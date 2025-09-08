@@ -126,35 +126,53 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.mpa-user-info:hover {
+    background-color: #f9fafb;
 }
 
 .mpa-user-avatar {
-    width: 2rem;
-    height: 2rem;
-    background-color: #e5e7eb;
+    width: 2.25rem;
+    height: 2.25rem;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+    flex-shrink: 0;
 }
 
 .mpa-user-details {
     display: flex;
     flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
 }
 
 .mpa-user-name {
     font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.25;
+    margin: 0;
 }
 
 .mpa-user-welcome {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: #6b7280;
+    line-height: 1.2;
+    margin: 0;
+    font-weight: 400;
 }
 
 .mpa-icon {
@@ -193,8 +211,12 @@ body.mpa-dark-mode .mpa-header-btn:hover {
     background-color: #374151;
 }
 
+body.mpa-dark-mode .mpa-user-info:hover {
+    background-color: #374151;
+}
+
 body.mpa-dark-mode .mpa-user-name {
-    color: #d1d5db;
+    color: #f3f4f6;
 }
 
 body.mpa-dark-mode .mpa-user-welcome {
@@ -202,8 +224,9 @@ body.mpa-dark-mode .mpa-user-welcome {
 }
 
 body.mpa-dark-mode .mpa-user-avatar {
-    background-color: #374151;
-    color: #9ca3af;
+    background: linear-gradient(135deg, #3b82f6, #1e40af);
+    color: white;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 /* Responsive */
