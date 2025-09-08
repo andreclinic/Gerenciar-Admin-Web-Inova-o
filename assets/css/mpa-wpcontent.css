@@ -1,0 +1,18 @@
+/* admin-style.css */
+#wpadminbar {
+  background-color: #222 !important;
+}
+
+#adminmenu {
+  background-color: #1d2327 !important;
+}
+
+#adminmenu .wp-submenu {
+  background-color: #32373c !important;
+}
+
+#wpfooter {
+  background-color: #ffffff !important;
+  color: #ff0000 !important;
+  border-top: 1px solid #1d2327 !important;
+}

@@ -1,0 +1,318 @@
+/* Sidebar Styles baseado no modelo_dashboard.html */
+.mpa-sidebar {
+    width: 16rem;
+    background: linear-gradient(to bottom, #f9fafb, white);
+    height: calc(100vh - 50px);
+    border-right: 1px solid #e5e7eb;
+    padding: 1rem 1rem 3rem 1rem;
+    position: fixed;
+    left: 0;
+    top: 50px;
+    z-index: 100;
+    transition: transform 0.3s ease, width 0.3s ease;
+    overflow-y: auto;
+}
+
+.mpa-sidebar.collapsed {
+    transform: translateX(-100%);
+}
+
+.mpa-sidebar.hidden {
+    transform: translateX(-100%);
+}
+
+.mpa-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+}
+
+.mpa-sidebar-overlay.show {
+    display: block;
+}
+
+.mpa-sidebar-section {
+    margin-bottom: 1rem;
+}
+
+.mpa-sidebar-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+}
+
+.mpa-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-bottom: 3rem;
+}
+
+.mpa-nav-item-container {
+    margin-bottom: 0.25rem;
+}
+
+.mpa-nav-item-container:last-child {
+    margin-bottom: 3rem;
+}
+
+.mpa-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: 0.75rem;
+    text-decoration: none;
+    color: #6b7280;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.mpa-nav-item:hover {
+    color: #2563eb;
+    background-color: #f9fafb;
+    text-decoration: none;
+}
+
+.mpa-nav-item.active {
+    color: #2563eb !important;
+    background-color: #eff6ff !important;
+    border-color: #dbeafe !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.mpa-nav-icon {
+    padding: 0.5rem;
+    background-color: #f3f4f6;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mpa-nav-item:hover .mpa-nav-icon,
+.mpa-nav-item.active .mpa-nav-icon {
+    background-color: #dbeafe !important;
+}
+
+.mpa-nav-content h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin: 0 0 0.125rem 0;
+    line-height: 1.2;
+}
+
+.mpa-nav-content {
+    flex: 1;
+}
+
+.mpa-nav-content p {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin: 0;
+    line-height: 1;
+}
+
+.mpa-nav-item.active .mpa-nav-content p {
+    color: #3b82f6 !important;
+}
+
+/* Seta para submenus */
+.mpa-nav-arrow {
+    margin-left: auto;
+    transition: transform 0.2s;
+}
+
+.mpa-nav-item-container.expanded .mpa-nav-arrow {
+    transform: rotate(90deg);
+}
+
+.mpa-arrow-icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Submenus */
+.mpa-submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out, opacity 0.2s ease-out;
+    background-color: #f8fafc;
+    border-radius: 0 0 0.75rem 0.75rem;
+    margin-top: -0.75rem;
+    padding-top: 0;
+    opacity: 0;
+}
+
+.mpa-submenu.expanded {
+    max-height: 500px;
+    padding-top: 0.75rem;
+    padding-bottom: 0.5rem;
+    opacity: 1;
+}
+
+.mpa-submenu-item {
+    display: block;
+    padding: 0.5rem 1rem 0.5rem 3rem;
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    border-radius: 0.5rem;
+    margin: 0 0.5rem;
+}
+
+.mpa-submenu-item:hover {
+    color: #2563eb;
+    background-color: #eff6ff;
+    text-decoration: none;
+}
+
+.mpa-submenu-item.active {
+    color: #2563eb;
+    background-color: #dbeafe;
+    font-weight: 500;
+}
+
+.mpa-submenu-item span {
+    display: block;
+}
+
+.mpa-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: currentColor;
+    stroke: currentColor;
+}
+
+/* Dark Mode Styles */
+body.mpa-dark-mode .mpa-sidebar {
+    background: linear-gradient(to bottom, #1f2937, #111827);
+    border-right-color: #374151;
+}
+
+body.mpa-dark-mode .mpa-sidebar-title {
+    color: #6b7280;
+}
+
+body.mpa-dark-mode .mpa-nav-item {
+    color: #9ca3af;
+}
+
+body.mpa-dark-mode .mpa-nav-item:hover {
+    color: #3b82f6;
+    background-color: #1f2937;
+}
+
+body.mpa-dark-mode .mpa-nav-item.active {
+    color: #60a5fa;
+    background-color: #1e3a8a;
+    border-color: #1d4ed8;
+}
+
+body.mpa-dark-mode .mpa-nav-icon {
+    background-color: #374151;
+}
+
+body.mpa-dark-mode .mpa-nav-item:hover .mpa-nav-icon,
+body.mpa-dark-mode .mpa-nav-item.active .mpa-nav-icon {
+    background-color: #1e40af;
+}
+
+body.mpa-dark-mode .mpa-nav-content p {
+    color: #6b7280;
+}
+
+body.mpa-dark-mode .mpa-nav-item.active .mpa-nav-content p {
+    color: #93c5fd;
+}
+
+body.mpa-dark-mode .mpa-submenu {
+    background-color: #1f2937;
+}
+
+body.mpa-dark-mode .mpa-submenu-item {
+    color: #9ca3af;
+}
+
+body.mpa-dark-mode .mpa-submenu-item:hover {
+    color: #60a5fa;
+    background-color: #374151;
+}
+
+body.mpa-dark-mode .mpa-submenu-item.active {
+    color: #60a5fa;
+    background-color: #1e40af;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .mpa-sidebar {
+        transform: translateX(-100%);
+        top: 48px;
+        height: calc(100vh - 48px);
+        width: 100%;
+        max-width: 280px;
+        z-index: 1001;
+    }
+
+    .mpa-sidebar.show {
+        transform: translateX(0);
+    }
+    
+    .mpa-sidebar-overlay {
+        position: fixed;
+        top: 48px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: none;
+    }
+    
+    .mpa-sidebar-overlay.show {
+        display: block;
+    }
+    
+    /* Prevent body scroll when mobile menu is open */
+    body.mobile-menu-open {
+        overflow: hidden;
+    }
+    
+    /* Improve mobile submenu experience */
+    .mpa-submenu-item {
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        font-size: 0.9375rem;
+    }
+    
+    .mpa-nav-item {
+        padding: 1rem;
+    }
+    
+    .mpa-nav-content h3 {
+        font-size: 0.9375rem;
+    }
+    
+    .mpa-nav-content p {
+        font-size: 0.8125rem;
+    }
+    
+    /* Force collapsed state not to apply on mobile */
+    .mpa-sidebar.collapsed {
+        transform: translateX(-100%);
+    }
+    
+    .mpa-sidebar.collapsed.show {
+        transform: translateX(0);
+    }
+}

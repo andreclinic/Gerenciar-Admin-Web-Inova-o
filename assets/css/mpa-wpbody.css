@@ -1,0 +1,289 @@
+/* Cards e Layout Principal baseado no modelo_dashboard.html */
+
+/* Cards */
+.mpa-card {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.25rem;
+    border: 1px solid #f3f4f6;
+    transition: all 0.2s;
+}
+
+.mpa-card:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.mpa-card-grid {
+    display: grid;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.mpa-card-grid-4 {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.mpa-card-grid-3 {
+    grid-template-columns: 2fr 1fr;
+}
+
+.mpa-card-grid-2 {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+}
+
+.mpa-card-grid-real-time {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+/* Metric Cards */
+.mpa-metric-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.mpa-metric-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    margin: 0;
+}
+
+.mpa-metric-change {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-weight: 500;
+}
+
+.mpa-metric-change.positive {
+    color: #059669;
+    background-color: #ecfdf5;
+}
+
+.mpa-metric-change.negative {
+    color: #dc2626;
+    background-color: #fef2f2;
+}
+
+.mpa-metric-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 0.25rem 0;
+    line-height: 1;
+}
+
+.mpa-metric-subtitle {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* Section Titles */
+.mpa-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 1.5rem 0;
+}
+
+/* Chart Containers */
+.mpa-chart-container {
+    position: relative;
+    height: 200px;
+    margin: 1rem 0;
+}
+
+.mpa-chart-container-small {
+    position: relative;
+    height: 150px;
+    margin: 1rem 0;
+}
+
+.mpa-donut-chart {
+    position: relative;
+    height: 180px;
+    margin: 1rem 0;
+}
+
+/* Device Stats */
+.mpa-device-stats {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.mpa-device-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mpa-device-stat-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mpa-device-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+}
+
+.mpa-device-dot.desktop {
+    background-color: #2563eb;
+}
+
+.mpa-device-dot.mobile {
+    background-color: #9333ea;
+}
+
+.mpa-device-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.mpa-device-percentage {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+/* Progress Bars */
+.mpa-progress-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.mpa-progress-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.mpa-progress-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mpa-progress-bar {
+    width: 5rem;
+    height: 0.5rem;
+    background-color: #e5e7eb;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.mpa-progress-fill {
+    height: 100%;
+    border-radius: 9999px;
+}
+
+.mpa-progress-fill.organic {
+    background-color: #2563eb;
+    width: 65%;
+}
+
+.mpa-progress-fill.direct {
+    background-color: #9333ea;
+    width: 20%;
+}
+
+.mpa-progress-fill.social {
+    background-color: #10b981;
+    width: 15%;
+}
+
+.mpa-progress-percentage {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+/* Dark Mode Styles */
+body.mpa-dark-mode .mpa-card {
+    background-color: #1f2937;
+    border-color: #374151;
+}
+
+body.mpa-dark-mode .mpa-section-title {
+    color: #f9fafb;
+}
+
+body.mpa-dark-mode .mpa-metric-title {
+    color: #9ca3af;
+}
+
+body.mpa-dark-mode .mpa-metric-value {
+    color: #f9fafb;
+}
+
+body.mpa-dark-mode .mpa-metric-subtitle {
+    color: #6b7280;
+}
+
+body.mpa-dark-mode .mpa-metric-change.positive {
+    color: #10b981;
+    background-color: #064e3b;
+}
+
+body.mpa-dark-mode .mpa-metric-change.negative {
+    color: #f87171;
+    background-color: #7f1d1d;
+}
+
+body.mpa-dark-mode .mpa-device-label {
+    color: #9ca3af;
+}
+
+body.mpa-dark-mode .mpa-device-percentage {
+    color: #f9fafb;
+}
+
+body.mpa-dark-mode .mpa-progress-label {
+    color: #9ca3af;
+}
+
+body.mpa-dark-mode .mpa-progress-percentage {
+    color: #f9fafb;
+}
+
+body.mpa-dark-mode .mpa-progress-bar {
+    background-color: #374151;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .mpa-card-grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .mpa-card-grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .mpa-metric-value {
+        font-size: 1.5rem;
+    }
+
+    .mpa-section-title {
+        font-size: 1.125rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .mpa-card-grid-4 {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .mpa-card-grid-real-time {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+}

@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Administrativo</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f9fafb;
+        color: #111827;
+        line-height: 1.5;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      /* Dark Mode Styles */
+      body.dark-mode {
+        background-color: #111827;
+        color: #f9fafb;
+      }
+
+      body.dark-mode .header {
+        background-color: #1f2937;
+        border-bottom-color: #374151;
+      }
+
+      body.dark-mode .logo {
+        color: #f9fafb;
+      }
+
+      body.dark-mode .date-filter {
+        background-color: #374151;
+        border-color: #4b5563;
+        color: #d1d5db;
+      }
+
+      body.dark-mode .date-filter:hover {
+        background-color: #4b5563;
+      }
+
+      body.dark-mode .header-btn {
+        color: #9ca3af;
+      }
+
+      body.dark-mode .header-btn:hover {
+        color: #d1d5db;
+        background-color: #374151;
+      }
+
+      body.dark-mode .user-name {
+        color: #d1d5db;
+      }
+
+      body.dark-mode .user-welcome {
+        color: #9ca3af;
+      }
+
+      body.dark-mode .user-avatar {
+        background-color: #374151;
+        color: #9ca3af;
+      }
+
+      body.dark-mode .sidebar {
+        background: linear-gradient(to bottom, #1f2937, #111827);
+        border-right-color: #374151;
+      }
+
+      body.dark-mode .sidebar-title {
+        color: #6b7280;
+      }
+
+      body.dark-mode .nav-item {
+        color: #9ca3af;
+      }
+
+      body.dark-mode .nav-item:hover {
+        color: #3b82f6;
+        background-color: #1f2937;
+      }
+
+      body.dark-mode .nav-item.active {
+        color: #60a5fa;
+        background-color: #1e3a8a;
+        border-color: #1d4ed8;
+      }
+
+      body.dark-mode .nav-icon {
+        background-color: #374151;
+      }
+
+      body.dark-mode .nav-item:hover .nav-icon,
+      body.dark-mode .nav-item.active .nav-icon {
+        background-color: #1e40af;
+      }
+
+      body.dark-mode .nav-content p {
+        color: #6b7280;
+      }
+
+      body.dark-mode .nav-item.active .nav-content p {
+        color: #93c5fd;
+      }
+
+      body.dark-mode .card {
+        background-color: #1f2937;
+        border-color: #374151;
+      }
+
+      body.dark-mode .section-title {
+        color: #f9fafb;
+      }
+
+      body.dark-mode .metric-title {
+        color: #9ca3af;
+      }
+
+      body.dark-mode .metric-value {
+        color: #f9fafb;
+      }
+
+      body.dark-mode .metric-subtitle {
+        color: #6b7280;
+      }
+
+      body.dark-mode .metric-change.positive {
+        color: #10b981;
+        background-color: #064e3b;
+      }
+
+      body.dark-mode .metric-change.negative {
+        color: #f87171;
+        background-color: #7f1d1d;
+      }
+
+      body.dark-mode .device-label {
+        color: #9ca3af;
+      }
+
+      body.dark-mode .device-percentage {
+        color: #f9fafb;
+      }
+
+      body.dark-mode .progress-label {
+        color: #9ca3af;
+      }
+
+      body.dark-mode .progress-percentage {
+        color: #f9fafb;
+      }
+
+      body.dark-mode .progress-bar {
+        background-color: #374151;
+      }
+
+      body.dark-mode .city-stats {
+        border-top-color: #374151;
+      }
+
+      body.dark-mode .city-stats h4 {
+        color: #f9fafb;
+      }
+
+      body.dark-mode .city-name {
+        color: #9ca3af;
+      }
+
+      body.dark-mode .city-value {
+        color: #f9fafb;
+      }
+
+      body.dark-mode .revenue-value {
+        color: #10b981;
+      }
+
+      body.dark-mode .revenue-subtitle {
+        color: #9ca3af;
+      }
+
+      body.dark-mode .products-list h4 {
+        color: #f9fafb;
+      }
+
+      body.dark-mode .product-name {
+        color: #9ca3af;
+      }
+
+      body.dark-mode .product-value {
+        color: #10b981;
+      }
+
+      /* Header Styles */
+      .header {
+        background: white;
+        padding: 1rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+      }
+
+      .mobile-menu-btn {
+        display: none;
+        padding: 0.5rem;
+        background: none;
+        border: none;
+        color: #6b7280;
+        cursor: pointer;
+        border-radius: 0.5rem;
+        margin-right: 0.75rem;
+        transition: all 0.2s;
+      }
+
+      .mobile-menu-btn:hover {
+        color: #111827;
+        background-color: #f3f4f6;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #111827;
+      }
+
+      .logo-accent {
+        color: #2563eb;
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+      }
+
+      .date-filter {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        color: #374151;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .date-filter:hover {
+        background-color: #f3f4f6;
+      }
+
+      .header-buttons {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .header-btn {
+        padding: 0.5rem;
+        background: none;
+        border: none;
+        color: #9ca3af;
+        cursor: pointer;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+        position: relative;
+      }
+
+      .header-btn:hover {
+        color: #6b7280;
+        background-color: #f3f4f6;
+      }
+
+      .notification-dot {
+        position: absolute;
+        top: 1px;
+        right: 7px;
+        width: 8px;
+        height: 8px;
+        background-color: #ef4444;
+        border-radius: 50%;
+        animation: pulse 1.5s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.4);
+          opacity: 0.6;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .user-avatar {
+        width: 2rem;
+        height: 2rem;
+        background-color: #e5e7eb;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #6b7280;
+      }
+
+      .user-details {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .user-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+      }
+
+      .user-welcome {
+        font-size: 0.75rem;
+        color: #9ca3af;
+      }
+
+      /* Layout */
+      .main-container {
+        display: flex;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 18rem;
+        background: linear-gradient(to bottom, #f9fafb, white);
+        height: calc(100vh - 73px);
+        border-right: 1px solid #e5e7eb;
+        padding: 2rem;
+        position: fixed;
+        left: 0;
+        top: 73px;
+        z-index: 50;
+        transition: transform 0.3s ease;
+      }
+
+      .sidebar.hidden {
+        transform: translateX(-100%);
+      }
+
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 40;
+      }
+
+      .sidebar-overlay.show {
+        display: block;
+      }
+
+      .sidebar-section {
+        margin-bottom: 2rem;
+      }
+
+      .sidebar-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+      }
+
+      .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        text-decoration: none;
+        color: #6b7280;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+      }
+
+      .nav-item:hover {
+        color: #2563eb;
+        background-color: #f9fafb;
+      }
+
+      .nav-item.active {
+        color: #2563eb;
+        background-color: #eff6ff;
+        border-color: #dbeafe;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .nav-icon {
+        padding: 0.5rem;
+        background-color: #f3f4f6;
+        border-radius: 0.5rem;
+        transition: background-color 0.2s;
+      }
+
+      .nav-item:hover .nav-icon,
+      .nav-item.active .nav-icon {
+        background-color: #dbeafe;
+      }
+
+      .nav-content h3 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 0.125rem;
+      }
+
+      .nav-content p {
+        font-size: 0.75rem;
+        color: #9ca3af;
+      }
+
+      .nav-item.active .nav-content p {
+        color: #3b82f6;
+      }
+
+      /* Main Content */
+      .main-content {
+        flex: 1;
+        margin-left: 18rem;
+        padding: 1.5rem;
+        overflow-y: auto;
+      }
+
+      /* Cards */
+      .card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        padding: 1.25rem;
+        border: 1px solid #f3f4f6;
+      }
+
+      .card-grid {
+        display: grid;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .card-grid-4 {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      }
+
+      .card-grid-3 {
+        grid-template-columns: 2fr 1fr;
+      }
+
+      .card-grid-2 {
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      }
+
+      .card-grid-real-time {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+
+      /* Metric Cards */
+      .metric-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+      }
+
+      .metric-title {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #6b7280;
+      }
+
+      .metric-change {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 9999px;
+        font-weight: 500;
+      }
+
+      .metric-change.positive {
+        color: #059669;
+        background-color: #ecfdf5;
+      }
+
+      .metric-change.negative {
+        color: #dc2626;
+        background-color: #fef2f2;
+      }
+
+      .metric-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 0.25rem;
+      }
+
+      .metric-subtitle {
+        font-size: 0.75rem;
+        color: #6b7280;
+      }
+
+      /* Section Titles */
+      .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 1.5rem;
+      }
+
+      /* Chart Containers */
+      .chart-container {
+        position: relative;
+        height: 200px;
+      }
+
+      .chart-container-small {
+        position: relative;
+        height: 150px;
+      }
+
+      .donut-chart {
+        position: relative;
+        height: 180px;
+      }
+
+      /* Device Stats */
+      .device-stats {
+        margin-top: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .device-stat {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .device-stat-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .device-dot {
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 50%;
+      }
+
+      .device-dot.desktop {
+        background-color: #2563eb;
+      }
+
+      .device-dot.mobile {
+        background-color: #9333ea;
+      }
+
+      .device-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+      }
+
+      .device-percentage {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #111827;
+      }
+
+      /* Progress Bars */
+      .progress-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+      }
+
+      .progress-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+      }
+
+      .progress-right {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .progress-bar {
+        width: 5rem;
+        height: 0.5rem;
+        background-color: #e5e7eb;
+        border-radius: 9999px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        border-radius: 9999px;
+      }
+
+      .progress-fill.organic {
+        background-color: #2563eb;
+        width: 65%;
+      }
+
+      .progress-fill.direct {
+        background-color: #9333ea;
+        width: 20%;
+      }
+
+      .progress-fill.social {
+        background-color: #10b981;
+        width: 15%;
+      }
+
+      .progress-percentage {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #111827;
+      }
+
+      /* City Stats */
+      .city-stats {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .city-stats h4 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.75rem;
+      }
+
+      .city-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+      }
+
+      .city-name {
+        font-size: 0.875rem;
+        color: #6b7280;
+      }
+
+      .city-value {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #111827;
+      }
+
+      /* Revenue */
+      .revenue-header {
+        margin-bottom: 1.5rem;
+      }
+
+      .revenue-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #059669;
+        margin-bottom: 0.25rem;
+      }
+
+      .revenue-subtitle {
+        font-size: 0.875rem;
+        color: #6b7280;
+      }
+
+      .products-list h4 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.75rem;
+      }
+
+      .product-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+      }
+
+      .product-name {
+        font-size: 0.875rem;
+        color: #6b7280;
+      }
+
+      .product-value {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #059669;
+      }
+
+      /* SVG Icons */
+      .icon {
+        width: 1.25rem;
+        height: 1.25rem;
+        fill: currentColor;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .mobile-menu-btn {
+          display: block;
+        }
+
+        .sidebar {
+          transform: translateX(-100%);
+        }
+
+        .sidebar.show {
+          transform: translateX(0);
+        }
+
+        .main-content {
+          margin-left: 0;
+          padding: 1rem;
+        }
+
+        .header {
+          padding: 1rem;
+        }
+
+        .header-right {
+          gap: 0.5rem;
+        }
+
+        .date-filter {
+          display: none;
+        }
+
+        .user-details {
+          display: none;
+        }
+
+        .card-grid-3 {
+          grid-template-columns: 1fr;
+        }
+
+        .card-grid-2 {
+          grid-template-columns: 1fr;
+        }
+
+        .metric-value {
+          font-size: 1.5rem;
+        }
+
+        .section-title {
+          font-size: 1.125rem;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .card-grid-4 {
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .card-grid-real-time {
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <button id="mobileMenuBtn" class="mobile-menu-btn">
+          <svg
+            class="icon"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            fill="none"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
+        <div class="logo">
+          Analytics
+          <span class="logo-accent">Pro</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="date-filter">📅 Últimos 30 dias</div>
+        <div class="header-buttons">
+          <button id="darkModeToggle" class="header-btn">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              fill="none"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+              />
+            </svg>
+          </button>
+          <button class="header-btn">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              fill="none"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </button>
+          <button class="header-btn">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              fill="none"
+            >
+              <path
+                d="M14.97 21a3.001 3.001 0 01-5.94 0h5.94zM18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9z"
+              />
+            </svg>
+            <span class="notification-dot"></span>
+          </button>
+        </div>
+        <div class="user-info">
+          <div class="user-avatar">AL</div>
+          <div class="user-details">
+            <span class="user-name">Olá ANDRE LUIZ CORREA</span>
+            <p class="user-welcome">Bem-vindo de volta!</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="main-container">
+      <!-- Mobile Sidebar Overlay -->
+      <div id="mobileOverlay" class="sidebar-overlay"></div>
+
+      <!-- Sidebar -->
+      <aside id="sidebar" class="sidebar">
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">Menu Principal</h3>
+        </div>
+
+        <nav class="sidebar-nav">
+          <a href="#" class="nav-item active">
+            <div class="nav-icon">
+              <svg class="icon" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"
+                />
+              </svg>
+            </div>
+            <div class="nav-content">
+              <h3>Dashboard</h3>
+              <p>Visão geral</p>
+            </div>
+          </a>
+
+          <a href="#" class="nav-item">
+            <div class="nav-icon">
+              <svg class="icon" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fill-rule="evenodd"
+                  d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </div>
+            <div class="nav-content">
+              <h3>Relatórios</h3>
+              <p>Análises detalhadas</p>
+            </div>
+          </a>
+
+          <a href="#" class="nav-item">
+            <div class="nav-icon">
+              <svg class="icon" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"
+                />
+              </svg>
+            </div>
+            <div class="nav-content">
+              <h3>Usuários</h3>
+              <p>Gerenciar usuários</p>
+            </div>
+          </a>
+
+          <a href="#" class="nav-item">
+            <div class="nav-icon">
+              <svg class="icon" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fill-rule="evenodd"
+                  d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </div>
+            <div class="nav-content">
+              <h3>Configurações</h3>
+              <p>Preferências</p>
+            </div>
+          </a>
+        </nav>
+
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">Ferramentas</h3>
+          <nav class="sidebar-nav">
+            <a href="#" class="nav-item">
+              <div class="nav-icon">
+                <svg class="icon" viewBox="0 0 20 20" fill="currentColor">
+                  <path
+                    fill-rule="evenodd"
+                    d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div class="nav-content">
+                <h3>Exportar</h3>
+                <p>Baixar dados</p>
+              </div>
+            </a>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Visitor Analytics Section -->
+        <section>
+          <h2 class="section-title">Visitor Analytics</h2>
+          <div class="card-grid card-grid-4">
+            <!-- Users Card -->
+            <div class="card">
+              <div class="metric-header">
+                <h3 class="metric-title">Usuários do Site</h3>
+                <span class="metric-change positive">+12.5%</span>
+              </div>
+              <div class="metric-value">24,532</div>
+              <p class="metric-subtitle">vs mês anterior</p>
+            </div>
+
+            <!-- Page Views Card -->
+            <div class="card">
+              <div class="metric-header">
+                <h3 class="metric-title">Visualizações</h3>
+                <span class="metric-change negative">-3.2%</span>
+              </div>
+              <div class="metric-value">89,247</div>
+              <p class="metric-subtitle">vs mês anterior</p>
+            </div>
+
+            <!-- Bounce Rate Card -->
+            <div class="card">
+              <div class="metric-header">
+                <h3 class="metric-title">Taxa de Rejeição</h3>
+                <span class="metric-change positive">-5.1%</span>
+              </div>
+              <div class="metric-value">42.3%</div>
+              <p class="metric-subtitle">vs mês anterior</p>
+            </div>
+
+            <!-- Session Duration Card -->
+            <div class="card">
+              <div class="metric-header">
+                <h3 class="metric-title">Duração Média</h3>
+                <span class="metric-change positive">+8.7%</span>
+              </div>
+              <div class="metric-value">3:42</div>
+              <p class="metric-subtitle">minutos por sessão</p>
+            </div>
+          </div>
+
+          <div class="card-grid card-grid-3">
+            <!-- Visitors Chart -->
+            <div class="card">
+              <h3 class="section-title">Visitantes por Dia</h3>
+              <div class="chart-container">
+                <canvas id="visitorsChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Device Breakdown -->
+            <div class="card">
+              <h3 class="section-title">Visitas por Dispositivo</h3>
+              <div class="donut-chart">
+                <canvas id="deviceChart"></canvas>
+              </div>
+              <div class="device-stats">
+                <div class="device-stat">
+                  <div class="device-stat-left">
+                    <div class="device-dot desktop"></div>
+                    <span class="device-label">Desktop</span>
+                  </div>
+                  <span class="device-percentage">83.06%</span>
+                </div>
+                <div class="device-stat">
+                  <div class="device-stat-left">
+                    <div class="device-dot mobile"></div>
+                    <span class="device-label">Mobile</span>
+                  </div>
+                  <span class="device-percentage">16.94%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- User Acquisition & Site Revenue -->
+        <div class="card-grid card-grid-2">
+          <!-- User Acquisition -->
+          <div class="card">
+            <h3 class="section-title">User Acquisition</h3>
+            <div>
+              <div class="progress-item">
+                <span class="progress-label">Pesquisa Orgânica</span>
+                <div class="progress-right">
+                  <div class="progress-bar">
+                    <div class="progress-fill organic"></div>
+                  </div>
+                  <span class="progress-percentage">65%</span>
+                </div>
+              </div>
+              <div class="progress-item">
+                <span class="progress-label">Direto</span>
+                <div class="progress-right">
+                  <div class="progress-bar">
+                    <div class="progress-fill direct"></div>
+                  </div>
+                  <span class="progress-percentage">20%</span>
+                </div>
+              </div>
+              <div class="progress-item">
+                <span class="progress-label">Redes Sociais</span>
+                <div class="progress-right">
+                  <div class="progress-bar">
+                    <div class="progress-fill social"></div>
+                  </div>
+                  <span class="progress-percentage">15%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="city-stats">
+              <h4>Principais Cidades</h4>
+              <div class="city-item">
+                <span class="city-name">São Paulo</span>
+                <span class="city-value">8,432</span>
+              </div>
+              <div class="city-item">
+                <span class="city-name">Rio de Janeiro</span>
+                <span class="city-value">5,621</span>
+              </div>
+              <div class="city-item">
+                <span class="city-name">Belo Horizonte</span>
+                <span class="city-value">3,247</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Site Revenue -->
+          <div class="card">
+            <h3 class="section-title">Site Revenue</h3>
+            <div class="revenue-header">
+              <div class="revenue-value">R$ 47,832</div>
+              <p class="revenue-subtitle">Receita total este mês</p>
+            </div>
+
+            <div class="chart-container-small">
+              <canvas id="revenueChart"></canvas>
+            </div>
+
+            <div class="products-list">
+              <h4>Mais Vendidos</h4>
+              <div class="product-item">
+                <span class="product-name">Produto Premium</span>
+                <span class="product-value">R$ 12,450</span>
+              </div>
+              <div class="product-item">
+                <span class="product-name">Serviço Básico</span>
+                <span class="product-value">R$ 8,320</span>
+              </div>
+              <div class="product-item">
+                <span class="product-name">Consultoria</span>
+                <span class="product-value">R$ 6,890</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real Time Section -->
+        <section>
+          <h2 class="section-title">Real Time</h2>
+          <div class="card-grid card-grid-real-time">
+            <div class="card">
+              <h3 class="metric-title">Usuários Ativos</h3>
+              <div class="metric-value">127</div>
+              <p class="metric-subtitle">agora mesmo</p>
+            </div>
+
+            <div class="card">
+              <h3 class="metric-title">Páginas Ativas</h3>
+              <div class="metric-value">43</div>
+              <p class="metric-subtitle">sendo visualizadas</p>
+            </div>
+
+            <div class="card">
+              <h3 class="metric-title">Conversões (30min)</h3>
+              <div class="metric-value" style="color: #ef4444">0</div>
+              <p class="metric-subtitle">últimos 30 minutos</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      // Dark Mode Toggle - Fully Functional
+      const darkModeToggle = document.getElementById("darkModeToggle");
+      const body = document.body;
+
+      // Check for saved theme preference or default to light mode
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme === "dark") {
+        body.classList.add("dark-mode");
+      }
+
+      darkModeToggle.addEventListener("click", () => {
+        // Toggle dark mode class
+        body.classList.toggle("dark-mode");
+
+        // Save preference to localStorage
+        if (body.classList.contains("dark-mode")) {
+          localStorage.setItem("theme", "dark");
+        } else {
+          localStorage.setItem("theme", "light");
+        }
+
+        // Visual feedback
+        darkModeToggle.style.transform = "scale(0.95)";
+        setTimeout(() => {
+          darkModeToggle.style.transform = "scale(1)";
+        }, 150);
+
+        // Update chart colors
+        updateChartColors();
+      });
+
+      // Mobile Menu Functionality
+      const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+      const sidebar = document.getElementById("sidebar");
+      const mobileOverlay = document.getElementById("mobileOverlay");
+
+      function toggleMobileMenu() {
+        sidebar.classList.toggle("show");
+        mobileOverlay.classList.toggle("show");
+      }
+
+      mobileMenuBtn.addEventListener("click", toggleMobileMenu);
+      mobileOverlay.addEventListener("click", toggleMobileMenu);
+
+      // Close sidebar when clicking on a link (mobile)
+      const sidebarLinks = sidebar.querySelectorAll("a");
+      sidebarLinks.forEach((link) => {
+        link.addEventListener("click", () => {
+          if (window.innerWidth < 768) {
+            toggleMobileMenu();
+          }
+        });
+      });
+
+      // Chart variables
+      let visitorsChart, deviceChart, revenueChart;
+
+      // Function to get chart colors based on theme
+      function getThemeColors() {
+        const isDarkMode = document.body.classList.contains("dark-mode");
+
+        if (isDarkMode) {
+          return {
+            gridColor: "#374151",
+            textColor: "#9CA3AF",
+            backgroundColor: "#1F2937",
+          };
+        } else {
+          return {
+            gridColor: "#F3F4F6",
+            textColor: "#6B7280",
+            backgroundColor: "#FFFFFF",
+          };
+        }
+      }
+
+      // Function to update chart colors
+      function updateChartColors() {
+        const themeColors = getThemeColors();
+
+        // Update visitors chart
+        if (visitorsChart) {
+          visitorsChart.options.scales.y.grid.color = themeColors.gridColor;
+          visitorsChart.options.scales.y.ticks.color = themeColors.textColor;
+          visitorsChart.options.scales.x.ticks.color = themeColors.textColor;
+          visitorsChart.update();
+        }
+
+        // Update revenue chart
+        if (revenueChart) {
+          revenueChart.options.scales.y.grid.color = themeColors.gridColor;
+          revenueChart.options.scales.y.ticks.color = themeColors.textColor;
+          revenueChart.options.scales.x.ticks.color = themeColors.textColor;
+          revenueChart.data.datasets[0].pointBorderColor =
+            themeColors.backgroundColor;
+          revenueChart.update();
+        }
+      }
+
+      // Visitors Chart
+      const visitorsCtx = document
+        .getElementById("visitorsChart")
+        .getContext("2d");
+      const themeColors = getThemeColors();
+
+      visitorsChart = new Chart(visitorsCtx, {
+        type: "bar",
+        data: {
+          labels: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
+          datasets: [
+            {
+              label: "Visitantes",
+              data: [1200, 1900, 3000, 2500, 2200, 3000, 2800],
+              backgroundColor: "#2563EB",
+              borderRadius: 4,
+              borderSkipped: false,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false,
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: themeColors.gridColor,
+              },
+              ticks: {
+                color: themeColors.textColor,
+              },
+            },
+            x: {
+              grid: {
+                display: false,
+              },
+              ticks: {
+                color: themeColors.textColor,
+              },
+            },
+          },
+        },
+      });
+
+      // Device Chart
+      const deviceCtx = document.getElementById("deviceChart").getContext("2d");
+      deviceChart = new Chart(deviceCtx, {
+        type: "doughnut",
+        data: {
+          labels: ["Desktop", "Mobile"],
+          datasets: [
+            {
+              data: [83.06, 16.94],
+              backgroundColor: ["#2563EB", "#9333EA"],
+              borderWidth: 0,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false,
+            },
+          },
+          cutout: "70%",
+        },
+      });
+
+      // Revenue Chart
+      const revenueCtx = document
+        .getElementById("revenueChart")
+        .getContext("2d");
+      revenueChart = new Chart(revenueCtx, {
+        type: "line",
+        data: {
+          labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"],
+          datasets: [
+            {
+              label: "Receita",
+              data: [30000, 35000, 32000, 40000, 45000, 47832],
+              borderColor: "#2563EB",
+              backgroundColor: "rgba(37, 99, 235, 0.1)",
+              fill: true,
+              tension: 0.4,
+              borderWidth: 2,
+              pointBackgroundColor: "#2563EB",
+              pointBorderColor: themeColors.backgroundColor,
+              pointBorderWidth: 2,
+              pointRadius: 4,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false,
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: themeColors.gridColor,
+              },
+              ticks: {
+                color: themeColors.textColor,
+                callback: function (value) {
+                  return "R$ " + value / 1000 + "k";
+                },
+              },
+            },
+            x: {
+              grid: {
+                display: false,
+              },
+              ticks: {
+                color: themeColors.textColor,
+              },
+            },
+          },
+        },
+      });
+    </script>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'97a7ebbdb39602ff',t:'MTc1NzA5ODMxNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
