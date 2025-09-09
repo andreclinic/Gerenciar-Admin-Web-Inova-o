@@ -285,10 +285,100 @@ function mpa_menu_roles_page() {
                         <?php endif; ?>
                     </a>
                 <?php endforeach; ?>
+                
+                <!-- Nova aba de ícones -->
+                <a href="<?php echo esc_url(admin_url('admin.php?page=mpa-menu-roles&view=icons')); ?>" 
+                   class="mpa-role-tab mpa-icons-tab <?php echo (isset($_GET['view']) && $_GET['view'] === 'icons') ? 'active' : ''; ?>">
+                    🎨 Ícones
+                </a>
             </div>
         </div>
         
-        <?php if (!empty($selected_role)): ?>
+        <?php if (isset($_GET['view']) && $_GET['view'] === 'icons'): ?>
+        <div class="mpa-icons-section">
+            <h2>📚 Guia de Ícones do WordPress</h2>
+            <p class="description">
+                Clique no ícone desejado para copiar seu nome. Use esses nomes nos campos de ícone personalizado dos menus.
+            </p>
+            
+            <div class="mpa-icons-search">
+                <input type="text" id="mpa-icon-search" placeholder="🔍 Pesquisar ícones..." />
+                <span class="mpa-search-clear" onclick="clearSearch()">✕</span>
+            </div>
+            
+            <div class="mpa-icons-grid" id="mpa-icons-container">
+                <?php
+                // Lista completa de ícones do WordPress
+                $wordpress_icons = array(
+                    'admin-appearance', 'admin-collapse', 'admin-comments', 'admin-customizer', 'admin-generic',
+                    'admin-home', 'admin-media', 'admin-multisite', 'admin-network', 'admin-page',
+                    'admin-plugins', 'admin-post', 'admin-settings', 'admin-site', 'admin-site-alt',
+                    'admin-site-alt2', 'admin-site-alt3', 'admin-tools', 'admin-users',
+                    'airplane', 'album', 'align-center', 'align-full-width', 'align-left', 'align-none', 
+                    'align-pull-left', 'align-pull-right', 'align-right', 'align-wide', 'analytics',
+                    'archive', 'arrow-down', 'arrow-down-alt', 'arrow-down-alt2', 'arrow-left',
+                    'arrow-left-alt', 'arrow-left-alt2', 'arrow-right', 'arrow-right-alt',
+                    'arrow-right-alt2', 'arrow-up', 'arrow-up-alt', 'arrow-up-alt2', 'arrow-up-duplicate',
+                    'art', 'awards', 'backup', 'bank', 'beer', 'bell', 'block-default', 'book',
+                    'book-alt', 'buddicons-activity', 'buddicons-bbpress-logo', 'buddicons-buddypress-logo',
+                    'buddicons-community', 'buddicons-forums', 'buddicons-friends', 'buddicons-groups',
+                    'buddicons-pm', 'buddicons-replies', 'buddicons-topics', 'buddicons-tracking',
+                    'building', 'businessman', 'button', 'calendar', 'calendar-alt', 'camera',
+                    'camera-alt', 'carrot', 'cart', 'category', 'chart-area', 'chart-bar', 'chart-line',
+                    'chart-pie', 'clipboard', 'clock', 'cloud', 'cloud-saved', 'cloud-upload', 'code-standards',
+                    'coffee', 'color-picker', 'columns', 'comment', 'controls-back', 'controls-forward',
+                    'controls-pause', 'controls-play', 'controls-repeat', 'controls-skipback',
+                    'controls-skipforward', 'controls-volumeoff', 'controls-volumeon', 'cover-image',
+                    'dashboard', 'database', 'database-add', 'database-export', 'database-import',
+                    'database-remove', 'database-view', 'desktop', 'dismiss', 'download', 'edit',
+                    'editor-aligncenter', 'editor-alignleft', 'editor-alignright', 'editor-bold',
+                    'editor-break', 'editor-code', 'editor-contract', 'editor-customchar', 'editor-expand',
+                    'editor-help', 'editor-indent', 'editor-insertmore', 'editor-italic', 'editor-justify',
+                    'editor-kitchensink', 'editor-ltr', 'editor-ol', 'editor-ol-rtl', 'editor-outdent',
+                    'editor-paragraph', 'editor-paste-text', 'editor-paste-word', 'editor-quote',
+                    'editor-removeformatting', 'editor-rtl', 'editor-spellcheck', 'editor-strikethrough',
+                    'editor-table', 'editor-textcolor', 'editor-ul', 'editor-ul-rtl', 'editor-underline',
+                    'editor-unlink', 'editor-video', 'email', 'email-alt', 'email-alt2', 'embed-audio',
+                    'embed-generic', 'embed-photo', 'embed-post', 'embed-video', 'excerpt-view', 'exit',
+                    'external', 'facebook', 'facebook-alt', 'feedback', 'filter', 'flag', 'format-aside',
+                    'format-audio', 'format-chat', 'format-gallery', 'format-image', 'format-quote',
+                    'format-status', 'format-video', 'forms', 'fullscreen-alt', 'fullscreen-exit-alt',
+                    'games', 'google', 'googleplus', 'grid-view', 'groups', 'hammer', 'heading', 'heart',
+                    'hidden', 'hourglass', 'html', 'id', 'id-alt', 'image-crop', 'image-filter',
+                    'image-flip-horizontal', 'image-flip-vertical', 'image-rotate', 'image-rotate-left',
+                    'image-rotate-right', 'images-alt', 'images-alt2', 'index-card', 'info', 'info-outline',
+                    'insert', 'instagram', 'laptop', 'layout', 'leftright', 'lightbulb', 'linkedin',
+                    'list-view', 'location', 'location-alt', 'lock', 'marker', 'media-archive', 'media-audio',
+                    'media-code', 'media-default', 'media-document', 'media-interactive', 'media-spreadsheet',
+                    'media-text', 'media-video', 'megaphone', 'menu', 'menu-alt', 'menu-alt2', 'menu-alt3',
+                    'microphone', 'migrate', 'minus', 'money', 'money-alt', 'move', 'nametag', 'networking',
+                    'no', 'no-alt', 'open-folder', 'palmtree', 'paperclip', 'performance', 'pets',
+                    'phone', 'pinterest', 'playlist-audio', 'playlist-video', 'plus', 'plus-alt', 'plus-alt2',
+                    'portfolio', 'post-status', 'pressthis', 'printer', 'privacy', 'products', 'redo',
+                    'reddit', 'rest-api', 'rss', 'saved', 'schedule', 'screenoptions', 'search', 'share',
+                    'share-alt', 'share-alt2', 'shield', 'shield-alt', 'slides', 'smartphone', 'smiley',
+                    'sort', 'sos', 'star-empty', 'star-filled', 'star-half', 'sticky', 'store',
+                    'superhero', 'superhero-alt', 'tablet', 'tag', 'tagcloud', 'testimonial', 'text',
+                    'text-page', 'thumbs-down', 'thumbs-up', 'tickets', 'tickets-alt', 'tide', 'translation',
+                    'trash', 'twitter', 'twitter-alt', 'undo', 'unlock', 'update', 'update-alt', 'upload',
+                    'vault', 'video-alt', 'video-alt2', 'video-alt3', 'visibility', 'warning', 'welcome-add-page',
+                    'welcome-comments', 'welcome-learn-more', 'welcome-view-site', 'welcome-widgets-menus',
+                    'welcome-write-blog', 'wordpress', 'wordpress-alt', 'yes', 'yes-alt', 'youtube'
+                );
+                
+                foreach ($wordpress_icons as $icon): ?>
+                    <div class="mpa-icon-item" data-icon="dashicons-<?php echo esc_attr($icon); ?>" onclick="copyIcon('dashicons-<?php echo esc_attr($icon); ?>')">
+                        <span class="dashicons dashicons-<?php echo esc_attr($icon); ?>"></span>
+                        <span class="mpa-icon-name">dashicons-<?php echo esc_attr($icon); ?></span>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            
+            <div class="mpa-copy-notification" id="mpa-copy-notification">
+                <strong>✅ Copiado!</strong> O ícone foi copiado para a área de transferência.
+            </div>
+        </div>
+        <?php elseif (!empty($selected_role)): ?>
         <form method="post" action="">
             <?php wp_nonce_field('mpa_menu_roles_nonce'); ?>
             <input type="hidden" name="selected_role" value="<?php echo esc_attr($selected_role); ?>" />
@@ -449,6 +539,17 @@ function mpa_menu_roles_page() {
                         <?php submit_button('Importar Configurações JSON', 'secondary', 'import', false); ?>
                     </form>
                 </div>
+            </div>
+            
+            <!-- Seção de Reset -->
+            <div class="mpa-reset-section">
+                <h3>🔄 Resetar Configurações</h3>
+                <p>Restaura todas as configurações de menu ao estado inicial padrão do WordPress. <strong>Esta ação não pode ser desfeita!</strong></p>
+                <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" onsubmit="return confirmReset();">
+                    <input type="hidden" name="action" value="mpa_reset_menu_settings">
+                    <?php wp_nonce_field('mpa_reset_settings', 'mpa_reset_nonce'); ?>
+                    <?php submit_button('Resetar Todas as Configurações', 'delete', 'reset', false); ?>
+                </form>
             </div>
         </div>
         
@@ -833,6 +934,294 @@ function mpa_menu_roles_page() {
             background: #fff;
         }
         
+        /* Seção de Reset */
+        .mpa-reset-section {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #e1e1e1;
+            border-left: 4px solid #dc3232;
+            border-radius: 4px;
+            background: #fdf2f2;
+        }
+        
+        .mpa-reset-section h3 {
+            margin-top: 0;
+            color: #dc3232;
+            font-size: 16px;
+        }
+        
+        .mpa-reset-section p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        /* Melhorias nos botões principais */
+        .mpa-submit-section .button-primary,
+        .mpa-export-section .button-primary,
+        .mpa-import-section .button-secondary,
+        .mpa-reset-section .button.delete {
+            font-size: 16px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            height: auto !important;
+            line-height: 1.4 !important;
+            border-radius: 6px !important;
+            text-shadow: none !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s ease !important;
+            min-width: 180px !important;
+            text-align: center !important;
+        }
+        
+        /* Botão de salvar configurações */
+        .mpa-submit-section .button-primary {
+            background: linear-gradient(135deg, #00a32a 0%, #008a20 100%) !important;
+            border-color: #008a20 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+        }
+        
+        .mpa-submit-section .button-primary:hover {
+            background: linear-gradient(135deg, #008a20 0%, #007017 100%) !important;
+            border-color: #007017 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+        }
+        
+        /* Botão de exportar */
+        .mpa-export-section .button-primary {
+            background: linear-gradient(135deg, #0073aa 0%, #005a87 100%) !important;
+            border-color: #005a87 !important;
+        }
+        
+        .mpa-export-section .button-primary:hover {
+            background: linear-gradient(135deg, #005a87 0%, #004766 100%) !important;
+            border-color: #004766 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+        }
+        
+        /* Botão de importar */
+        .mpa-import-section .button-secondary {
+            background: linear-gradient(135deg, #2271b1 0%, #135e96 100%) !important;
+            color: #fff !important;
+            border-color: #135e96 !important;
+        }
+        
+        .mpa-import-section .button-secondary:hover {
+            background: linear-gradient(135deg, #135e96 0%, #0f4c7a 100%) !important;
+            color: #fff !important;
+            border-color: #0f4c7a !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+        }
+        
+        /* Botão de reset */
+        .mpa-reset-section .button.delete {
+            background: linear-gradient(135deg, #dc3232 0%, #b32d2e 100%) !important;
+            border-color: #b32d2e !important;
+            color: #fff !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+        }
+        
+        .mpa-reset-section .button.delete:hover {
+            background: linear-gradient(135deg, #b32d2e 0%, #8f2728 100%) !important;
+            border-color: #8f2728 !important;
+            color: #fff !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(220,50,50,0.3) !important;
+        }
+        
+        /* Ícones nos botões */
+        .mpa-export-section .button-primary:before {
+            content: "📤 ";
+            font-size: 18px;
+            margin-right: 8px;
+        }
+        
+        .mpa-import-section .button-secondary:before {
+            content: "📥 ";
+            font-size: 18px;
+            margin-right: 8px;
+        }
+        
+        .mpa-reset-section .button.delete:before {
+            content: "🔄 ";
+            font-size: 18px;
+            margin-right: 8px;
+        }
+        
+        .mpa-submit-section .button-primary:before {
+            content: "💾 ";
+            font-size: 18px;
+            margin-right: 8px;
+        }
+        
+        /* Responsividade para botões */
+        @media (max-width: 768px) {
+            .mpa-submit-section .button-primary,
+            .mpa-export-section .button-primary,
+            .mpa-import-section .button-secondary,
+            .mpa-reset-section .button.delete {
+                font-size: 14px !important;
+                padding: 10px 20px !important;
+                min-width: 150px !important;
+            }
+        }
+        
+        /* Seção de Ícones */
+        .mpa-icons-section {
+            background: #fff;
+            border: 1px solid #ccd0d4;
+            border-radius: 4px;
+            padding: 30px;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+            margin-bottom: 20px;
+        }
+        
+        .mpa-icons-section h2 {
+            margin-top: 0;
+            color: #23282d;
+            border-bottom: 3px solid #0073aa;
+            padding-bottom: 15px;
+        }
+        
+        .mpa-icons-search {
+            position: relative;
+            margin: 20px 0;
+            max-width: 400px;
+        }
+        
+        .mpa-icons-search input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .mpa-icons-search input:focus {
+            outline: none;
+            border-color: #0073aa;
+            box-shadow: 0 0 0 3px rgba(0,115,170,0.1);
+        }
+        
+        .mpa-search-clear {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #999;
+            font-size: 18px;
+            display: none;
+        }
+        
+        .mpa-search-clear:hover {
+            color: #dc3232;
+        }
+        
+        .mpa-icons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .mpa-icon-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fff;
+        }
+        
+        .mpa-icon-item:hover {
+            border-color: #0073aa;
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,115,170,0.15);
+            background: #f8fbff;
+        }
+        
+        .mpa-icon-item:active {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,115,170,0.2);
+        }
+        
+        .mpa-icon-item .dashicons {
+            font-size: 32px !important;
+            color: #0073aa;
+            margin-bottom: 10px;
+        }
+        
+        .mpa-icon-name {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            word-break: break-all;
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: #f1f1f1;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .mpa-copy-notification {
+            position: fixed;
+            top: 50px;
+            right: 20px;
+            background: #00a32a;
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 10000;
+        }
+        
+        .mpa-copy-notification.show {
+            transform: translateX(0);
+        }
+        
+        .mpa-icons-tab {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%) !important;
+            border-color: #8e44ad !important;
+            color: white !important;
+        }
+        
+        .mpa-icons-tab:hover {
+            background: linear-gradient(135deg, #8e44ad 0%, #732d91 100%) !important;
+            border-color: #732d91 !important;
+            color: white !important;
+        }
+        
+        /* Responsividade para ícones */
+        @media (max-width: 768px) {
+            .mpa-icons-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 10px;
+            }
+            
+            .mpa-icon-item {
+                padding: 15px 10px;
+            }
+            
+            .mpa-icon-item .dashicons {
+                font-size: 24px !important;
+            }
+            
+            .mpa-copy-notification {
+                right: 10px;
+                font-size: 14px;
+            }
+        }
+        
         /* Campos de edição de menus */
         .mpa-menu-edit-fields {
             margin-top: 10px;
@@ -931,6 +1320,19 @@ function mpa_menu_roles_page() {
     </style>
     
     <script>
+        // Função de confirmação para reset
+        function confirmReset() {
+            return confirm(
+                '⚠️ ATENÇÃO: Esta ação irá resetar TODAS as configurações do plugin!\n\n' +
+                '• Todas as permissões de menu serão removidas\n' +
+                '• Todos os nomes personalizados de menus serão removidos\n' +
+                '• A ordem personalizada dos menus será removida\n' +
+                '• Os menus voltarão ao estado padrão do WordPress\n\n' +
+                'Esta ação NÃO PODE ser desfeita!\n\n' +
+                'Tem certeza que deseja continuar?'
+            );
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Botão Marcar Todos
             document.getElementById('mpa-select-all').addEventListener('click', function() {
@@ -1176,6 +1578,70 @@ function mpa_menu_roles_page() {
                     });
                 }
             });
+        });
+
+        // Função para copiar ícone para clipboard
+        function copyIcon(iconName) {
+            navigator.clipboard.writeText(iconName).then(function() {
+                // Mostrar notificação
+                const notification = document.getElementById('mpa-copy-notification');
+                if (notification) {
+                    notification.classList.add('show');
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                    }, 2000);
+                }
+            }).catch(function(err) {
+                console.error('Erro ao copiar: ', err);
+                // Fallback para navegadores antigos
+                const textArea = document.createElement('textarea');
+                textArea.value = iconName;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // Mostrar notificação
+                const notification = document.getElementById('mpa-copy-notification');
+                if (notification) {
+                    notification.classList.add('show');
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                    }, 2000);
+                }
+            });
+        }
+
+        // Função para limpar busca
+        function clearSearch() {
+            const searchInput = document.getElementById('mpa-icon-search');
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+                searchInput.focus();
+            }
+        }
+
+        // Função de busca de ícones
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('mpa-icon-search');
+            const iconsContainer = document.getElementById('mpa-icons-container');
+            
+            if (searchInput && iconsContainer) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const iconItems = iconsContainer.querySelectorAll('.mpa-icon-item');
+                    
+                    iconItems.forEach(function(item) {
+                        const iconName = item.getAttribute('data-icon');
+                        if (iconName && iconName.toLowerCase().includes(searchTerm)) {
+                            item.style.display = 'flex';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            }
         });
     </script>
     <?php
@@ -1607,6 +2073,7 @@ add_action('admin_notices', function() {
 // Adicionar actions para export/import
 add_action('admin_post_mpa_export_menu_settings', 'mpa_export_menu_settings_callback');
 add_action('admin_post_mpa_import_menu_settings', 'mpa_import_menu_settings_callback');
+add_action('admin_post_mpa_reset_menu_settings', 'mpa_reset_menu_settings_callback');
 
 function mpa_export_menu_settings_callback() {
     if (!current_user_can('manage_options')) {
@@ -1677,6 +2144,28 @@ function mpa_import_menu_settings_callback() {
     exit;
 }
 
+// Função de Reset
+function mpa_reset_menu_settings_callback() {
+    if (!current_user_can('manage_options')) {
+        wp_die('Sem permissões suficientes.');
+    }
+    
+    // Verificar nonce de segurança
+    if (!wp_verify_nonce($_POST['mpa_reset_nonce'], 'mpa_reset_settings')) {
+        wp_die('Erro de segurança. Tente novamente.');
+    }
+    
+    // Deletar todas as opções do plugin
+    delete_option('mpa_menu_permissions');
+    delete_option('mpa_menu_customizations');
+    delete_option('mpa_menu_order');
+    
+    // Redirect com mensagem de sucesso
+    $redirect = add_query_arg('mpa_status', 'reset_success', admin_url('admin.php?page=mpa-menu-roles'));
+    wp_redirect($redirect);
+    exit;
+}
+
 // Mensagens de feedback para export/import
 add_action('admin_notices', function () {
     if (!isset($_GET['page']) || $_GET['page'] !== 'mpa-menu-roles')
@@ -1692,6 +2181,9 @@ add_action('admin_notices', function () {
                 break;
             case 'no_file':
                 echo '<div class="notice notice-warning is-dismissible"><p>Nenhum arquivo foi enviado.</p></div>';
+                break;
+            case 'reset_success':
+                echo '<div class="notice notice-success is-dismissible"><p><strong>✅ Reset concluído!</strong> Todas as configurações do plugin foram restauradas ao padrão.</p></div>';
                 break;
         }
     }
