@@ -1393,11 +1393,34 @@ add_action('admin_menu', function() {
         $slug = mpa_normalize_slug($menu_item['slug']);
         
         if (!mpa_user_can_see_menu($slug, $roles, $opts)) {
-            remove_menu_page($menu_item['slug']); // usar slug original para remoção
-            $debug_info[] = "REMOVIDO menu: {$menu_item['slug']} (normalizado: $slug)";
-            
-            if ($slug === 'edit.php') {
-                $debug_info[] = "*** POSTS REMOVIDO ***";
+            // Verificar se é uma taxonomia
+            if (strpos($menu_item['slug_raw'], 'edit-tags.php?taxonomy=') === 0) {
+                // Para taxonomias, precisamos remover de múltiplos locais possíveis
+                $taxonomy_name = str_replace('edit-tags.php?taxonomy=', '', $menu_item['slug_raw']);
+                
+                // Remover de Posts (para category, post_tag)
+                remove_submenu_page('edit.php', $menu_item['slug_raw']);
+                
+                // Remover de Products (para product_cat, product_tag, etc.)
+                remove_submenu_page('edit.php?post_type=product', $menu_item['slug_raw']);
+                
+                // Remover de outros post types possíveis
+                $post_types = get_post_types(['public' => true], 'names');
+                foreach ($post_types as $post_type) {
+                    if ($post_type !== 'post' && $post_type !== 'product') {
+                        remove_submenu_page('edit.php?post_type=' . $post_type, $menu_item['slug_raw']);
+                    }
+                }
+                
+                $debug_info[] = "REMOVIDA taxonomia: {$taxonomy_name} de múltiplos menus";
+            } else {
+                // Menu normal
+                remove_menu_page($menu_item['slug']); // usar slug original para remoção
+                $debug_info[] = "REMOVIDO menu: {$menu_item['slug']} (normalizado: $slug)";
+                
+                if ($slug === 'edit.php') {
+                    $debug_info[] = "*** POSTS REMOVIDO ***";
+                }
             }
         }
 
