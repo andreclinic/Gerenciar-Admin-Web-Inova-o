@@ -28,6 +28,21 @@ add_action('in_admin_header', 'mpa_render_dynamic_sidebar', 10);
 function mpa_render_dynamic_sidebar() {
     global $menu, $submenu;
     
+    // Obter restrições de menu para o usuário atual
+    $user_restrictions = mpa_get_user_menu_restrictions();
+    
+    // Debug temporário
+    if (isset($_GET['debug_sidebar_restrictions']) && current_user_can('edit_posts')) {
+        echo '<div style="position: fixed; top: 10px; right: 10px; background: red; color: white; padding: 10px; z-index: 9999; max-width: 300px;">';
+        echo '<h4>Debug Sidebar</h4>';
+        $user = wp_get_current_user();
+        echo '<p>User: ' . $user->user_login . '</p>';
+        echo '<p>Roles: ' . implode(', ', $user->roles) . '</p>';
+        echo '<p>Restrições: <pre>' . print_r($user_restrictions, true) . '</pre></p>';
+        echo '<button onclick="this.parentElement.style.display=\'none\'">X</button>';
+        echo '</div>';
+    }
+    
     ?>
     <div id="mpa-sidebar-overlay" class="mpa-sidebar-overlay"></div>
     
@@ -48,6 +63,9 @@ function mpa_render_dynamic_sidebar() {
                 if (!current_user_can($menu_item[1])) continue;
                 
                 $menu_file = $menu_item[2];
+                
+                // NOVA VERIFICAÇÃO: Pular se menu está restrito por role
+                if (mpa_is_menu_restricted($menu_file, $user_restrictions)) continue;
                 $menu_title = wp_strip_all_tags($menu_item[0]);
                 $menu_icon = mpa_get_menu_icon($menu_item[6]);
                 
@@ -113,6 +131,9 @@ function mpa_render_dynamic_sidebar() {
                                 
                                 $submenu_title = wp_strip_all_tags($submenu_item[0]);
                                 $submenu_file = $submenu_item[2];
+                                
+                                // NOVA VERIFICAÇÃO: Pular se submenu está restrito por role
+                                if (mpa_is_submenu_restricted($menu_file, $submenu_file, $user_restrictions)) continue;
                                 
                                 // Construir URL do submenu corretamente
                                 if (strpos($submenu_file, '.php') !== false) {
@@ -225,3 +246,95 @@ function mpa_render_dashboard_page() {
     </div>
     <?php
 }
+
+// NOVAS FUNÇÕES PARA CONTROLE DE RESTRIÇÕES DE MENU
+
+function mpa_get_user_menu_restrictions() {
+    // Administradores não têm restrições
+    $user = wp_get_current_user();
+    if (in_array('administrator', (array) $user->roles, true)) {
+        return array();
+    }
+    
+    $user = wp_get_current_user();
+    $user_roles = $user->roles;
+    
+    if (empty($user_roles)) return array();
+    
+    $menu_permissions = get_option('mpa_menu_permissions', array());
+    $restricted_menus = array();
+    $restricted_submenus = array();
+    
+    // Coletar todas as restrições para as roles do usuário
+    foreach ($user_roles as $role) {
+        if (!isset($menu_permissions[$role])) continue;
+        
+        $role_permissions = $menu_permissions[$role];
+        
+        // Coletar menus principais restritos
+        foreach ($role_permissions as $menu_slug => $permission) {
+            if ($menu_slug === 'submenus') continue;
+            
+            if ($permission === false) {
+                $restricted_menus[] = $menu_slug;
+            }
+        }
+        
+        // Coletar submenus restritos
+        if (isset($role_permissions['submenus']) && is_array($role_permissions['submenus'])) {
+            foreach ($role_permissions['submenus'] as $submenu_key => $permission) {
+                if ($permission === false) {
+                    $restricted_submenus[] = $submenu_key;
+                }
+            }
+        }
+    }
+    
+    return array(
+        'menus' => array_unique($restricted_menus),
+        'submenus' => array_unique($restricted_submenus)
+    );
+}
+
+function mpa_is_menu_restricted($menu_slug, $user_restrictions) {
+    if (empty($user_restrictions['menus'])) return false;
+    
+    return in_array($menu_slug, $user_restrictions['menus']);
+}
+
+function mpa_is_submenu_restricted($parent_slug, $submenu_slug, $user_restrictions) {
+    if (empty($user_restrictions['submenus'])) return false;
+    
+    $submenu_key = $parent_slug . '|' . $submenu_slug;
+    return in_array($submenu_key, $user_restrictions['submenus']);
+}
+
+// Função para filtrar o menu principal do WordPress baseado nas permissões de role
+function mpa_filtrar_menu_principal_por_role() {
+    global $menu;
+
+    $user = wp_get_current_user();
+    if (in_array('administrator', (array) $user->roles, true)) {
+        return; // Administradores não têm restrições
+    }
+
+    $user = wp_get_current_user();
+    $roles = (array) $user->roles;
+    $permissoes = get_option('mpa_menu_permissions', []);
+
+    // Nada a fazer se não houver roles ou permissões salvas
+    if (empty($roles) || empty($permissoes))
+        return;
+
+    foreach ($menu as $key => $item) {
+        $slug_raw = $item[2] ?? '';
+        $slug_normalizado = mpa_normalize_slug($slug_raw);
+
+        // Usa a função que já verifica permissões corretamente
+        if (!mpa_user_can_see_menu($slug_normalizado, $roles, $permissoes)) {
+            unset($menu[$key]);
+        }
+    }
+}
+// Adiciona a ação para filtrar os menus com alta prioridade
+add_action('admin_menu', 'mpa_filtrar_menu_principal_por_role', 999);
