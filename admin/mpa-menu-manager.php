@@ -103,6 +103,7 @@ function mpa_main_page() {
 
 // Página de gerenciamento de menus por role
 function mpa_menu_roles_page() {
+    
     // Salvar configurações se formulário foi submetido
     if (isset($_POST['submit'])) {
         check_admin_referer('mpa_menu_roles_nonce');
@@ -146,13 +147,69 @@ function mpa_menu_roles_page() {
             }
         }
         
+        // Processar customizações de menus (nomes e ícones)
+        $menu_customizations = array();
+        if (isset($_POST['menu_custom_title']) && is_array($_POST['menu_custom_title'])) {
+            foreach ($_POST['menu_custom_title'] as $menu_slug => $custom_title) {
+                $custom_title = sanitize_text_field($custom_title);
+                if (!empty($custom_title)) {
+                    $menu_customizations[$menu_slug]['title'] = $custom_title;
+                }
+            }
+        }
+        
+        if (isset($_POST['menu_custom_icon']) && is_array($_POST['menu_custom_icon'])) {
+            foreach ($_POST['menu_custom_icon'] as $menu_slug => $custom_icon) {
+                $custom_icon = sanitize_text_field($custom_icon);
+                if (!empty($custom_icon)) {
+                    $menu_customizations[$menu_slug]['icon'] = $custom_icon;
+                }
+            }
+        }
+        
+        // Processar customizações de submenus
+        if (isset($_POST['submenu_custom_title']) && is_array($_POST['submenu_custom_title'])) {
+            foreach ($_POST['submenu_custom_title'] as $submenu_key => $custom_title) {
+                $custom_title = sanitize_text_field($custom_title);
+                if (!empty($custom_title)) {
+                    $menu_customizations['submenu_custom_title'][$submenu_key] = $custom_title;
+                    error_log("[MPA SUBMENU DEBUG] Salvando submenu: $submenu_key = $custom_title");
+                }
+            }
+        }
+        
+        // Salvar customizações
+        update_option('mpa_menu_customizations', $menu_customizations);
+        
         update_option('mpa_menu_permissions', $current_permissions);
         
-        echo '<div class="notice notice-success"><p>Configurações salvas para a role <strong>' . esc_html($selected_role) . '</strong>!</p></div>';
+        echo '<div class="notice notice-success"><p>Configurações salvas para a role <strong>' . esc_html($selected_role) . '</strong>! <span id="mpa-reload-countdown">Atualizando em 2 segundos...</span></p></div>';
+        
+        // Adicionar JavaScript para recarregar a página após um delay
+        echo '<script>
+        let countdown = 2;
+        const countdownElement = document.getElementById("mpa-reload-countdown");
+        
+        const updateCountdown = () => {
+            if (countdown > 0) {
+                countdownElement.textContent = "Atualizando em " + countdown + " segundo" + (countdown > 1 ? "s" : "") + "...";
+                countdown--;
+                setTimeout(updateCountdown, 1000);
+            } else {
+                countdownElement.textContent = "Atualizando...";
+                window.location.reload();
+            }
+        };
+        
+        setTimeout(updateCountdown, 1000);
+        </script>';
     }
     
     // Obter configurações atuais
     $current_permissions = get_option('mpa_menu_permissions', array());
+    
+    // Obter customizações de menus (nomes e ícones)
+    $menu_customizations = get_option('mpa_menu_customizations', array());
     
     // Obter todas as roles do WordPress (exceto administrator)
     $roles = wp_roles();
@@ -220,7 +277,7 @@ function mpa_menu_roles_page() {
                 
                 <div class="mpa-menu-list">
                     <?php foreach ($admin_menus as $menu_item): ?>
-                        <div class="mpa-menu-item">
+                        <div class="mpa-menu-item" draggable="true" data-menu-slug="<?php echo esc_attr($menu_item['slug']); ?>">
                             <div class="mpa-menu-main">
                                 <?php
                                 // Verificar se menu está marcado
@@ -228,6 +285,7 @@ function mpa_menu_roles_page() {
                                     ? ($current_permissions[$selected_role][$menu_item['slug']] === true)
                                     : true; // Padrão habilitado
                                 ?>
+                                <span class="mpa-drag-handle dashicons dashicons-menu" title="Arrastar para reordenar"></span>
                                 <label class="mpa-menu-label">
                                     <input type="checkbox" 
                                            name="menu_permissions[<?php echo esc_attr($menu_item['slug']); ?>]" 
@@ -242,13 +300,49 @@ function mpa_menu_roles_page() {
                                             <span class="dashicons dashicons-admin-generic"></span>
                                         <?php endif; ?>
                                     </span>
-                                    <span class="mpa-menu-title"><?php echo esc_html($menu_item['title']); ?></span>
+                                    <span class="mpa-menu-title" data-menu-slug="<?php echo esc_attr($menu_item['slug']); ?>">
+                                        <?php echo esc_html($menu_item['title']); ?>
+                                    </span>
+                                    <span class="mpa-edit-icon dashicons dashicons-edit" title="Clique para editar"></span>
                                     <code class="mpa-menu-slug"><?php echo esc_html($menu_item['slug']); ?></code>
                                 </label>
+                                
+                                <!-- Campos de edição de nome e ícone -->
+                                <div class="mpa-menu-edit-fields">
+                                    <?php 
+                                    $current_custom_title = isset($menu_customizations[$menu_item['slug']]['title']) ? $menu_customizations[$menu_item['slug']]['title'] : '';
+                                    $current_custom_icon = isset($menu_customizations[$menu_item['slug']]['icon']) ? $menu_customizations[$menu_item['slug']]['icon'] : '';
+                                    ?>
+                                    <div class="mpa-edit-row">
+                                        <label class="mpa-edit-label">Nome personalizado:</label>
+                                        <input type="text" 
+                                               name="menu_custom_title[<?php echo esc_attr($menu_item['slug']); ?>]" 
+                                               value="<?php echo esc_attr($current_custom_title); ?>"
+                                               placeholder="<?php echo esc_attr($menu_item['title']); ?>"
+                                               class="mpa-custom-title-input" />
+                                    </div>
+                                    <div class="mpa-edit-row">
+                                        <label class="mpa-edit-label">Ícone (dashicon):</label>
+                                        <input type="text" 
+                                               name="menu_custom_icon[<?php echo esc_attr($menu_item['slug']); ?>]" 
+                                               value="<?php echo esc_attr($current_custom_icon); ?>"
+                                               placeholder="<?php echo esc_attr($menu_item['icon'] ?: 'dashicons-admin-generic'); ?>"
+                                               class="mpa-custom-icon-input" />
+                                        <span class="mpa-icon-preview">
+                                            <span class="dashicons <?php echo esc_attr($current_custom_icon ?: $menu_item['icon'] ?: 'dashicons-admin-generic'); ?>"></span>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                             
                             <?php if (!empty($menu_item['submenus'])): ?>
-                                <div class="mpa-submenu-list">
+                                <div class="mpa-submenu-header">
+                                    <button type="button" class="mpa-submenu-toggle" data-target="submenu-<?php echo esc_attr($menu_item['slug']); ?>">
+                                        <span class="dashicons dashicons-plus-alt2"></span>
+                                        <span class="mpa-toggle-text">Mostrar submenus (<?php echo count($menu_item['submenus']); ?>)</span>
+                                    </button>
+                                </div>
+                                <div class="mpa-submenu-list collapsed" id="submenu-<?php echo esc_attr($menu_item['slug']); ?>">
                                     <?php foreach ($menu_item['submenus'] as $submenu_item): ?>
                                         <div class="mpa-submenu-item">
                                             <?php
@@ -263,9 +357,24 @@ function mpa_menu_roles_page() {
                                                        value="1" 
                                                        <?php checked($is_sub_checked); ?>
                                                        class="mpa-submenu-checkbox" />
-                                                <span class="mpa-submenu-title">↳ <?php echo esc_html($submenu_item['title']); ?></span>
+                                                <span class="mpa-submenu-title" data-submenu-key="<?php echo esc_attr($submenu_key); ?>">
+                                                    ↳ <?php echo esc_html($submenu_item['title']); ?>
+                                                </span>
+                                                <span class="mpa-edit-icon dashicons dashicons-edit" title="Clique para editar"></span>
                                                 <code class="mpa-submenu-slug"><?php echo esc_html($submenu_item['slug']); ?></code>
                                             </label>
+                                            
+                                            <!-- Campos de edição do submenu -->
+                                            <div class="mpa-submenu-edit-fields" data-submenu-key="<?php echo esc_attr($submenu_key); ?>">
+                                                <div class="mpa-edit-row">
+                                                    <label class="mpa-edit-label">Nome personalizado:</label>
+                                                    <input type="text" 
+                                                           name="submenu_custom_title[<?php echo esc_attr($submenu_key); ?>]"
+                                                           value="<?php echo esc_attr($menu_customizations['submenu_custom_title'][$submenu_key] ?? ''); ?>"
+                                                           placeholder="<?php echo esc_attr($submenu_item['title']); ?>"
+                                                           class="mpa-custom-title-input" />
+                                                </div>
+                                            </div>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -284,6 +393,37 @@ function mpa_menu_roles_page() {
             </div>
         </form>
         <?php endif; ?>
+        
+        <!-- Seção de Export/Import -->
+        <div class="mpa-export-import-section">
+            <h2>Exportar / Importar Configurações</h2>
+            <p class="description">
+                Exporte suas configurações de menu para fazer backup ou use em outro site. 
+                Importe configurações de outro arquivo JSON.
+            </p>
+            
+            <div class="mpa-export-import-buttons">
+                <div class="mpa-export-section">
+                    <h3>📤 Exportar Configurações</h3>
+                    <p>Baixe um arquivo JSON com todas as configurações atuais de menus por role.</p>
+                    <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+                        <input type="hidden" name="action" value="mpa_export_menu_settings">
+                        <?php submit_button('Exportar Configurações JSON', 'primary', 'export', false); ?>
+                    </form>
+                </div>
+                
+                <div class="mpa-import-section">
+                    <h3>📥 Importar Configurações</h3>
+                    <p>Selecione um arquivo JSON de configurações para importar. <strong>Isso substituirá as configurações atuais!</strong></p>
+                    <form method="post" enctype="multipart/form-data" action="<?php echo admin_url('admin-post.php'); ?>">
+                        <input type="hidden" name="action" value="mpa_import_menu_settings">
+                        <input type="file" name="mpa_import_file" accept=".json" required style="margin-bottom: 10px;" />
+                        <?php submit_button('Importar Configurações JSON', 'secondary', 'import', false); ?>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
     </div>
     
     <style>
@@ -404,6 +544,63 @@ function mpa_menu_roles_page() {
         .mpa-menu-title {
             flex: 1;
             color: #23282d;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .mpa-menu-title:hover {
+            color: #0073aa;
+        }
+        
+        .mpa-edit-icon {
+            color: #666;
+            font-size: 16px !important;
+            cursor: pointer;
+            margin-left: 8px;
+            padding: 3px;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+        
+        .mpa-edit-icon:hover {
+            color: #0073aa;
+            background-color: #f0f6fc;
+            transform: scale(1.1);
+        }
+        
+        .mpa-drag-handle {
+            color: #999;
+            font-size: 16px !important;
+            cursor: grab;
+            margin-right: 8px;
+            padding: 3px;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+        
+        .mpa-drag-handle:hover {
+            color: #0073aa;
+            background-color: #f0f6fc;
+            transform: scale(1.1);
+        }
+        
+        .mpa-drag-handle:active {
+            cursor: grabbing;
+        }
+        
+        .mpa-menu-item.dragging {
+            opacity: 0.5;
+            transform: scale(1.05);
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .mpa-menu-item.drag-over {
+            border-top: 3px solid #0073aa;
         }
         
         .mpa-menu-slug {
@@ -414,9 +611,63 @@ function mpa_menu_roles_page() {
             border-radius: 2px;
         }
         
+        /* Header toggle dos submenus */
+        .mpa-submenu-header {
+            background: #f8f9fa;
+            border-top: 1px solid #e1e1e1;
+            padding: 0;
+        }
+        
+        .mpa-submenu-toggle {
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #555;
+            transition: all 0.2s;
+        }
+        
+        .mpa-submenu-toggle:hover {
+            background: #f0f0f0;
+            color: #0073aa;
+        }
+        
+        .mpa-submenu-toggle .dashicons {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
+            transition: transform 0.2s;
+        }
+        
+        .mpa-submenu-toggle.expanded .dashicons {
+            transform: rotate(45deg);
+        }
+        
+        .mpa-toggle-text {
+            font-weight: 500;
+        }
+        
         /* Submenus */
         .mpa-submenu-list {
             background: #fafafa;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        
+        .mpa-submenu-list.expanded {
+            max-height: 1000px;
+            transition: max-height 0.3s ease-in;
+        }
+        
+        .mpa-submenu-list.collapsed {
+            max-height: 0;
         }
         
         .mpa-submenu-item {
@@ -440,7 +691,18 @@ function mpa_menu_roles_page() {
         .mpa-submenu-title {
             flex: 1;
             color: #555;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
+        
+        .mpa-submenu-title:hover {
+            color: #0073aa;
+        }
+        
         
         .mpa-submenu-slug {
             font-size: 10px;
@@ -474,6 +736,170 @@ function mpa_menu_roles_page() {
         .mpa-submenu-checkbox:checked ~ .mpa-submenu-title {
             color: #00a32a;
         }
+        
+        /* Seção de Export/Import */
+        .mpa-export-import-section {
+            margin-top: 40px;
+            background: #fff;
+            border: 1px solid #ccd0d4;
+            border-radius: 4px;
+            padding: 20px;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+        }
+        
+        .mpa-export-import-section h2 {
+            margin-top: 0;
+            color: #23282d;
+            border-bottom: 2px solid #0073aa;
+            padding-bottom: 10px;
+        }
+        
+        .mpa-export-import-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .mpa-export-import-buttons {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+        
+        .mpa-export-section,
+        .mpa-import-section {
+            padding: 20px;
+            border: 1px solid #e1e1e1;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        
+        .mpa-export-section h3,
+        .mpa-import-section h3 {
+            margin-top: 0;
+            color: #23282d;
+            font-size: 16px;
+        }
+        
+        .mpa-export-section p,
+        .mpa-import-section p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .mpa-export-section {
+            border-left: 4px solid #00a32a;
+        }
+        
+        .mpa-import-section {
+            border-left: 4px solid #0073aa;
+        }
+        
+        .mpa-import-section input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background: #fff;
+        }
+        
+        /* Campos de edição de menus */
+        .mpa-menu-edit-fields {
+            margin-top: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 1px solid #e1e1e1;
+            border-radius: 4px;
+            display: none; /* Oculto por padrão */
+        }
+        
+        .mpa-menu-edit-fields.active {
+            display: block;
+        }
+        
+        .mpa-submenu-edit-fields {
+            margin-top: 8px;
+            padding: 10px;
+            background: #f0f0f1;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            display: none;
+            font-size: 12px;
+        }
+        
+        .mpa-submenu-edit-fields.active {
+            display: block;
+        }
+        
+        .mpa-edit-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        
+        .mpa-edit-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .mpa-edit-label {
+            min-width: 140px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .mpa-custom-title-input,
+        .mpa-custom-icon-input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+        
+        .mpa-custom-title-input:focus,
+        .mpa-custom-icon-input:focus {
+            border-color: #0073aa;
+            box-shadow: 0 0 0 1px #0073aa;
+            outline: none;
+        }
+        
+        .mpa-icon-preview {
+            margin-left: 10px;
+            padding: 4px 8px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            min-width: 32px;
+            text-align: center;
+        }
+        
+        .mpa-icon-preview .dashicons {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
+            color: #666;
+        }
+        
+        @media (max-width: 768px) {
+            .mpa-edit-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .mpa-edit-label {
+                min-width: auto;
+            }
+            
+            .mpa-icon-preview {
+                align-self: center;
+                margin-left: 0;
+                margin-top: 5px;
+            }
+        }
     </style>
     
     <script>
@@ -503,6 +929,225 @@ function mpa_menu_roles_page() {
                     cb.checked = true;
                 });
             });
+            
+            // Atualizar preview de ícones em tempo real
+            document.querySelectorAll('.mpa-custom-icon-input').forEach(input => {
+                input.addEventListener('input', function() {
+                    const preview = this.parentElement.querySelector('.mpa-icon-preview .dashicons');
+                    const iconClass = this.value.trim();
+                    
+                    if (iconClass && iconClass.startsWith('dashicons-')) {
+                        preview.className = 'dashicons ' + iconClass;
+                    } else if (iconClass) {
+                        preview.className = 'dashicons dashicons-' + iconClass;
+                    } else {
+                        // Usar ícone padrão se vazio
+                        const placeholder = this.getAttribute('placeholder');
+                        preview.className = 'dashicons ' + (placeholder || 'dashicons-admin-generic');
+                    }
+                });
+            });
+            
+            // Click-to-edit functionality para ícones de lápis
+            document.querySelectorAll('.mpa-edit-icon').forEach(editIcon => {
+                editIcon.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const menuItem = this.closest('.mpa-menu-item, .mpa-submenu-item');
+                    const editFields = menuItem.querySelector('.mpa-menu-edit-fields, .mpa-submenu-edit-fields');
+                    
+                    if (editFields) {
+                        editFields.classList.toggle('active');
+                        
+                        // Focar no primeiro input quando abrir
+                        if (editFields.classList.contains('active')) {
+                            const firstInput = editFields.querySelector('input[type="text"]');
+                            if (firstInput) {
+                                setTimeout(() => firstInput.focus(), 100);
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // Atualização em tempo real dos títulos ao digitar
+            document.querySelectorAll('.mpa-custom-title-input').forEach(input => {
+                input.addEventListener('input', function() {
+                    const menuItem = this.closest('.mpa-menu-item, .mpa-submenu-item');
+                    const titleElement = menuItem.querySelector('.mpa-menu-title, .mpa-submenu-title');
+                    
+                    if (titleElement) {
+                        const originalTitle = titleElement.getAttribute('data-original-title') || titleElement.textContent.trim();
+                        
+                        // Salvar título original na primeira vez
+                        if (!titleElement.getAttribute('data-original-title')) {
+                            titleElement.setAttribute('data-original-title', originalTitle);
+                        }
+                        
+                        // Verificar se é um submenu (tem ↳)
+                        const isSubmenu = titleElement.classList.contains('mpa-submenu-title');
+                        const prefix = isSubmenu ? '↳ ' : '';
+                        
+                        // Atualizar título com valor digitado ou voltar ao original se vazio
+                        const newTitle = this.value.trim();
+                        if (newTitle) {
+                            titleElement.textContent = prefix + newTitle;
+                        } else {
+                            titleElement.textContent = originalTitle;
+                        }
+                    }
+                });
+            });
+            
+            // Implementação do Drag & Drop para reordenação de menus
+            let draggedItem = null;
+            
+            // Eventos de drag para os menus
+            document.querySelectorAll('.mpa-menu-item').forEach(item => {
+                item.addEventListener('dragstart', function(e) {
+                    draggedItem = this;
+                    this.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/html', this.outerHTML);
+                });
+                
+                item.addEventListener('dragend', function(e) {
+                    this.classList.remove('dragging');
+                    document.querySelectorAll('.mpa-menu-item').forEach(item => {
+                        item.classList.remove('drag-over');
+                    });
+                });
+                
+                item.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    
+                    if (this !== draggedItem) {
+                        this.classList.add('drag-over');
+                    }
+                });
+                
+                item.addEventListener('dragenter', function(e) {
+                    e.preventDefault();
+                });
+                
+                item.addEventListener('dragleave', function(e) {
+                    this.classList.remove('drag-over');
+                });
+                
+                item.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('drag-over');
+                    
+                    if (this !== draggedItem) {
+                        const rect = this.getBoundingClientRect();
+                        const mouseY = e.clientY;
+                        const itemMiddle = rect.top + rect.height / 2;
+                        
+                        if (mouseY < itemMiddle) {
+                            // Inserir antes
+                            this.parentNode.insertBefore(draggedItem, this);
+                        } else {
+                            // Inserir depois
+                            this.parentNode.insertBefore(draggedItem, this.nextSibling);
+                        }
+                        
+                        // Salvar nova ordem
+                        saveMenuOrder();
+                    }
+                });
+            });
+            
+            // Função para salvar a nova ordem dos menus
+            function saveMenuOrder() {
+                const menuItems = document.querySelectorAll('.mpa-menu-item[data-menu-slug]');
+                const order = Array.from(menuItems).map(item => item.getAttribute('data-menu-slug'));
+                
+                // Enviar via AJAX para salvar no backend
+                const formData = new FormData();
+                formData.append('action', 'mpa_save_menu_order');
+                formData.append('menu_order', JSON.stringify(order));
+                formData.append('nonce', '<?php echo wp_create_nonce("mpa_menu_order"); ?>');
+                
+                fetch('<?php echo admin_url("admin-ajax.php"); ?>', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Ordem dos menus salva com sucesso!');
+                        // Opcional: mostrar notificação de sucesso
+                        showNotification('Ordem dos menus atualizada!', 'success');
+                    } else {
+                        console.error('Erro ao salvar ordem:', data.data);
+                        showNotification('Erro ao salvar ordem dos menus.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro na requisição:', error);
+                    showNotification('Erro ao salvar ordem dos menus.', 'error');
+                });
+            }
+            
+            // Função para mostrar notificações
+            function showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notice notice-${type} is-dismissible`;
+                notification.innerHTML = `<p>${message}</p>`;
+                notification.style.position = 'fixed';
+                notification.style.top = '32px';
+                notification.style.right = '20px';
+                notification.style.zIndex = '9999';
+                notification.style.maxWidth = '300px';
+                
+                document.body.appendChild(notification);
+                
+                // Remover após 3 segundos
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+            
+            // Toggle de submenus - expandir/recolher
+            document.querySelectorAll('.mpa-submenu-toggle').forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const target = document.getElementById(targetId);
+                    const icon = this.querySelector('.dashicons');
+                    const text = this.querySelector('.mpa-toggle-text');
+                    
+                    if (!target || !icon || !text) return;
+                    
+                    if (target.classList.contains('collapsed')) {
+                        // Expandir
+                        target.classList.remove('collapsed');
+                        target.classList.add('expanded');
+                        icon.classList.remove('dashicons-plus-alt2');
+                        icon.classList.add('dashicons-minus-alt2');
+                        text.textContent = text.textContent.replace('Mostrar', 'Ocultar');
+                        this.classList.add('expanded');
+                    } else {
+                        // Recolher
+                        target.classList.remove('expanded');
+                        target.classList.add('collapsed');
+                        icon.classList.remove('dashicons-minus-alt2');
+                        icon.classList.add('dashicons-plus-alt2');
+                        text.textContent = text.textContent.replace('Ocultar', 'Mostrar');
+                        this.classList.remove('expanded');
+                    }
+                });
+            });
+            
+            // Fechar edição quando clicar fora
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.mpa-menu-item') && !e.target.closest('.mpa-submenu-item')) {
+                    document.querySelectorAll('.mpa-menu-edit-fields.active, .mpa-submenu-edit-fields.active').forEach(field => {
+                        field.classList.remove('active');
+                    });
+                }
+            });
         });
     </script>
     <?php
@@ -515,6 +1160,9 @@ function mpa_get_admin_menus() {
     $admin_menus = [];
     
     if (!is_array($menu)) return $admin_menus;
+    
+    // Obter ordem customizada
+    $custom_order = get_option('mpa_menu_order', array());
     
     foreach ($menu as $menu_item) {
         if (empty($menu_item[0]) || $menu_item[0] === '') continue;
@@ -571,6 +1219,29 @@ function mpa_get_admin_menus() {
             'icon'     => 'dashicons-tag',
             'submenus' => []
         ];
+    }
+    
+    // Aplicar ordem customizada se existir
+    if (!empty($custom_order)) {
+        $ordered_menus = array();
+        
+        // Primeiro, adicionar menus conforme a ordem customizada
+        foreach ($custom_order as $slug) {
+            foreach ($admin_menus as $index => $menu_data) {
+                if ($menu_data['slug'] === $slug) {
+                    $ordered_menus[] = $menu_data;
+                    unset($admin_menus[$index]);
+                    break;
+                }
+            }
+        }
+        
+        // Depois, adicionar menus restantes
+        foreach ($admin_menus as $menu_data) {
+            $ordered_menus[] = $menu_data;
+        }
+        
+        $admin_menus = $ordered_menus;
     }
     
     return $admin_menus;
@@ -1224,4 +1895,307 @@ add_action('admin_notices', function() {
     echo '<p><em>Sistema de bloqueio ativo!</em></p>';
     echo '</div>';
 });
+
+/////////////////////
+// EXPORTAÇÃO E IMPORTAÇÃO
+/////////////////////
+
+// Adicionar actions para export/import
+add_action('admin_post_mpa_export_menu_settings', 'mpa_export_menu_settings_callback');
+add_action('admin_post_mpa_import_menu_settings', 'mpa_import_menu_settings_callback');
+
+function mpa_export_menu_settings_callback() {
+    if (!current_user_can('manage_options')) {
+        wp_die('Sem permissões suficientes.');
+    }
+
+    $options = get_option('mpa_menu_permissions', array());
+    $json = json_encode($options, JSON_PRETTY_PRINT);
+
+    $filename = 'mpa_menu_permissions_' . date('Y-m-d') . '.json';
+
+    header('Content-Description: File Transfer');
+    header('Content-Type: application/octet-stream');
+    header("Content-Disposition: attachment; filename=\"$filename\"");
+    header('Content-Transfer-Encoding: binary');
+    header('Expires: 0');
+    header('Cache-Control: must-revalidate');
+    header('Pragma: public');
+    header('Content-Length: ' . strlen($json));
+
+    ob_clean();
+    flush();
+    echo $json;
+    exit;
+}
+
+function mpa_import_menu_settings_callback() {
+    if (!current_user_can('manage_options')) {
+        wp_die('Sem permissões suficientes.');
+    }
+
+    if (!empty($_FILES['mpa_import_file']['tmp_name'])) {
+        $file_content = file_get_contents($_FILES['mpa_import_file']['tmp_name']);
+        $data = json_decode($file_content, true);
+
+        if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
+            update_option('mpa_menu_permissions', $data);
+            $redirect = add_query_arg('mpa_status', 'success', admin_url('admin.php?page=mpa-menu-roles'));
+        } else {
+            $redirect = add_query_arg('mpa_status', 'invalid_json', admin_url('admin.php?page=mpa-menu-roles'));
+        }
+    } else {
+        $redirect = add_query_arg('mpa_status', 'no_file', admin_url('admin.php?page=mpa-menu-roles'));
+    }
+
+    wp_redirect($redirect);
+    exit;
+}
+
+// Mensagens de feedback para export/import
+add_action('admin_notices', function () {
+    if (!isset($_GET['page']) || $_GET['page'] !== 'mpa-menu-roles')
+        return;
+
+    if (isset($_GET['mpa_status'])) {
+        switch ($_GET['mpa_status']) {
+            case 'success':
+                echo '<div class="notice notice-success is-dismissible"><p>Configurações importadas com sucesso!</p></div>';
+                break;
+            case 'invalid_json':
+                echo '<div class="notice notice-error is-dismissible"><p>Arquivo JSON inválido.</p></div>';
+                break;
+            case 'no_file':
+                echo '<div class="notice notice-warning is-dismissible"><p>Nenhum arquivo foi enviado.</p></div>';
+                break;
+        }
+    }
+});
+
+// Aplicar customizações de nomes e ícones aos menus
+// Hook com prioridade 999 para garantir que todos os plugins já registraram os menus
+add_action('admin_menu', 'mpa_apply_menu_customizations', 999);
+
+// AJAX handler para salvar ordem dos menus
+add_action('wp_ajax_mpa_save_menu_order', 'mpa_save_menu_order_callback');
+
+function mpa_save_menu_order_callback() {
+    // Verificar nonce
+    if (!wp_verify_nonce($_POST['nonce'], 'mpa_menu_order')) {
+        wp_die('Nonce inválido');
+    }
+    
+    // Verificar permissões
+    if (!current_user_can('manage_options')) {
+        wp_die('Sem permissões suficientes');
+    }
+    
+    // Obter nova ordem
+    $menu_order = json_decode(stripslashes($_POST['menu_order']), true);
+    
+    if (!is_array($menu_order)) {
+        wp_send_json_error('Dados inválidos');
+        return;
+    }
+    
+    // Salvar ordem customizada
+    update_option('mpa_menu_order', $menu_order);
+    
+    wp_send_json_success('Ordem salva com sucesso');
+}
+
+// Aplicar ordem customizada dos menus
+add_action('admin_menu', 'mpa_apply_menu_order', 999);
+
+function mpa_apply_menu_order() {
+    global $menu;
+    
+    $custom_order = get_option('mpa_menu_order', array());
+    
+    if (empty($custom_order) || !is_array($menu)) {
+        return;
+    }
+    
+    $ordered_menu = array();
+    $used_positions = array();
+    
+    // Criar um mapa dos menus existentes por slug
+    $menu_by_slug = array();
+    foreach ($menu as $position => $menu_item) {
+        if (!empty($menu_item[2])) {
+            $slug = $menu_item[2];
+            $menu_by_slug[$slug] = array(
+                'position' => $position,
+                'item' => $menu_item
+            );
+        }
+    }
+    
+    // Reordenar conforme a ordem customizada
+    $new_position = 5; // Começar em posição 5
+    foreach ($custom_order as $slug) {
+        if (isset($menu_by_slug[$slug])) {
+            // Encontrar próxima posição livre
+            while (isset($menu[$new_position])) {
+                $new_position++;
+            }
+            
+            $ordered_menu[$new_position] = $menu_by_slug[$slug]['item'];
+            $used_positions[] = $menu_by_slug[$slug]['position'];
+            $new_position++;
+        }
+    }
+    
+    // Adicionar menus que não estão na ordem customizada
+    foreach ($menu as $position => $menu_item) {
+        if (!in_array($position, $used_positions)) {
+            // Encontrar próxima posição livre
+            while (isset($ordered_menu[$new_position])) {
+                $new_position++;
+            }
+            $ordered_menu[$new_position] = $menu_item;
+            $new_position++;
+        }
+    }
+    
+    // Aplicar nova ordem
+    if (!empty($ordered_menu)) {
+        // Manter separadores e itens especiais
+        foreach ($menu as $position => $menu_item) {
+            if (empty($menu_item[2]) || strpos($menu_item[4], 'wp-menu-separator') !== false) {
+                $ordered_menu[$position] = $menu_item;
+            }
+        }
+        
+        $menu = $ordered_menu;
+        ksort($menu);
+    }
+}
+
+function mpa_apply_menu_customizations() {
+    global $menu, $submenu;
+    
+    $menu_customizations = get_option('mpa_menu_customizations', array());
+    
+    if (empty($menu_customizations) || !is_array($menu)) {
+        return;
+    }
+    
+    // Debug: mostrar todos os menus encontrados
+    if (isset($_GET['debug_menus'])) {
+        error_log('=== MENUS ENCONTRADOS ===');
+        foreach ($menu as $key => $menu_item) {
+            if (!empty($menu_item[0]) && !empty($menu_item[2])) {
+                error_log("Menu $key: Título='{$menu_item[0]}', Slug='{$menu_item[2]}'");
+            }
+        }
+    }
+    
+    // Aplicar customizações aos menus principais
+    foreach ($menu as $key => $menu_item) {
+        if (empty($menu_item[0]) || empty($menu_item[2])) {
+            continue;
+        }
+        
+        $menu_slug = $menu_item[2];
+        $menu_title = $menu_item[0];
+        
+        // Procurar customização por diferentes estratégias
+        $custom_data = null;
+        
+        // 1. Buscar pelo slug exato
+        if (isset($menu_customizations[$menu_slug])) {
+            $custom_data = $menu_customizations[$menu_slug];
+        }
+        
+        // 2. Buscar pelo slug simplificado
+        if (!$custom_data) {
+            $simple_slug = str_replace(['admin.php?page=', 'edit.php?post_type='], '', $menu_slug);
+            if (isset($menu_customizations[$simple_slug])) {
+                $custom_data = $menu_customizations[$simple_slug];
+            }
+        }
+        
+        // 3. Buscar por slugs conhecidos baseados no texto do menu
+        if (!$custom_data) {
+            $menu_text_lower = strtolower(strip_tags($menu_title));
+            
+            if (strpos($menu_text_lower, 'woocommerce') !== false && isset($menu_customizations['woocommerce'])) {
+                $custom_data = $menu_customizations['woocommerce'];
+            } elseif (strpos($menu_text_lower, 'elementor') !== false && isset($menu_customizations['elementor'])) {
+                $custom_data = $menu_customizations['elementor'];
+            } elseif (strpos($menu_text_lower, 'users') !== false && isset($menu_customizations['users'])) {
+                $custom_data = $menu_customizations['users'];
+            } elseif (strpos($menu_text_lower, 'posts') !== false && isset($menu_customizations['posts'])) {
+                $custom_data = $menu_customizations['posts'];
+            } elseif (strpos($menu_text_lower, 'pages') !== false && isset($menu_customizations['pages'])) {
+                $custom_data = $menu_customizations['pages'];
+            }
+        }
+        
+        // Aplicar customizações se encontradas
+        if ($custom_data) {
+            if (!empty($custom_data['title'])) {
+                $menu[$key][0] = $custom_data['title'];
+                
+                if (isset($_GET['debug_menus'])) {
+                    error_log("CUSTOMIZAÇÃO APLICADA: '{$menu_title}' -> '{$custom_data['title']}'");
+                }
+            }
+            
+            if (!empty($custom_data['icon'])) {
+                $custom_icon = $custom_data['icon'];
+                if (!str_starts_with($custom_icon, 'dashicons-')) {
+                    $custom_icon = 'dashicons-' . $custom_icon;
+                }
+                $menu[$key][6] = $custom_icon;
+            }
+        }
+    }
+    
+    // Aplicar customizações aos submenus
+    if (is_array($submenu)) {
+        foreach ($submenu as $parent_slug => $submenus) {
+            if (!is_array($submenus)) continue;
+            
+            foreach ($submenus as $sub_key => $submenu_item) {
+                if (empty($submenu_item[0]) || empty($submenu_item[2])) {
+                    continue;
+                }
+                
+                $submenu_slug = $submenu_item[2];
+                $submenu_title = $submenu_item[0];
+                
+                // Criar chave do submenu para buscar customização
+                $submenu_key = $parent_slug . '|' . $submenu_slug;
+                
+                // Debug: mostrar chave do submenu
+                if (isset($_GET['debug_menus'])) {
+                    error_log("[MPA SUBMENU DEBUG] Verificando submenu: $submenu_key (parent: $parent_slug, slug: $submenu_slug)");
+                }
+                
+                // Buscar customização do submenu
+                if (isset($menu_customizations['submenu_custom_title'][$submenu_key])) {
+                    $custom_title = $menu_customizations['submenu_custom_title'][$submenu_key];
+                    
+                    if (!empty($custom_title)) {
+                        $submenu[$parent_slug][$sub_key][0] = $custom_title;
+                        
+                        if (isset($_GET['debug_menus'])) {
+                            error_log("CUSTOMIZAÇÃO SUBMENU APLICADA: '{$submenu_title}' -> '{$custom_title}'");
+                        }
+                    }
+                } else {
+                    if (isset($_GET['debug_menus'])) {
+                        error_log("[MPA SUBMENU DEBUG] Customização não encontrada para: $submenu_key");
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Removido JavaScript complexo - dependendo apenas do PHP hook acima
+
+// Função JavaScript removida - usando apenas o PHP hook
 
