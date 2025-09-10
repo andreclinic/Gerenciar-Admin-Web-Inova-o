@@ -257,40 +257,53 @@ function mpa_menu_roles_page() {
         
         <!-- Seletor de Role -->
         <div class="mpa-role-selector">
-            <h2>Selecione a Role:</h2>
-            <div class="mpa-role-tabs">
-                <?php foreach ($all_roles as $role_key => $role_name): ?>
-                    <a href="<?php echo esc_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key)); ?>" 
-                       class="mpa-role-tab <?php echo ($selected_role === $role_key) ? 'active' : ''; ?>">
-                        <?php echo esc_html($role_name); ?>
-                        <?php
-                        // Mostrar contador de menus bloqueados
-                        $blocked_count = 0;
-                        if (isset($current_permissions[$role_key])) {
-                            foreach ($current_permissions[$role_key] as $key => $value) {
-                                if ($key !== 'submenus' && $value === false) {
-                                    $blocked_count++;
-                                }
-                            }
-                            if (isset($current_permissions[$role_key]['submenus'])) {
-                                foreach ($current_permissions[$role_key]['submenus'] as $value) {
-                                    if ($value === false) {
+                <div class="mpa-selector-group">
+                    <label for="role-select"><h2>Selecione a Role:</h2></label>
+                    <select name="role" id="role-select" onchange="changeRole(this.value)">
+                        <?php foreach ($all_roles as $role_key => $role_name): ?>
+                            <?php
+                            // Calcular contador de menus bloqueados
+                            $blocked_count = 0;
+                            if (isset($current_permissions[$role_key])) {
+                                foreach ($current_permissions[$role_key] as $key => $value) {
+                                    if ($key !== 'submenus' && $value === false) {
                                         $blocked_count++;
                                     }
                                 }
+                                if (isset($current_permissions[$role_key]['submenus'])) {
+                                    foreach ($current_permissions[$role_key]['submenus'] as $value) {
+                                        if ($value === false) {
+                                            $blocked_count++;
+                                        }
+                                    }
+                                }
                             }
-                        }
-                        if ($blocked_count > 0): ?>
-                            <span class="mpa-blocked-count"><?php echo $blocked_count; ?></span>
-                        <?php endif; ?>
-                    </a>
-                <?php endforeach; ?>
+                            $display_text = $role_name;
+                            if ($blocked_count > 0) {
+                                $display_text .= " ({$blocked_count} bloqueados)";
+                            }
+                            ?>
+                            <option value="<?php echo esc_attr($role_key); ?>" <?php selected($selected_role, $role_key); ?>>
+                                <?php echo esc_html($display_text); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
                 
-                <!-- Nova aba de ícones -->
-                <a href="<?php echo esc_url(admin_url('admin.php?page=mpa-menu-roles&view=icons')); ?>" 
-                   class="mpa-role-tab mpa-icons-tab <?php echo (isset($_GET['view']) && $_GET['view'] === 'icons') ? 'active' : ''; ?>">
-                    🎨 Ícones
-                </a>
+                <div class="mpa-view-options">
+                    <button type="button" 
+                            onclick="toggleView('menu')" 
+                            class="mpa-view-btn <?php echo (!isset($_GET['view']) || $_GET['view'] !== 'icons') ? 'active' : ''; ?>" 
+                            id="menu-view-btn">
+                        📋 Gerenciar Menus
+                    </button>
+                    <button type="button" 
+                            onclick="toggleView('icons')" 
+                            class="mpa-view-btn <?php echo (isset($_GET['view']) && $_GET['view'] === 'icons') ? 'active' : ''; ?>" 
+                            id="icons-view-btn">
+                        🎨 Guia de Ícones
+                    </button>
+                </div>
             </div>
         </div>
         
@@ -433,19 +446,23 @@ function mpa_menu_roles_page() {
                                     ?>
                                     <div class="mpa-edit-row">
                                         <label class="mpa-edit-label">Nome personalizado:</label>
-                                        <input type="text" 
-                                               name="menu_custom_title[<?php echo esc_attr($menu_item['slug']); ?>]" 
-                                               value="<?php echo esc_attr($current_custom_title); ?>"
-                                               placeholder="<?php echo esc_attr($menu_item['title']); ?>"
-                                               class="mpa-custom-title-input" />
+                                        <div class="mpa-edit-input-group">
+                                            <input type="text" 
+                                                   name="menu_custom_title[<?php echo esc_attr($menu_item['slug']); ?>]" 
+                                                   value="<?php echo esc_attr($current_custom_title); ?>"
+                                                   placeholder="<?php echo esc_attr($menu_item['title']); ?>"
+                                                   class="mpa-custom-title-input" />
+                                        </div>
                                     </div>
                                     <div class="mpa-edit-row">
                                         <label class="mpa-edit-label">Ícone (dashicon):</label>
-                                        <input type="text" 
-                                               name="menu_custom_icon[<?php echo esc_attr($menu_item['slug']); ?>]" 
-                                               value="<?php echo esc_attr($current_custom_icon); ?>"
-                                               placeholder="<?php echo esc_attr($menu_item['icon'] ?: 'dashicons-admin-generic'); ?>"
-                                               class="mpa-custom-icon-input" />
+                                        <div class="mpa-edit-input-group">
+                                            <input type="text" 
+                                                   name="menu_custom_icon[<?php echo esc_attr($menu_item['slug']); ?>]" 
+                                                   value="<?php echo esc_attr($current_custom_icon); ?>"
+                                                   placeholder="<?php echo esc_attr($menu_item['icon'] ?: 'dashicons-admin-generic'); ?>"
+                                                   class="mpa-custom-icon-input" />
+                                        </div>
                                         <span class="mpa-icon-preview">
                                             <span class="dashicons <?php echo esc_attr($current_custom_icon ?: $menu_item['icon'] ?: 'dashicons-admin-generic'); ?>"></span>
                                         </span>
@@ -486,11 +503,13 @@ function mpa_menu_roles_page() {
                                             <div class="mpa-submenu-edit-fields" data-submenu-key="<?php echo esc_attr($submenu_key); ?>">
                                                 <div class="mpa-edit-row">
                                                     <label class="mpa-edit-label">Nome personalizado:</label>
-                                                    <input type="text" 
-                                                           name="submenu_custom_title[<?php echo esc_attr($submenu_key); ?>]"
-                                                           value="<?php echo esc_attr($menu_customizations['submenu_custom_title'][$submenu_key] ?? ''); ?>"
-                                                           placeholder="<?php echo esc_attr($submenu_item['title']); ?>"
-                                                           class="mpa-custom-title-input" />
+                                                    <div class="mpa-edit-input-group">
+                                                        <input type="text" 
+                                                               name="submenu_custom_title[<?php echo esc_attr($submenu_key); ?>]"
+                                                               value="<?php echo esc_attr($menu_customizations['submenu_custom_title'][$submenu_key] ?? ''); ?>"
+                                                               placeholder="<?php echo esc_attr($submenu_item['title']); ?>"
+                                                               class="mpa-custom-title-input" />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -565,48 +584,67 @@ function mpa_menu_roles_page() {
             padding: 15px;
         }
         
-        .mpa-role-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-top: 10px;
+        .mpa-role-selector {
+            background: #fff;
+            border: 1px solid #ccd0d4;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
         }
         
-        .mpa-role-tab {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 8px 15px;
+        .mpa-selector-group {
+            margin-bottom: 20px;
+        }
+        
+        .mpa-selector-group h2 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #23282d;
+        }
+        
+        #role-select {
+            min-width: 300px;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fff;
+            font-size: 14px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,.07);
+        }
+        
+        #role-select:focus {
+            border-color: #0073aa;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.2);
+        }
+        
+        .mpa-view-options {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .mpa-view-btn {
+            padding: 10px 20px;
             background: #f1f1f1;
             border: 1px solid #ddd;
-            border-radius: 3px;
-            text-decoration: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
             color: #555;
-            font-weight: 500;
+            text-decoration: none;
             transition: all 0.2s;
         }
         
-        .mpa-role-tab:hover {
+        .mpa-view-btn:hover {
             background: #e0e0e0;
             color: #333;
-            text-decoration: none;
         }
         
-        .mpa-role-tab.active {
+        .mpa-view-btn.active {
             background: #0073aa;
             color: white;
             border-color: #005a87;
-        }
-        
-        .mpa-blocked-count {
-            background: #d63638;
-            color: white;
-            border-radius: 50%;
-            font-size: 11px;
-            font-weight: bold;
-            padding: 2px 6px;
-            min-width: 18px;
-            text-align: center;
         }
         
         /* Configuração da Role */
@@ -1070,6 +1108,55 @@ function mpa_menu_roles_page() {
             }
         }
         
+        /* Indicadores de Auto-Save */
+        .mpa-save-indicator {
+            position: absolute;
+            right: -120px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .mpa-save-saving {
+            background: #0073aa;
+            color: #fff;
+        }
+        
+        .mpa-save-success {
+            background: #00a32a;
+            color: #fff;
+        }
+        
+        .mpa-save-error {
+            background: #dc3232;
+            color: #fff;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-50%) translateX(10px); }
+            to { opacity: 1; transform: translateY(-50%) translateX(0); }
+        }
+        
+        /* Posicionamento relativo para os containers dos campos de edição */
+        .mpa-edit-input-group {
+            position: relative;
+        }
+        
+        /* Responsividade para indicadores */
+        @media (max-width: 768px) {
+            .mpa-save-indicator {
+                right: -90px;
+                font-size: 10px;
+                padding: 2px 6px;
+            }
+        }
+        
         /* Seção de Ícones */
         .mpa-icons-section {
             background: #fff;
@@ -1334,34 +1421,47 @@ function mpa_menu_roles_page() {
         }
         
         document.addEventListener('DOMContentLoaded', function() {
-            // Botão Marcar Todos
-            document.getElementById('mpa-select-all').addEventListener('click', function() {
-                document.querySelectorAll('.mpa-menu-checkbox, .mpa-submenu-checkbox').forEach(cb => {
-                    cb.checked = true;
-                });
-            });
+            // Verificar se estamos na página de gerenciamento de menus (não na página de ícones)
+            const isMenuManagementPage = !document.querySelector('.mpa-icons-section');
             
-            // Botão Desmarcar Todos
-            document.getElementById('mpa-select-none').addEventListener('click', function() {
-                document.querySelectorAll('.mpa-menu-checkbox, .mpa-submenu-checkbox').forEach(cb => {
-                    cb.checked = false;
-                });
-            });
-            
-            // Botão Apenas Core WP (desmarcar taxonomias e plugins)
-            document.getElementById('mpa-select-core').addEventListener('click', function() {
-                document.querySelectorAll('.mpa-menu-checkbox').forEach(cb => {
-                    const menuType = cb.getAttribute('data-menu-type');
-                    cb.checked = (menuType === 'core');
-                });
-                // Desmarcar todos os submenus para simplificar
-                document.querySelectorAll('.mpa-submenu-checkbox').forEach(cb => {
-                    cb.checked = true;
-                });
-            });
-            
-            // Atualizar preview de ícones em tempo real
-            document.querySelectorAll('.mpa-custom-icon-input').forEach(input => {
+            if (isMenuManagementPage) {
+                // Botão Marcar Todos
+                const selectAllBtn = document.getElementById('mpa-select-all');
+                if (selectAllBtn) {
+                    selectAllBtn.addEventListener('click', function() {
+                        document.querySelectorAll('.mpa-menu-checkbox, .mpa-submenu-checkbox').forEach(cb => {
+                            cb.checked = true;
+                        });
+                    });
+                }
+                
+                // Botão Desmarcar Todos
+                const selectNoneBtn = document.getElementById('mpa-select-none');
+                if (selectNoneBtn) {
+                    selectNoneBtn.addEventListener('click', function() {
+                        document.querySelectorAll('.mpa-menu-checkbox, .mpa-submenu-checkbox').forEach(cb => {
+                            cb.checked = false;
+                        });
+                    });
+                }
+                
+                // Botão Apenas Core WP (desmarcar taxonomias e plugins)
+                const selectCoreBtn = document.getElementById('mpa-select-core');
+                if (selectCoreBtn) {
+                    selectCoreBtn.addEventListener('click', function() {
+                        document.querySelectorAll('.mpa-menu-checkbox').forEach(cb => {
+                            const menuType = cb.getAttribute('data-menu-type');
+                            cb.checked = (menuType === 'core');
+                        });
+                        // Desmarcar todos os submenus para simplificar
+                        document.querySelectorAll('.mpa-submenu-checkbox').forEach(cb => {
+                            cb.checked = true;
+                        });
+                    });
+                }
+                
+                // Atualizar preview de ícones em tempo real
+                document.querySelectorAll('.mpa-custom-icon-input').forEach(input => {
                 input.addEventListener('input', function() {
                     const preview = this.parentElement.querySelector('.mpa-icon-preview .dashicons');
                     const iconClass = this.value.trim();
@@ -1401,32 +1501,42 @@ function mpa_menu_roles_page() {
                 });
             });
             
-            // Atualização em tempo real dos títulos ao digitar
-            document.querySelectorAll('.mpa-custom-title-input').forEach(input => {
+            // Atualização em tempo real dos títulos ao digitar COM AUTO-SAVE
+            document.querySelectorAll('.mpa-custom-title-input, .mpa-custom-icon-input').forEach(input => {
                 input.addEventListener('input', function() {
                     const menuItem = this.closest('.mpa-menu-item, .mpa-submenu-item');
-                    const titleElement = menuItem.querySelector('.mpa-menu-title, .mpa-submenu-title');
                     
-                    if (titleElement) {
-                        const originalTitle = titleElement.getAttribute('data-original-title') || titleElement.textContent.trim();
+                    // Atualizar título em tempo real apenas para campos de título
+                    if (this.classList.contains('mpa-custom-title-input')) {
+                        const titleElement = menuItem.querySelector('.mpa-menu-title, .mpa-submenu-title');
                         
-                        // Salvar título original na primeira vez
-                        if (!titleElement.getAttribute('data-original-title')) {
-                            titleElement.setAttribute('data-original-title', originalTitle);
-                        }
-                        
-                        // Verificar se é um submenu (tem ↳)
-                        const isSubmenu = titleElement.classList.contains('mpa-submenu-title');
-                        const prefix = isSubmenu ? '↳ ' : '';
-                        
-                        // Atualizar título com valor digitado ou voltar ao original se vazio
-                        const newTitle = this.value.trim();
-                        if (newTitle) {
-                            titleElement.textContent = prefix + newTitle;
-                        } else {
-                            titleElement.textContent = originalTitle;
+                        if (titleElement) {
+                            const originalTitle = titleElement.getAttribute('data-original-title') || titleElement.textContent.trim();
+                            
+                            // Salvar título original na primeira vez
+                            if (!titleElement.getAttribute('data-original-title')) {
+                                titleElement.setAttribute('data-original-title', originalTitle);
+                            }
+                            
+                            // Verificar se é um submenu (tem ↳)
+                            const isSubmenu = titleElement.classList.contains('mpa-submenu-title');
+                            const prefix = isSubmenu ? '↳ ' : '';
+                            
+                            // Atualizar título com valor digitado ou voltar ao original se vazio
+                            const newTitle = this.value.trim();
+                            if (newTitle) {
+                                titleElement.textContent = prefix + newTitle;
+                            } else {
+                                titleElement.textContent = originalTitle;
+                            }
                         }
                     }
+                    
+                    // Auto-save com debounce
+                    clearTimeout(this.autoSaveTimer);
+                    this.autoSaveTimer = setTimeout(() => {
+                        autoSaveCustomization(this);
+                    }, 1000); // Salva após 1 segundo de inatividade
                 });
             });
             
@@ -1578,6 +1688,7 @@ function mpa_menu_roles_page() {
                     });
                 }
             });
+            } // Fim da verificação isMenuManagementPage
         });
 
         // Função para copiar ícone para clipboard
@@ -1643,6 +1754,138 @@ function mpa_menu_roles_page() {
                 });
             }
         });
+
+        // Funções para o seletor de role
+        function changeRole(roleValue) {
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('role', roleValue);
+            // Manter view se estiver definida
+            if (currentUrl.searchParams.has('view')) {
+                const view = currentUrl.searchParams.get('view');
+                if (view !== 'icons') {
+                    currentUrl.searchParams.delete('view');
+                }
+            }
+            window.location.href = currentUrl.toString();
+        }
+
+        function toggleView(viewType) {
+            const currentUrl = new URL(window.location);
+            const roleSelect = document.getElementById('role-select');
+            const selectedRole = roleSelect ? roleSelect.value : null;
+            
+            if (selectedRole) {
+                currentUrl.searchParams.set('role', selectedRole);
+            }
+            
+            if (viewType === 'icons') {
+                currentUrl.searchParams.set('view', 'icons');
+            } else {
+                currentUrl.searchParams.delete('view');
+            }
+            
+            window.location.href = currentUrl.toString();
+        }
+
+        // Função de Auto-Save para customizações
+        function autoSaveCustomization(inputElement) {
+            const menuItem = inputElement.closest('.mpa-menu-item, .mpa-submenu-item');
+            const isSubmenu = menuItem.classList.contains('mpa-submenu-item');
+            
+            // Obter dados básicos
+            let menuSlug, submenuKey, fieldType, fieldValue;
+            
+            if (isSubmenu) {
+                // Para submenus
+                const menuContainer = menuItem.closest('.mpa-menu-item');
+                menuSlug = menuContainer.getAttribute('data-menu-slug');
+                submenuKey = inputElement.closest('.mpa-submenu-edit-fields').getAttribute('data-submenu-key');
+                fieldType = inputElement.classList.contains('mpa-custom-title-input') ? 'title' : 'icon';
+                fieldValue = inputElement.value.trim();
+            } else {
+                // Para menus principais
+                menuSlug = menuItem.getAttribute('data-menu-slug');
+                fieldType = inputElement.classList.contains('mpa-custom-title-input') ? 'title' : 'icon';
+                fieldValue = inputElement.value.trim();
+            }
+            
+            // Mostrar indicador de salvamento
+            showSaveIndicator(inputElement, 'saving');
+            
+            // Preparar dados para envio
+            const formData = new FormData();
+            formData.append('action', 'mpa_auto_save_customization');
+            formData.append('menu_slug', menuSlug);
+            formData.append('field_type', fieldType);
+            formData.append('field_value', fieldValue);
+            formData.append('nonce', '<?php echo wp_create_nonce("mpa_auto_save"); ?>');
+            
+            if (isSubmenu) {
+                formData.append('submenu_key', submenuKey);
+                formData.append('is_submenu', '1');
+            }
+            
+            // Enviar via AJAX
+            fetch('<?php echo admin_url("admin-ajax.php"); ?>', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSaveIndicator(inputElement, 'success');
+                    console.log('Auto-save realizado com sucesso:', data.data);
+                } else {
+                    showSaveIndicator(inputElement, 'error');
+                    console.error('Erro no auto-save:', data.data);
+                }
+            })
+            .catch(error => {
+                showSaveIndicator(inputElement, 'error');
+                console.error('Erro na requisição de auto-save:', error);
+            });
+        }
+
+        // Função para mostrar indicadores visuais de salvamento
+        function showSaveIndicator(inputElement, status) {
+            // Remover indicadores existentes
+            const existingIndicator = inputElement.parentNode.querySelector('.mpa-save-indicator');
+            if (existingIndicator) {
+                existingIndicator.remove();
+            }
+            
+            // Criar novo indicador
+            const indicator = document.createElement('span');
+            indicator.className = 'mpa-save-indicator mpa-save-' + status;
+            
+            let text, icon;
+            switch (status) {
+                case 'saving':
+                    text = 'Salvando...';
+                    icon = '⏳';
+                    break;
+                case 'success':
+                    text = 'Salvo!';
+                    icon = '✅';
+                    break;
+                case 'error':
+                    text = 'Erro';
+                    icon = '❌';
+                    break;
+            }
+            
+            indicator.innerHTML = icon + ' ' + text;
+            inputElement.parentNode.appendChild(indicator);
+            
+            // Auto-remover indicador após delay
+            if (status !== 'saving') {
+                setTimeout(() => {
+                    if (indicator.parentNode) {
+                        indicator.remove();
+                    }
+                }, 2000);
+            }
+        }
     </script>
     <?php
 }
@@ -2418,4 +2661,77 @@ function mpa_apply_menu_customizations() {
 // Removido JavaScript complexo - dependendo apenas do PHP hook acima
 
 // Função JavaScript removida - usando apenas o PHP hook
+
+// AJAX handler para auto-save de customizações
+add_action('wp_ajax_mpa_auto_save_customization', 'mpa_auto_save_customization_handler');
+
+function mpa_auto_save_customization_handler() {
+    // Verificar nonce de segurança
+    if (!wp_verify_nonce($_POST['nonce'], 'mpa_auto_save')) {
+        wp_send_json_error('Erro de segurança');
+    }
+    
+    // Verificar permissões
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Sem permissões');
+    }
+    
+    // Validar dados recebidos
+    if (!isset($_POST['menu_slug']) || !isset($_POST['field_type'])) {
+        wp_send_json_error('Dados inválidos');
+    }
+    
+    $menu_slug = sanitize_text_field($_POST['menu_slug']);
+    $field_type = sanitize_text_field($_POST['field_type']);
+    $field_value = isset($_POST['field_value']) ? wp_strip_all_tags($_POST['field_value']) : '';
+    
+    // Verificar se é submenu
+    $is_submenu = isset($_POST['is_submenu']) && $_POST['is_submenu'] === 'true';
+    
+    // Obter customizações atuais
+    $menu_customizations = get_option('mpa_menu_customizations', array());
+    
+    try {
+        if ($is_submenu) {
+            // Para submenus
+            if ($field_type === 'title') {
+                if (!isset($menu_customizations['submenu_custom_title'])) {
+                    $menu_customizations['submenu_custom_title'] = array();
+                }
+                $menu_customizations['submenu_custom_title'][$menu_slug] = $field_value;
+            }
+        } else {
+            // Para menus principais
+            if (!isset($menu_customizations[$menu_slug])) {
+                $menu_customizations[$menu_slug] = array();
+            }
+            
+            if ($field_type === 'title') {
+                $menu_customizations[$menu_slug]['title'] = $field_value;
+            } elseif ($field_type === 'icon') {
+                $menu_customizations[$menu_slug]['icon'] = $field_value;
+            }
+        }
+        
+        // Salvar no banco de dados
+        $result = update_option('mpa_menu_customizations', $menu_customizations);
+        
+        if ($result !== false) {
+            wp_send_json_success(array(
+                'message' => 'Salvo automaticamente',
+                'data' => array(
+                    'menu_slug' => $menu_slug,
+                    'field_type' => $field_type,
+                    'field_value' => $field_value,
+                    'is_submenu' => $is_submenu
+                )
+            ));
+        } else {
+            wp_send_json_error('Erro ao salvar no banco de dados');
+        }
+        
+    } catch (Exception $e) {
+        wp_send_json_error('Erro interno: ' . $e->getMessage());
+    }
+}
 
