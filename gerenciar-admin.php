@@ -21,6 +21,8 @@ include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-wpcontent.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-wpfooter.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-menu-manager.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-capability-manager.php'; // Novo: Gerenciar capabilities
+include_once ADMIN_BAR_MENU_PATH . '/admin/class-mpa-analytics-page.php'; // Novo: Analytics Dashboard
+include_once ADMIN_BAR_MENU_PATH . '/includes/class-mpa-analytics-client.php'; // Novo: GA4 Integration
 include_once ADMIN_BAR_MENU_PATH . '/debug-menu-slugs.php'; // Debug ativo temporariamente
 include_once ADMIN_BAR_MENU_PATH . '/admin/debugar.php';
 include_once ADMIN_BAR_MENU_PATH . '/debug-permissions.php'; // Debug de permissões

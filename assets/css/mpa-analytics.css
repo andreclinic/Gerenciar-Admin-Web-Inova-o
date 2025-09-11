@@ -1,0 +1,1118 @@
+/**
+ * MPA Analytics Dashboard CSS
+ * 
+ * Estilos para o dashboard de Analytics baseado no modelo_dashboard.html
+ * Compatible com dark mode automaticamente usando variáveis CSS do tema global
+ * 
+ * @package Gerenciar_Admin
+ * @since 1.0.0
+ */
+
+/* ===================================
+   VARIÁVEIS CSS PARA TEMAS
+   =================================== */
+.mpa-dashboard-analytics {
+    --mpa-bg-primary: #ffffff;
+    --mpa-bg-secondary: #f9fafb;
+    --mpa-text-primary: #111827;
+    --mpa-text-secondary: #6b7280;
+    --mpa-text-muted: #9ca3af;
+    --mpa-border-color: #e5e7eb;
+    --mpa-border-light: #f3f4f6;
+    --mpa-accent-primary: #2563eb;
+    --mpa-accent-secondary: #3b82f6;
+    --mpa-success: #10b981;
+    --mpa-warning: #f59e0b;
+    --mpa-error: #ef4444;
+    --mpa-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --mpa-shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --mpa-radius: 0.75rem;
+    --mpa-radius-sm: 0.5rem;
+}
+
+/* Dark Mode Variables */
+body.dark-mode .mpa-dashboard-analytics,
+.dark-mode .mpa-dashboard-analytics {
+    --mpa-bg-primary: #1f2937;
+    --mpa-bg-secondary: #111827;
+    --mpa-text-primary: #f9fafb;
+    --mpa-text-secondary: #d1d5db;
+    --mpa-text-muted: #9ca3af;
+    --mpa-border-color: #374151;
+    --mpa-border-light: #4b5563;
+    --mpa-accent-primary: #3b82f6;
+    --mpa-accent-secondary: #60a5fa;
+    --mpa-success: #10b981;
+    --mpa-warning: #f59e0b;
+    --mpa-error: #f87171;
+    --mpa-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --mpa-shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* ===================================
+   LAYOUT PRINCIPAL
+   =================================== */
+.mpa-dashboard-analytics {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--mpa-bg-secondary);
+    color: var(--mpa-text-primary);
+    padding: 1.5rem;
+    min-height: 100vh;
+}
+
+/* Header do Analytics */
+.mpa-analytics-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    background: var(--mpa-bg-primary);
+    border: 1px solid var(--mpa-border-color);
+    border-radius: var(--mpa-radius);
+    padding: 1.5rem;
+    box-shadow: var(--mpa-shadow);
+}
+
+.mpa-analytics-header-left h1.mpa-analytics-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--mpa-text-primary);
+    margin: 0 0 0.5rem 0;
+}
+
+.mpa-analytics-header-left .mpa-analytics-subtitle {
+    font-size: 0.875rem;
+    color: var(--mpa-text-secondary);
+    margin: 0;
+}
+
+.mpa-analytics-header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Filtros de Data */
+.mpa-date-filter-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mpa-date-filter-container label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--mpa-text-secondary);
+}
+
+.mpa-date-filter {
+    background: var(--mpa-bg-secondary);
+    border: 1px solid var(--mpa-border-color);
+    border-radius: var(--mpa-radius-sm);
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    color: var(--mpa-text-primary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mpa-date-filter:hover {
+    background-color: var(--mpa-border-light);
+    border-color: var(--mpa-accent-primary);
+}
+
+.mpa-date-filter:focus {
+    outline: none;
+    border-color: var(--mpa-accent-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.mpa-custom-date-range {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--mpa-bg-primary);
+    border: 1px solid var(--mpa-border-color);
+    border-radius: var(--mpa-radius-sm);
+}
+
+.mpa-date-input {
+    border: 1px solid var(--mpa-border-color);
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    color: var(--mpa-text-primary);
+    background: var(--mpa-bg-primary);
+}
+
+/* ===================================
+   CARDS E GRID SYSTEM
+   =================================== */
+.mpa-card {
+    background: var(--mpa-bg-primary);
+    border-radius: var(--mpa-radius);
+    box-shadow: var(--mpa-shadow);
+    padding: 1.5rem;
+    border: 1px solid var(--mpa-border-light);
+    transition: all 0.2s ease;
+}
+
+.mpa-card:hover {
+    box-shadow: var(--mpa-shadow-lg);
+    transform: translateY(-1px);
+}
+
+.mpa-card-grid {
+    display: grid;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.mpa-card-grid-4 {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.mpa-card-grid-3 {
+    grid-template-columns: 2fr 1fr;
+}
+
+.mpa-card-grid-2 {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+}
+
+.mpa-card-grid-real-time {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+/* ===================================
+   MÉTRICAS E VALORES
+   =================================== */
+.mpa-metric-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.mpa-metric-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--mpa-text-secondary);
+    margin: 0;
+}
+
+.mpa-metric-change {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-weight: 500;
+}
+
+.mpa-metric-change-positive {
+    color: var(--mpa-success);
+    background-color: rgba(16, 185, 129, 0.1);
+}
+
+.mpa-metric-change-negative {
+    color: var(--mpa-error);
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+.mpa-metric-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--mpa-text-primary);
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+}
+
+.mpa-realtime-value {
+    color: var(--mpa-accent-primary);
+    animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.mpa-metric-subtitle {
+    font-size: 0.75rem;
+    color: var(--mpa-text-secondary);
+    margin: 0;
+}
+
+/* ===================================
+   SEÇÕES E TÍTULOS
+   =================================== */
+.mpa-analytics-section {
+    margin-bottom: 3rem;
+}
+
+.mpa-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+    margin: 0 0 1.5rem 0;
+}
+
+/* ===================================
+   GRÁFICOS
+   =================================== */
+.mpa-chart-container {
+    position: relative;
+    height: 250px;
+    margin-top: 1rem;
+}
+
+.mpa-chart-container-small {
+    position: relative;
+    height: 180px;
+    margin-top: 1rem;
+}
+
+.mpa-donut-chart {
+    position: relative;
+    height: 200px;
+    margin-top: 1rem;
+}
+
+/* ===================================
+   ESTATÍSTICAS DE DISPOSITIVOS
+   =================================== */
+.mpa-device-stats {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mpa-device-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mpa-device-stat-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mpa-device-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+}
+
+.mpa-device-dot.desktop {
+    background-color: var(--mpa-accent-primary);
+}
+
+.mpa-device-dot.mobile {
+    background-color: #9333ea;
+}
+
+.mpa-device-dot.tablet {
+    background-color: var(--mpa-success);
+}
+
+.mpa-device-label {
+    font-size: 0.875rem;
+    color: var(--mpa-text-secondary);
+}
+
+.mpa-device-percentage {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+}
+
+/* ===================================
+   BARRAS DE PROGRESSO
+   =================================== */
+.mpa-progress-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.mpa-progress-label {
+    font-size: 0.875rem;
+    color: var(--mpa-text-secondary);
+    font-weight: 500;
+}
+
+.mpa-progress-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mpa-progress-bar {
+    width: 6rem;
+    height: 0.5rem;
+    background-color: var(--mpa-border-color);
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.mpa-progress-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.3s ease;
+}
+
+.mpa-progress-fill.organic {
+    background-color: var(--mpa-accent-primary);
+}
+
+.mpa-progress-fill.direct {
+    background-color: #9333ea;
+}
+
+.mpa-progress-fill.social {
+    background-color: var(--mpa-success);
+}
+
+.mpa-progress-fill.referral {
+    background-color: var(--mpa-warning);
+}
+
+.mpa-progress-percentage {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+    min-width: 2.5rem;
+    text-align: right;
+}
+
+/* ===================================
+   CIDADES E LISTAS
+   =================================== */
+.mpa-city-stats {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--mpa-border-color);
+}
+
+.mpa-city-stats h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+    margin: 0 0 1rem 0;
+}
+
+.mpa-city-item, .mpa-recent-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0;
+}
+
+.mpa-city-name, .mpa-recent-title {
+    font-size: 0.875rem;
+    color: var(--mpa-text-secondary);
+    font-weight: 500;
+}
+
+.mpa-city-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+}
+
+.mpa-recent-date, .mpa-recent-excerpt {
+    font-size: 0.75rem;
+    color: var(--mpa-text-muted);
+}
+
+/* ===================================
+   CONTEÚDO WORDPRESS
+   =================================== */
+.mpa-wp-content {
+    margin-bottom: 2rem;
+}
+
+.mpa-wp-content h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--mpa-border-color);
+}
+
+.mpa-recent-posts, .mpa-recent-comments {
+    margin-bottom: 1.5rem;
+}
+
+.mpa-recent-item:last-child {
+    margin-bottom: 0;
+}
+
+.mpa-no-data {
+    font-size: 0.875rem;
+    color: var(--mpa-text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: 1rem;
+    background: var(--mpa-bg-secondary);
+    border-radius: var(--mpa-radius-sm);
+}
+
+/* ===================================
+   PÁGINAS MAIS VISITADAS
+   =================================== */
+.mpa-top-pages {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--mpa-border-color);
+}
+
+.mpa-top-pages h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+    margin: 0 0 1rem 0;
+}
+
+.mpa-page-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    background: var(--mpa-bg-secondary);
+    border-radius: var(--mpa-radius-sm);
+    transition: background-color 0.2s ease;
+}
+
+.mpa-page-item:hover {
+    background: var(--mpa-border-light);
+}
+
+.mpa-page-info {
+    flex: 1;
+    margin-right: 1rem;
+}
+
+.mpa-page-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--mpa-text-primary);
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+}
+
+.mpa-page-path {
+    font-size: 0.75rem;
+    color: var(--mpa-text-muted);
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.mpa-page-views {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mpa-accent-primary);
+    white-space: nowrap;
+}
+
+/* ===================================
+   BOTÕES E AÇÕES
+   =================================== */
+.mpa-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--mpa-radius-sm);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.mpa-btn-primary {
+    background: var(--mpa-accent-primary);
+    color: white;
+}
+
+.mpa-btn-primary:hover {
+    background: var(--mpa-accent-secondary);
+    transform: translateY(-1px);
+    box-shadow: var(--mpa-shadow-lg);
+}
+
+.mpa-btn-secondary {
+    background: var(--mpa-bg-secondary);
+    color: var(--mpa-text-primary);
+    border: 1px solid var(--mpa-border-color);
+}
+
+.mpa-btn-secondary:hover {
+    background: var(--mpa-border-light);
+    transform: translateY(-1px);
+}
+
+.mpa-btn-danger {
+    background: var(--mpa-error);
+    color: white;
+}
+
+.mpa-btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+
+.mpa-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.mpa-analytics-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 3rem;
+    padding: 2rem;
+    background: var(--mpa-bg-primary);
+    border: 1px solid var(--mpa-border-color);
+    border-radius: var(--mpa-radius);
+}
+
+/* ===================================
+   AVISOS E STATUS
+   =================================== */
+.mpa-config-notice {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem;
+    background: var(--mpa-bg-primary);
+    border: 2px solid var(--mpa-warning);
+    border-radius: var(--mpa-radius);
+    margin-bottom: 2rem;
+}
+
+.mpa-notice-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.mpa-notice-content h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+    margin: 0 0 0.5rem 0;
+}
+
+.mpa-notice-content p {
+    font-size: 0.875rem;
+    color: var(--mpa-text-secondary);
+    margin: 0 0 1rem 0;
+}
+
+/* ===================================
+   LOADING E ESTADOS
+   =================================== */
+.mpa-loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.mpa-loading-spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 3px solid var(--mpa-border-color);
+    border-top: 3px solid var(--mpa-accent-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.mpa-loading-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--mpa-text-secondary);
+}
+
+/* ===================================
+   MODAL
+   =================================== */
+.mpa-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.mpa-modal-content {
+    background: var(--mpa-bg-primary);
+    border-radius: var(--mpa-radius);
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: var(--mpa-shadow-lg);
+}
+
+.mpa-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--mpa-border-color);
+}
+
+.mpa-modal-header h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+    margin: 0;
+}
+
+.mpa-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--mpa-text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+}
+
+.mpa-modal-close:hover {
+    color: var(--mpa-text-primary);
+}
+
+.mpa-modal-body {
+    padding: 1.5rem;
+}
+
+.mpa-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid var(--mpa-border-color);
+}
+
+.mpa-date-inputs {
+    display: grid;
+    gap: 1rem;
+}
+
+.mpa-date-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.mpa-date-input-group label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--mpa-text-secondary);
+}
+
+/* ===================================
+   CONFIGURAÇÕES
+   =================================== */
+.mpa-analytics-settings {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.mpa-settings-header {
+    margin-bottom: 2rem;
+}
+
+.mpa-settings-header h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--mpa-text-primary);
+    margin: 0 0 0.5rem 0;
+}
+
+.mpa-settings-description {
+    font-size: 0.875rem;
+    color: var(--mpa-text-secondary);
+    margin: 0;
+}
+
+.mpa-connection-status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-radius: var(--mpa-radius);
+    margin-bottom: 2rem;
+}
+
+.mpa-status-connected {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid var(--mpa-success);
+}
+
+.mpa-status-disconnected {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid var(--mpa-warning);
+}
+
+.mpa-status-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.mpa-status-content h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+}
+
+.mpa-status-content p {
+    font-size: 0.875rem;
+    margin: 0.25rem 0;
+}
+
+.mpa-instructions-card {
+    background: var(--mpa-bg-primary);
+    border: 1px solid var(--mpa-border-color);
+    border-radius: var(--mpa-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.mpa-instructions-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+    margin: 0 0 1rem 0;
+}
+
+.mpa-instructions-list {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.mpa-instructions-list li {
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--mpa-text-secondary);
+}
+
+.mpa-external-link {
+    color: var(--mpa-accent-primary);
+    text-decoration: none;
+}
+
+.mpa-external-link:hover {
+    text-decoration: underline;
+}
+
+.mpa-instructions-list code {
+    background: var(--mpa-bg-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.75rem;
+    display: block;
+    margin-top: 0.5rem;
+    word-break: break-all;
+}
+
+.mpa-settings-form {
+    background: var(--mpa-bg-primary);
+    border: 1px solid var(--mpa-border-color);
+    border-radius: var(--mpa-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.mpa-form-section {
+    margin-bottom: 2rem;
+}
+
+.mpa-form-section:last-child {
+    margin-bottom: 0;
+}
+
+.mpa-form-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--mpa-border-color);
+}
+
+.mpa-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.mpa-form-group label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--mpa-text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.mpa-form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--mpa-border-color);
+    border-radius: var(--mpa-radius-sm);
+    font-size: 0.875rem;
+    color: var(--mpa-text-primary);
+    background: var(--mpa-bg-primary);
+    transition: all 0.2s ease;
+}
+
+.mpa-form-input:focus {
+    outline: none;
+    border-color: var(--mpa-accent-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.mpa-form-help {
+    font-size: 0.75rem;
+    color: var(--mpa-text-muted);
+    margin: 0.5rem 0 0 0;
+}
+
+.mpa-form-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--mpa-border-color);
+}
+
+.mpa-diagnostic-section {
+    background: var(--mpa-bg-primary);
+    border: 1px solid var(--mpa-border-color);
+    border-radius: var(--mpa-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.mpa-diagnostic-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+    margin: 0 0 1rem 0;
+}
+
+.mpa-diagnostic-results {
+    min-height: 3rem;
+    display: flex;
+    align-items: center;
+}
+
+.mpa-diagnostic-success {
+    color: var(--mpa-success);
+    padding: 0.75rem;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: var(--mpa-radius-sm);
+    font-size: 0.875rem;
+}
+
+.mpa-diagnostic-error {
+    color: var(--mpa-error);
+    padding: 0.75rem;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: var(--mpa-radius-sm);
+    font-size: 0.875rem;
+}
+
+.mpa-activity-log {
+    background: var(--mpa-bg-primary);
+    border: 1px solid var(--mpa-border-color);
+    border-radius: var(--mpa-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.mpa-activity-log h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+    margin: 0 0 1rem 0;
+}
+
+.mpa-log-container {
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--mpa-bg-secondary);
+    border-radius: var(--mpa-radius-sm);
+    padding: 0.75rem;
+}
+
+.mpa-log-entry {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+}
+
+.mpa-log-timestamp {
+    color: var(--mpa-text-muted);
+    white-space: nowrap;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.mpa-log-message {
+    flex: 1;
+}
+
+.mpa-log-message.success {
+    color: var(--mpa-success);
+}
+
+.mpa-log-message.error {
+    color: var(--mpa-error);
+}
+
+.mpa-log-message.info {
+    color: var(--mpa-text-secondary);
+}
+
+.mpa-no-log {
+    text-align: center;
+    color: var(--mpa-text-muted);
+    font-style: italic;
+    padding: 2rem;
+}
+
+.mpa-useful-links {
+    background: var(--mpa-bg-primary);
+    border: 1px solid var(--mpa-border-color);
+    border-radius: var(--mpa-radius);
+    padding: 1.5rem;
+}
+
+.mpa-useful-links h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+    margin: 0 0 1rem 0;
+}
+
+.mpa-useful-links ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.mpa-useful-links li {
+    margin-bottom: 0.5rem;
+}
+
+.mpa-useful-links a {
+    color: var(--mpa-accent-primary);
+    text-decoration: none;
+    font-size: 0.875rem;
+}
+
+.mpa-useful-links a:hover {
+    text-decoration: underline;
+}
+
+/* ===================================
+   RESPONSIVIDADE
+   =================================== */
+@media (max-width: 768px) {
+    .mpa-analytics-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .mpa-analytics-header-right {
+        justify-content: center;
+    }
+    
+    .mpa-card-grid-3 {
+        grid-template-columns: 1fr;
+    }
+    
+    .mpa-card-grid-2 {
+        grid-template-columns: 1fr;
+    }
+    
+    .mpa-card-grid-4 {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    
+    .mpa-card-grid-real-time {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+    
+    .mpa-metric-value {
+        font-size: 1.5rem;
+    }
+    
+    .mpa-analytics-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .mpa-custom-date-range {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .mpa-form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+@media (max-width: 640px) {
+    .mpa-dashboard-analytics {
+        padding: 1rem;
+    }
+    
+    .mpa-card {
+        padding: 1rem;
+    }
+    
+    .mpa-analytics-header {
+        padding: 1rem;
+    }
+    
+    .mpa-modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+}
