@@ -3759,46 +3759,6 @@ function mpa_edit_custom_menu_handler() {
 add_action('admin_menu', 'mpa_add_custom_menus_to_admin', 998); // Ativar antes da reordenação
 
 function mpa_add_custom_menus_to_admin() {
-    // Debug visível temporário - adicionar um menu de teste primeiro
-    add_menu_page(
-        'DEBUG MENU TEST',
-        '🔧 DEBUG TEST',
-        'read',
-        'mpa_debug_test',
-        function() {
-            $user = wp_get_current_user();
-            $custom_menus = get_option('mpa_custom_menus', array());
-            
-            echo '<div class="wrap">';
-            echo '<h1>Debug Test Menu</h1>';
-            echo '<p>Se você vê isto, a função está sendo executada!</p>';
-            
-            // Botão de limpeza de emergência
-            if (isset($_POST['emergency_clean'])) {
-                delete_option('mpa_custom_menus');
-                echo '<div class="notice notice-success"><p><strong>LIMPEZA REALIZADA!</strong> Todos os menus personalizados foram removidos.</p></div>';
-                $custom_menus = array();
-            }
-            
-            echo '<h2>🚨 LIMPEZA DE EMERGÊNCIA:</h2>';
-            echo '<form method="post" style="margin: 20px 0;">';
-            echo '<input type="hidden" name="emergency_clean" value="1">';
-            echo '<button type="submit" class="button button-primary" style="background: #dc3232;">🗑️ LIMPAR TODOS OS MENUS PERSONALIZADOS</button>';
-            echo '</form>';
-            
-            echo '<h2>Debug Info:</h2>';
-            echo '<p><strong>User:</strong> ' . ($user ? $user->user_login : 'Not found') . '</p>';
-            echo '<p><strong>Roles:</strong> ' . (isset($user->roles) ? implode(', ', $user->roles) : 'None') . '</p>';
-            echo '<p><strong>Custom Menus Data:</strong></p>';
-            echo '<pre style="background: #f0f0f0; padding: 10px; overflow: auto; max-height: 400px;">';
-            echo empty($custom_menus) ? 'EMPTY ARRAY' : print_r($custom_menus, true);
-            echo '</pre>';
-            echo '</div>';
-        },
-        'dashicons-admin-tools',
-        999
-    );
-    
     // Verificar se o usuário está logado
     if (!is_user_logged_in()) {
         return;
@@ -3812,17 +3772,13 @@ function mpa_add_custom_menus_to_admin() {
 
     // Obter menus personalizados
     $custom_menus = get_option('mpa_custom_menus', array());
-    error_log('[MPA DEBUG] Custom menus data: ' . print_r($custom_menus, true));
-    error_log('[MPA DEBUG] User roles: ' . print_r($user->roles, true));
     
     if (empty($custom_menus)) {
-        error_log('[MPA DEBUG] Custom menus array is empty');
         return;
     }
 
     // Adicionar menus personalizados para cada role do usuário
     foreach ($user->roles as $user_role) {
-        error_log('[MPA DEBUG] Verificando role: ' . $user_role);
         
         // Lista de roles para verificar (incluindo variações plural/singular)
         $roles_to_check = [$user_role];
@@ -3844,16 +3800,13 @@ function mpa_add_custom_menus_to_admin() {
         foreach ($roles_to_check as $role_variation) {
             if (isset($custom_menus[$role_variation]) && !empty($custom_menus[$role_variation])) {
                 $role_menus = array_merge($role_menus, $custom_menus[$role_variation]);
-                error_log('[MPA DEBUG] Encontrados menus para variação ' . $role_variation . ': ' . count($custom_menus[$role_variation]));
             }
         }
         
         if (empty($role_menus)) {
-            error_log('[MPA DEBUG] Nenhum menu para role: ' . $user_role . ' (variações verificadas: ' . implode(', ', $roles_to_check) . ')');
             continue;
         }
 
-        error_log('[MPA DEBUG] Total de menus encontrados para role ' . $user_role . ': ' . count($role_menus));
 
         // Obter ordem dos menus salvos para determinar posições corretas
         $custom_order = get_option('mpa_menu_order', array());
@@ -3896,7 +3849,6 @@ function mpa_add_custom_menus_to_admin() {
             // Gerar um slug único para o menu
             $menu_slug = 'mpa_custom_' . $menu_id;
             
-            error_log('[MPA DEBUG] Adicionando menu: ' . $title . ' | Slug: ' . $menu_slug . ' | Icon: ' . $icon . ' | URL: ' . $url);
             
             $result = add_menu_page(
                 $title,                              // page_title
@@ -3911,7 +3863,6 @@ function mpa_add_custom_menus_to_admin() {
                 null                                 // Deixar WordPress escolher posição, mpa_apply_menu_order() reorganizará
             );
             
-            error_log('[MPA DEBUG] Resultado add_menu_page: ' . ($result ? 'SUCCESS' : 'FAILED'));
         }
     }
 }
