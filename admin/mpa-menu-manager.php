@@ -117,7 +117,7 @@ function mpa_menu_roles_page() {
         
         // Obter configurações atuais
         $current_permissions = get_option('mpa_menu_permissions', array());
-        $admin_menus = mpa_get_admin_menus();
+        $admin_menus = mpa_get_admin_menus($selected_role);
         
         // Inicializar a role se não existir
         if (!isset($current_permissions[$selected_role])) {
@@ -248,7 +248,7 @@ function mpa_menu_roles_page() {
     $selected_role = $_GET['role'] ?? $_POST['selected_role'] ?? array_key_first($all_roles);
     
     // Obter todos os menus do admin
-    $admin_menus = mpa_get_admin_menus();
+    $admin_menus = mpa_get_admin_menus($selected_role);
     
     ?>
     <div class="wrap">
@@ -293,9 +293,15 @@ function mpa_menu_roles_page() {
                 <div class="mpa-view-options">
                     <button type="button" 
                             onclick="toggleView('menu')" 
-                            class="mpa-view-btn <?php echo (!isset($_GET['view']) || $_GET['view'] !== 'icons') ? 'active' : ''; ?>" 
+                            class="mpa-view-btn <?php echo (!isset($_GET['view']) || ($_GET['view'] !== 'icons' && $_GET['view'] !== 'custom_menus')) ? 'active' : ''; ?>" 
                             id="menu-view-btn">
                         📋 Gerenciar Menus
+                    </button>
+                    <button type="button" 
+                            onclick="toggleView('custom_menus')" 
+                            class="mpa-view-btn <?php echo (isset($_GET['view']) && $_GET['view'] === 'custom_menus') ? 'active' : ''; ?>" 
+                            id="custom-menus-view-btn">
+                        🔗 Menus Personalizados
                     </button>
                     <button type="button" 
                             onclick="toggleView('icons')" 
@@ -391,6 +397,81 @@ function mpa_menu_roles_page() {
                 <strong>✅ Copiado!</strong> O ícone foi copiado para a área de transferência.
             </div>
         </div>
+        <?php elseif (!empty($selected_role) && isset($_GET['view']) && $_GET['view'] === 'custom_menus'): ?>
+        <!-- Seção de Menus Personalizados -->
+        <div class="mpa-custom-menus-section">
+            <h2>🔗 Menus Personalizados para: <span class="mpa-role-name"><?php echo esc_html($all_roles[$selected_role]); ?></span></h2>
+            <p class="description">
+                Crie menus personalizados com título, ícone e link de destino. Esses menus aparecerão no painel administrativo para usuários com a função selecionada.
+            </p>
+
+            <?php
+            // Obter menus personalizados existentes para a role selecionada
+            $custom_menus = get_option('mpa_custom_menus', array());
+            $role_custom_menus = isset($custom_menus[$selected_role]) ? $custom_menus[$selected_role] : array();
+            ?>
+
+            <!-- Formulário para adicionar novo menu personalizado -->
+            <div class="mpa-add-custom-menu">
+                <h3>➕ Adicionar Novo Menu Personalizado</h3>
+                <div class="mpa-custom-menu-form">
+                    <div class="mpa-custom-form-row">
+                        <label for="custom-menu-title">Título do Menu:</label>
+                        <input type="text" id="custom-menu-title" placeholder="Digite o título do menu..." />
+                    </div>
+                    <div class="mpa-custom-form-row">
+                        <label for="custom-menu-icon">Ícone (dashicon):</label>
+                        <div class="mpa-icon-input-wrapper">
+                            <input type="text" id="custom-menu-icon" placeholder="dashicons-admin-generic" />
+                            <span class="mpa-custom-icon-preview">
+                                <span class="dashicons dashicons-admin-generic"></span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mpa-custom-form-row">
+                        <label for="custom-menu-url">URL de Destino:</label>
+                        <input type="url" id="custom-menu-url" placeholder="https://exemplo.com ou admin.php?page=minha-pagina" />
+                    </div>
+                    <div class="mpa-custom-form-actions">
+                        <button type="button" id="add-custom-menu-btn" class="button button-primary">
+                            🔗 Adicionar Menu Personalizado
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de menus personalizados existentes -->
+            <div class="mpa-existing-custom-menus">
+                <h3>📋 Menus Personalizados Existentes</h3>
+                <div id="custom-menus-list">
+                    <?php if (!empty($role_custom_menus)): ?>
+                        <?php foreach ($role_custom_menus as $menu_id => $menu_data): ?>
+                        <div class="mpa-custom-menu-item" data-menu-id="<?php echo esc_attr($menu_id); ?>">
+                            <div class="mpa-custom-menu-info">
+                                <span class="mpa-custom-menu-icon">
+                                    <span class="dashicons <?php echo esc_attr($menu_data['icon'] ?? 'dashicons-admin-generic'); ?>"></span>
+                                </span>
+                                <span class="mpa-custom-menu-title"><?php echo esc_html($menu_data['title'] ?? ''); ?></span>
+                                <span class="mpa-custom-menu-url"><?php echo esc_html($menu_data['url'] ?? ''); ?></span>
+                            </div>
+                            <div class="mpa-custom-menu-actions">
+                                <button type="button" class="button edit-custom-menu" title="Editar">
+                                    <span class="dashicons dashicons-edit"></span>
+                                </button>
+                                <button type="button" class="button delete-custom-menu" title="Excluir">
+                                    <span class="dashicons dashicons-trash"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="mpa-no-custom-menus">
+                            <p>Nenhum menu personalizado criado ainda. Use o formulário acima para criar o primeiro!</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
         <?php elseif (!empty($selected_role)): ?>
         <form method="post" action="">
             <?php wp_nonce_field('mpa_menu_roles_nonce'); ?>
@@ -433,6 +514,9 @@ function mpa_menu_roles_page() {
                                     </span>
                                     <span class="mpa-menu-title" data-menu-slug="<?php echo esc_attr($menu_item['slug']); ?>">
                                         <?php echo esc_html($menu_item['title']); ?>
+                                        <?php if (isset($menu_item['custom']) && $menu_item['custom']): ?>
+                                            <span class="mpa-custom-menu-badge">📎 Link Personalizado</span>
+                                        <?php endif; ?>
                                     </span>
                                     <span class="mpa-edit-icon dashicons dashicons-edit" title="Clique para editar"></span>
                                     <code class="mpa-menu-slug"><?php echo esc_html($menu_item['slug']); ?></code>
@@ -738,6 +822,19 @@ function mpa_menu_roles_page() {
             background-color: #f0f6fc;
             transform: scale(1.1);
         }
+        
+        .mpa-custom-menu-badge {
+            background: #e8f4fd;
+            color: #2271b1;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 6px;
+            border-radius: 12px;
+            border: 1px solid #c3dbf0;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+        
         
         .mpa-drag-handle {
             color: #999;
@@ -1288,6 +1385,227 @@ function mpa_menu_roles_page() {
             color: white !important;
         }
         
+        /* Estilos para Seção de Menus Personalizados */
+        .mpa-custom-menus-section {
+            background: #fff;
+            border: 1px solid #ccd0d4;
+            border-radius: 4px;
+            padding: 30px;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+            margin-bottom: 20px;
+        }
+        
+        .mpa-custom-menus-section h2 {
+            margin-top: 0;
+            color: #23282d;
+            border-bottom: 3px solid #0073aa;
+            padding-bottom: 15px;
+        }
+        
+        .mpa-add-custom-menu {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        
+        .mpa-add-custom-menu h3 {
+            margin-top: 0;
+            color: #2c5282;
+        }
+        
+        .mpa-custom-menu-form {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .mpa-custom-form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .mpa-custom-form-row label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+        }
+        
+        .mpa-custom-form-row input {
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .mpa-custom-form-row input:focus {
+            outline: none;
+            border-color: #0073aa;
+            box-shadow: 0 0 0 3px rgba(0,115,170,0.1);
+        }
+        
+        .mpa-icon-input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .mpa-icon-input-wrapper input {
+            flex: 1;
+        }
+        
+        .mpa-custom-icon-preview {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+        }
+        
+        .mpa-custom-icon-preview .dashicons {
+            font-size: 20px !important;
+            color: #0073aa;
+        }
+        
+        .mpa-custom-form-actions {
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .mpa-existing-custom-menus {
+            margin-top: 30px;
+        }
+        
+        .mpa-existing-custom-menus h3 {
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 12px;
+        }
+        
+        .mpa-custom-menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin: 10px 0;
+            transition: all 0.2s ease;
+        }
+        
+        .mpa-custom-menu-item:hover {
+            border-color: #0073aa;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .mpa-custom-menu-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+        
+        .mpa-custom-menu-icon .dashicons {
+            font-size: 18px !important;
+            color: #0073aa;
+        }
+        
+        .mpa-custom-menu-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-right: 15px;
+        }
+        
+        .mpa-custom-menu-url {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #6b7280;
+            background: #f9fafb;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .mpa-custom-menu-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .mpa-custom-menu-actions .button {
+            padding: 8px;
+            min-width: auto;
+            height: auto;
+        }
+        
+        .mpa-custom-menu-actions .edit-custom-menu {
+            color: #0073aa;
+            border-color: #0073aa;
+        }
+        
+        .mpa-custom-menu-actions .delete-custom-menu {
+            color: #dc2626;
+            border-color: #dc2626;
+        }
+        
+        .mpa-custom-menu-actions .button:hover {
+            opacity: 0.8;
+        }
+        
+        .mpa-no-custom-menus {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b7280;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px dashed #d1d5db;
+        }
+        
+        #add-custom-menu-btn {
+            background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
+            border: none;
+            padding: 12px 24px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        #add-custom-menu-btn:hover {
+            background: linear-gradient(135deg, #005a87 0%, #004466 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        /* Responsividade para menus personalizados */
+        @media (max-width: 768px) {
+            .mpa-custom-menu-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+            
+            .mpa-custom-menu-info {
+                justify-content: center;
+                text-align: center;
+            }
+            
+            .mpa-custom-menu-actions {
+                justify-content: center;
+            }
+            
+            .mpa-icon-input-wrapper {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .mpa-custom-icon-preview {
+                align-self: center;
+            }
+        }
+        
         /* Responsividade para ícones */
         @media (max-width: 768px) {
             .mpa-icons-grid {
@@ -1420,6 +1738,11 @@ function mpa_menu_roles_page() {
             );
         }
         
+        // Garantir que ajaxurl está disponível
+        if (typeof ajaxurl === 'undefined') {
+            var ajaxurl = '<?php echo admin_url('admin-ajax.php'); ?>';
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             // Verificar se estamos na página de gerenciamento de menus (não na página de ícones)
             const isMenuManagementPage = !document.querySelector('.mpa-icons-section');
@@ -1755,6 +2078,251 @@ function mpa_menu_roles_page() {
             }
         });
 
+        // =====================================
+        // FUNCIONALIDADES DE MENUS PERSONALIZADOS
+        // =====================================
+
+        // Preview dinâmico do ícone personalizado
+        const customIconInput = document.getElementById('custom-menu-icon');
+        const customIconPreview = document.querySelector('.mpa-custom-icon-preview .dashicons');
+        
+        if (customIconInput && customIconPreview) {
+            customIconInput.addEventListener('input', function() {
+                const iconClass = this.value.trim();
+                if (iconClass) {
+                    if (iconClass.startsWith('dashicons-')) {
+                        customIconPreview.className = 'dashicons ' + iconClass;
+                    } else {
+                        customIconPreview.className = 'dashicons dashicons-' + iconClass;
+                    }
+                } else {
+                    customIconPreview.className = 'dashicons dashicons-admin-generic';
+                }
+            });
+        }
+
+        // Botão "Adicionar Menu Personalizado"
+        const addCustomMenuBtn = document.getElementById('add-custom-menu-btn');
+        if (addCustomMenuBtn) {
+            addCustomMenuBtn.addEventListener('click', function() {
+                const title = document.getElementById('custom-menu-title').value.trim();
+                const icon = document.getElementById('custom-menu-icon').value.trim();
+                const url = document.getElementById('custom-menu-url').value.trim();
+
+                // Validação
+                if (!title) {
+                    alert('Por favor, insira um título para o menu.');
+                    document.getElementById('custom-menu-title').focus();
+                    return;
+                }
+
+                if (!url) {
+                    alert('Por favor, insira uma URL de destino.');
+                    document.getElementById('custom-menu-url').focus();
+                    return;
+                }
+
+                // Validar URL básica
+                try {
+                    if (!url.startsWith('http') && !url.startsWith('admin.php') && !url.startsWith('/')) {
+                        throw new Error('URL deve começar com http, admin.php ou /');
+                    }
+                } catch (e) {
+                    alert('Por favor, insira uma URL válida (exemplo: https://exemplo.com ou admin.php?page=minha-pagina).');
+                    document.getElementById('custom-menu-url').focus();
+                    return;
+                }
+
+                // Chamar função AJAX para salvar
+                addCustomMenu(title, icon || 'dashicons-admin-generic', url);
+            });
+        }
+
+        // Função para adicionar menu personalizado via AJAX
+        function addCustomMenu(title, icon, url) {
+            // Obter role atual da URL
+            const currentUrl = new URL(window.location);
+            const selectedRole = currentUrl.searchParams.get('role');
+
+            if (!selectedRole) {
+                alert('Erro: Role não selecionada.');
+                return;
+            }
+
+            // Verificar se está em modo de edição
+            const editingId = addCustomMenuBtn.dataset.editingId;
+            const isEditing = editingId && editingId.trim() !== '';
+
+            // Mostrar indicador de carregamento
+            addCustomMenuBtn.disabled = true;
+            addCustomMenuBtn.innerHTML = isEditing ? '⏳ Atualizando...' : '⏳ Salvando...';
+
+            // Fazer requisição AJAX
+            const fallbackUrl = '<?php echo str_replace("https://localhost", "http://localhost", admin_url('admin-ajax.php')); ?>';
+            const ajaxUrl = typeof mpa_ajax_object !== 'undefined' ? mpa_ajax_object.ajax_url : fallbackUrl;
+            
+            console.log('🐛 AJAX Debug:', {
+                'mpa_ajax_object': typeof mpa_ajax_object !== 'undefined' ? mpa_ajax_object : 'undefined',
+                'fallbackUrl': fallbackUrl,
+                'ajaxUrl': ajaxUrl,
+                'selectedRole': selectedRole,
+                'title': title,
+                'icon': icon,
+                'url': url,
+                'isEditing': isEditing,
+                'editingId': editingId
+            });
+
+            // Preparar parâmetros baseado no modo (edição ou criação)
+            const requestParams = {
+                action: isEditing ? 'mpa_edit_custom_menu' : 'mpa_add_custom_menu',
+                role: selectedRole,
+                title: title,
+                icon: icon,
+                url: url,
+                _ajax_nonce: typeof mpa_ajax_object !== 'undefined' ? mpa_ajax_object.ajax_nonce : '<?php echo wp_create_nonce('mpa_custom_menu'); ?>'
+            };
+
+            // Se está editando, adicionar o menu_id
+            if (isEditing) {
+                requestParams.menu_id = editingId;
+            }
+            
+            fetch(ajaxUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams(requestParams)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Limpar campos do formulário
+                    document.getElementById('custom-menu-title').value = '';
+                    document.getElementById('custom-menu-icon').value = '';
+                    document.getElementById('custom-menu-url').value = '';
+                    document.querySelector('.mpa-custom-icon-preview .dashicons').className = 'dashicons dashicons-admin-generic';
+
+                    // Mostrar sucesso baseado no modo
+                    const successMessage = isEditing ? '✅ Menu personalizado atualizado com sucesso!' : '✅ Menu personalizado adicionado com sucesso!';
+                    alert(successMessage);
+
+                    // Recarregar a página para mostrar o novo/atualizado menu
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    const errorMessage = isEditing ? '❌ Erro ao atualizar menu: ' : '❌ Erro ao adicionar menu: ';
+                    alert(errorMessage + (data.data || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                console.error('Erro na requisição:', error);
+                alert('❌ Erro ao comunicar com o servidor. Tente novamente.');
+            })
+            .finally(() => {
+                // Limpar modo de edição se estava editando
+                if (isEditing) {
+                    delete addCustomMenuBtn.dataset.editingId;
+                }
+                
+                // Restaurar botão
+                addCustomMenuBtn.disabled = false;
+                addCustomMenuBtn.innerHTML = '🔗 Adicionar Menu Personalizado';
+            });
+        }
+
+        // Botões de ação dos menus existentes (editar/excluir)
+        document.querySelectorAll('.edit-custom-menu').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const menuItem = this.closest('.mpa-custom-menu-item');
+                const menuId = menuItem.getAttribute('data-menu-id');
+                const currentTitle = menuItem.querySelector('.mpa-custom-menu-title').textContent;
+                const currentIcon = menuItem.querySelector('.mpa-custom-menu-icon .dashicons').className.replace('dashicons ', '');
+                const currentUrl = menuItem.querySelector('.mpa-custom-menu-url').textContent;
+
+                // Preencher formulário com dados existentes para edição
+                document.getElementById('custom-menu-title').value = currentTitle;
+                document.getElementById('custom-menu-icon').value = currentIcon;
+                document.getElementById('custom-menu-url').value = currentUrl;
+                document.querySelector('.mpa-custom-icon-preview .dashicons').className = 'dashicons ' + currentIcon;
+
+                // Rolar para o formulário
+                document.querySelector('.mpa-add-custom-menu').scrollIntoView({ behavior: 'smooth' });
+
+                // Alterar o texto do botão temporariamente
+                const btn = document.getElementById('add-custom-menu-btn');
+                btn.innerHTML = '✏️ Atualizar Menu Personalizado';
+                btn.dataset.editingId = menuId;
+            });
+        });
+
+        document.querySelectorAll('.delete-custom-menu').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (!confirm('🗑️ Tem certeza que deseja excluir este menu personalizado? Esta ação não pode ser desfeita.')) {
+                    return;
+                }
+
+                const menuItem = this.closest('.mpa-custom-menu-item');
+                const menuId = menuItem.getAttribute('data-menu-id');
+                const menuTitle = menuItem.querySelector('.mpa-custom-menu-title').textContent;
+
+                // Obter role atual
+                const currentUrl = new URL(window.location);
+                const selectedRole = currentUrl.searchParams.get('role');
+
+                if (!selectedRole) {
+                    alert('Erro: Role não selecionada.');
+                    return;
+                }
+
+                // Fazer requisição AJAX para excluir
+                const ajaxUrl = typeof mpa_ajax_object !== 'undefined' ? mpa_ajax_object.ajax_url : '<?php echo admin_url('admin-ajax.php'); ?>';
+                fetch(ajaxUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: 'mpa_delete_custom_menu',
+                        role: selectedRole,
+                        menu_id: menuId,
+                        nonce: typeof mpa_ajax_object !== 'undefined' ? mpa_ajax_object.ajax_nonce : '<?php echo wp_create_nonce('mpa_custom_menu'); ?>'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remover o elemento da interface
+                        menuItem.style.transition = 'all 0.3s ease';
+                        menuItem.style.opacity = '0';
+                        menuItem.style.transform = 'scale(0.9)';
+                        
+                        setTimeout(() => {
+                            menuItem.remove();
+                            
+                            // Verificar se não há mais menus personalizados
+                            const remainingMenus = document.querySelectorAll('.mpa-custom-menu-item');
+                            if (remainingMenus.length === 0) {
+                                document.getElementById('custom-menus-list').innerHTML = 
+                                    '<div class="mpa-no-custom-menus"><p>Nenhum menu personalizado criado ainda. Use o formulário acima para criar o primeiro!</p></div>';
+                            }
+                        }, 300);
+
+                        // Mostrar mensagem de sucesso
+                        alert('✅ Menu "' + menuTitle + '" excluído com sucesso!');
+                    } else {
+                        alert('❌ Erro ao excluir menu: ' + (data.data || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro na requisição:', error);
+                    alert('❌ Erro ao comunicar com o servidor. Tente novamente.');
+                });
+            });
+        });
+
         // Funções para o seletor de role
         function changeRole(roleValue) {
             const currentUrl = new URL(window.location);
@@ -1778,9 +2346,13 @@ function mpa_menu_roles_page() {
                 currentUrl.searchParams.set('role', selectedRole);
             }
             
+            // Definir a view baseada no tipo
             if (viewType === 'icons') {
                 currentUrl.searchParams.set('view', 'icons');
+            } else if (viewType === 'custom_menus') {
+                currentUrl.searchParams.set('view', 'custom_menus');
             } else {
+                // viewType === 'menu' ou outro - remover view para mostrar gerenciar menus
                 currentUrl.searchParams.delete('view');
             }
             
@@ -1792,10 +2364,25 @@ function mpa_menu_roles_page() {
             const menuItem = inputElement.closest('.mpa-menu-item, .mpa-submenu-item');
             const isSubmenu = menuItem.classList.contains('mpa-submenu-item');
             
-            // Obter dados básicos
-            let menuSlug, submenuKey, fieldType, fieldValue;
+            // Verificar se é um menu personalizado
+            const isCustomMenu = menuItem.querySelector('.mpa-custom-menu-badge');
             
-            if (isSubmenu) {
+            // Obter dados básicos
+            let menuSlug, submenuKey, fieldType, fieldValue, customMenuId;
+            
+            if (isCustomMenu) {
+                // Para menus personalizados
+                customMenuId = menuItem.getAttribute('data-custom-id') || menuItem.querySelector('[data-menu-id]')?.getAttribute('data-menu-id');
+                menuSlug = menuItem.getAttribute('data-menu-slug');
+                fieldType = inputElement.classList.contains('mpa-custom-title-input') ? 'title' : 
+                          inputElement.classList.contains('mpa-custom-icon-input') ? 'icon' : 'url';
+                fieldValue = inputElement.value.trim();
+                
+                if (customMenuId) {
+                    saveCustomMenuEdit(customMenuId, fieldType, fieldValue, inputElement);
+                    return;
+                }
+            } else if (isSubmenu) {
                 // Para submenus
                 const menuContainer = menuItem.closest('.mpa-menu-item');
                 menuSlug = menuContainer.getAttribute('data-menu-slug');
@@ -1845,6 +2432,81 @@ function mpa_menu_roles_page() {
                 console.error('Erro na requisição de auto-save:', error);
             });
         }
+        
+        // Função para salvar edição de menus personalizados
+        function saveCustomMenuEdit(menuId, fieldType, fieldValue, inputElement) {
+            // Obter role atual
+            const currentUrl = new URL(window.location);
+            const selectedRole = currentUrl.searchParams.get('role');
+            
+            if (!selectedRole) {
+                showSaveIndicator(inputElement, 'error');
+                console.error('Role não selecionada');
+                return;
+            }
+            
+            // Mostrar indicador de salvamento
+            showSaveIndicator(inputElement, 'saving');
+            
+            // Preparar dados para envio
+            const ajaxUrl = typeof mpa_ajax_object !== 'undefined' ? mpa_ajax_object.ajax_url : '<?php echo admin_url("admin-ajax.php"); ?>';
+            const nonce = typeof mpa_ajax_object !== 'undefined' ? mpa_ajax_object.ajax_nonce : '<?php echo wp_create_nonce("mpa_custom_menu"); ?>';
+            
+            // Obter valores atuais de todos os campos
+            const menuItem = inputElement.closest('.mpa-menu-item');
+            const titleInput = menuItem.querySelector('input[name*="custom_title"]');
+            const iconInput = menuItem.querySelector('input[name*="custom_icon"]');
+            
+            const requestData = {
+                action: 'mpa_edit_custom_menu',
+                role: selectedRole,
+                menu_id: menuId,
+                title: titleInput ? titleInput.value : '',
+                icon: iconInput ? iconInput.value || 'dashicons-admin-generic' : 'dashicons-admin-generic',
+                url: fieldValue, // Para este caso, sempre será a URL
+                _ajax_nonce: nonce
+            };
+            
+            // Fazer requisição AJAX
+            fetch(ajaxUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSaveIndicator(inputElement, 'success');
+                    
+                    // Atualizar interface se necessário
+                    if (fieldType === 'title') {
+                        const titleElement = menuItem.querySelector('.mpa-menu-title');
+                        if (titleElement && fieldValue.trim()) {
+                            const badge = titleElement.querySelector('.mpa-custom-menu-badge');
+                            titleElement.textContent = fieldValue;
+                            if (badge) titleElement.appendChild(badge);
+                        }
+                    } else if (fieldType === 'icon') {
+                        const iconElement = menuItem.querySelector('.mpa-menu-icon .dashicons');
+                        if (iconElement && fieldValue.trim()) {
+                            const iconClass = fieldValue.startsWith('dashicons-') ? fieldValue : 'dashicons-' + fieldValue;
+                            iconElement.className = 'dashicons ' + iconClass;
+                        }
+                    }
+                    
+                    console.log('Menu personalizado atualizado com sucesso!');
+                } else {
+                    showSaveIndicator(inputElement, 'error');
+                    console.error('Erro ao atualizar menu personalizado:', data.data);
+                }
+            })
+            .catch(error => {
+                showSaveIndicator(inputElement, 'error');
+                console.error('Erro na requisição:', error);
+            });
+        }
 
         // Função para mostrar indicadores visuais de salvamento
         function showSaveIndicator(inputElement, status) {
@@ -1891,7 +2553,7 @@ function mpa_menu_roles_page() {
 }
 
 // Função para obter todos os menus do admin (ATUALIZADA COM TAXONOMIAS)
-function mpa_get_admin_menus() {
+function mpa_get_admin_menus($selected_role = null) {
     global $menu, $submenu;
     
     $admin_menus = [];
@@ -1942,6 +2604,40 @@ function mpa_get_admin_menus() {
         $admin_menus[] = $menu_data;
     }
     
+    
+    // Adicionar menus personalizados APENAS para a role selecionada
+    $custom_menus = get_option('mpa_custom_menus', array());
+    if (!empty($custom_menus) && $selected_role) {
+        // Buscar apenas menus da role selecionada (incluindo variações)
+        $roles_to_check = [$selected_role];
+        
+        // Verificar variações de role (gerentes/gerente)
+        if ($selected_role === 'gerentes') {
+            $roles_to_check[] = 'gerente';
+        } elseif ($selected_role === 'gerente') {
+            $roles_to_check[] = 'gerentes';
+        }
+        
+        foreach ($roles_to_check as $role_variant) {
+            if (isset($custom_menus[$role_variant]) && !empty($custom_menus[$role_variant])) {
+                foreach ($custom_menus[$role_variant] as $menu_id => $custom_menu) {
+                    $slug = 'mpa_custom_' . $menu_id;
+                    
+                    $admin_menus[] = [
+                        'title'     => $custom_menu['title'],
+                        'slug_raw'  => $slug,
+                        'slug'      => $slug,
+                        'icon'      => $custom_menu['icon'],
+                        'submenus'  => [],
+                        'custom'    => true,
+                        'custom_url' => $custom_menu['url'],
+                        'custom_id'  => $menu_id,
+                        'custom_role' => $role_variant
+                    ];
+                }
+            }
+        }
+    }
     
     // Aplicar ordem customizada se existir
     if (!empty($custom_order)) {
@@ -2112,6 +2808,11 @@ add_action('admin_menu', function() {
     $admin_menus = mpa_get_admin_menus();
     
     foreach ($admin_menus as $menu_item) {
+        // Ignorar menus personalizados - eles são controlados pela própria função mpa_add_custom_menus_to_admin
+        if (isset($menu_item['custom']) && $menu_item['custom']) {
+            continue;
+        }
+        
         $slug = mpa_normalize_slug($menu_item['slug']);
         
         if (!mpa_user_can_see_menu($slug, $roles, $opts)) {
@@ -2402,6 +3103,7 @@ function mpa_reset_menu_settings_callback() {
     delete_option('mpa_menu_permissions');
     delete_option('mpa_menu_customizations');
     delete_option('mpa_menu_order');
+    delete_option('mpa_custom_menus');
     
     // Redirect com mensagem de sucesso
     $redirect = add_query_arg('mpa_status', 'reset_success', admin_url('admin.php?page=mpa-menu-roles'));
@@ -2476,11 +3178,52 @@ function mpa_apply_menu_order() {
         return;
     }
     
-    $ordered_menu = array();
-    $used_positions = array();
+    // Obter menus personalizados para adicionar à estrutura
+    $custom_menus = get_option('mpa_custom_menus', array());
+    $custom_menus_to_add = array();
+    
+    if (!empty($custom_menus)) {
+        $user = wp_get_current_user();
+        if ($user && !empty($user->roles)) {
+            foreach ($user->roles as $user_role) {
+                $roles_to_check = [$user_role];
+                if ($user_role === 'gerentes') {
+                    $roles_to_check[] = 'gerente';
+                } elseif ($user_role === 'gerente') {
+                    $roles_to_check[] = 'gerentes';
+                }
+                
+                foreach ($roles_to_check as $role_variant) {
+                    if (isset($custom_menus[$role_variant]) && !empty($custom_menus[$role_variant])) {
+                        foreach ($custom_menus[$role_variant] as $custom_menu) {
+                            $menu_id = $custom_menu['id'];
+                            
+                            // Criar slug único interno para este menu personalizado
+                            $internal_slug = 'mpa_custom_' . $menu_id;
+                            
+                            // Adicionar menu com slug interno (sem redirecionamento aqui - isso é feito na mpa_add_custom_menus_to_admin)
+                            $custom_menus_to_add[$internal_slug] = array(
+                                $custom_menu['title'],                    // [0] menu_title
+                                'read',                                   // [1] capability
+                                $internal_slug,                           // [2] menu_slug (slug interno)
+                                $custom_menu['title'],                    // [3] page_title
+                                'menu-top',                               // [4] classes
+                                '',                                       // [5] hookname
+                                $custom_menu['icon'],                     // [6] icon_url
+                                99                                        // [7] position (será reorganizada)
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
     
     // Criar um mapa dos menus existentes por slug
     $menu_by_slug = array();
+    $separators = array();
+    $non_reorderable = array();
+    
     foreach ($menu as $position => $menu_item) {
         if (!empty($menu_item[2])) {
             $slug = $menu_item[2];
@@ -2488,45 +3231,74 @@ function mpa_apply_menu_order() {
                 'position' => $position,
                 'item' => $menu_item
             );
+        } elseif (empty($menu_item[2]) || strpos($menu_item[4], 'wp-menu-separator') !== false) {
+            $separators[$position] = $menu_item;
+        } else {
+            $non_reorderable[$position] = $menu_item;
         }
     }
     
-    // Reordenar conforme a ordem customizada
-    $new_position = 5; // Começar em posição 5
+    // Adicionar menus personalizados ao mapa
+    foreach ($custom_menus_to_add as $slug => $menu_item) {
+        $menu_by_slug[$slug] = array(
+            'position' => 999, // posição temporária
+            'item' => $menu_item
+        );
+    }
+    
+    // Definir posições base para reorganização
+    $wordpress_positions = array(2 => true, 5 => true, 10 => true, 15 => true, 20 => true, 25 => true, 60 => true, 65 => true, 70 => true, 75 => true, 80 => true);
+    $ordered_menu = array();
+    $used_positions = array();
+    
+    // Primeiro, preservar separadores e menus não reorganizáveis
+    foreach ($separators as $pos => $item) {
+        $ordered_menu[$pos] = $item;
+        $used_positions[] = $pos;
+    }
+    foreach ($non_reorderable as $pos => $item) {
+        $ordered_menu[$pos] = $item;
+        $used_positions[] = $pos;
+    }
+    
+    // Aplicar ordem customizada com posicionamento inteligente
+    $current_position = 3; // Começar após Dashboard (posição 2)
+    
     foreach ($custom_order as $slug) {
-        if (isset($menu_by_slug[$slug])) {
-            // Encontrar próxima posição livre
-            while (isset($menu[$new_position])) {
-                $new_position++;
-            }
-            
-            $ordered_menu[$new_position] = $menu_by_slug[$slug]['item'];
-            $used_positions[] = $menu_by_slug[$slug]['position'];
-            $new_position++;
-        }
-    }
-    
-    // Adicionar menus que não estão na ordem customizada
-    foreach ($menu as $position => $menu_item) {
-        if (!in_array($position, $used_positions)) {
-            // Encontrar próxima posição livre
-            while (isset($ordered_menu[$new_position])) {
-                $new_position++;
-            }
-            $ordered_menu[$new_position] = $menu_item;
-            $new_position++;
-        }
-    }
-    
-    // Aplicar nova ordem
-    if (!empty($ordered_menu)) {
-        // Manter separadores e itens especiais
-        foreach ($menu as $position => $menu_item) {
-            if (empty($menu_item[2]) || strpos($menu_item[4], 'wp-menu-separator') !== false) {
-                $ordered_menu[$position] = $menu_item;
-            }
+        // Verificar tanto formato completo quanto formato simplificado
+        $target_slug = $slug;
+        if (strpos($slug, 'custom_') === 0 && !isset($menu_by_slug[$slug])) {
+            $target_slug = str_replace('custom_', 'mpa_custom_', $slug);
         }
         
+        if (isset($menu_by_slug[$target_slug])) {
+            // Encontrar próxima posição livre
+            while (isset($ordered_menu[$current_position]) || 
+                   isset($wordpress_positions[$current_position]) ||
+                   in_array($current_position, $used_positions)) {
+                $current_position += 0.5;
+            }
+            
+            $ordered_menu[$current_position] = $menu_by_slug[$target_slug]['item'];
+            $used_positions[] = $menu_by_slug[$target_slug]['position'];
+            $current_position += 1;
+        }
+    }
+    
+    // Adicionar menus que não estão na ordem customizada no final
+    $current_position = 90;
+    foreach ($menu_by_slug as $slug => $menu_data) {
+        if (!in_array($menu_data['position'], $used_positions)) {
+            while (isset($ordered_menu[$current_position])) {
+                $current_position++;
+            }
+            $ordered_menu[$current_position] = $menu_data['item'];
+            $current_position++;
+        }
+    }
+    
+    // Aplicar nova ordem mantendo a estrutura
+    if (!empty($ordered_menu)) {
         $menu = $ordered_menu;
         ksort($menu);
     }
@@ -2711,6 +3483,28 @@ function mpa_auto_save_customization_handler() {
             } elseif ($field_type === 'icon') {
                 $menu_customizations[$menu_slug]['icon'] = $field_value;
             }
+            
+            // Sincronizar com menus personalizados se for um menu custom
+            if (strpos($menu_slug, 'mpa_custom_') === 0) {
+                $custom_menu_id = str_replace('mpa_custom_', '', $menu_slug);
+                $custom_menus = get_option('mpa_custom_menus', array());
+                
+                // Procurar o menu personalizado em todas as roles
+                foreach ($custom_menus as $role => &$role_menus) {
+                    if (isset($role_menus[$custom_menu_id])) {
+                        if ($field_type === 'title') {
+                            $role_menus[$custom_menu_id]['title'] = $field_value;
+                        } elseif ($field_type === 'icon') {
+                            $role_menus[$custom_menu_id]['icon'] = $field_value;
+                        }
+                        $role_menus[$custom_menu_id]['updated_at'] = current_time('mysql');
+                        break; // Encontrou e atualizou, pode parar
+                    }
+                }
+                
+                // Salvar alterações no sistema de menus personalizados
+                update_option('mpa_custom_menus', $custom_menus);
+            }
         }
         
         // Salvar no banco de dados
@@ -2734,4 +3528,453 @@ function mpa_auto_save_customization_handler() {
         wp_send_json_error('Erro interno: ' . $e->getMessage());
     }
 }
+
+// ============================================================
+// HANDLERS AJAX PARA MENUS PERSONALIZADOS
+// ============================================================
+
+// Registrar os handlers AJAX para menus personalizados
+add_action('wp_ajax_mpa_add_custom_menu', 'mpa_add_custom_menu_handler');
+add_action('wp_ajax_mpa_delete_custom_menu', 'mpa_delete_custom_menu_handler');
+add_action('wp_ajax_mpa_edit_custom_menu', 'mpa_edit_custom_menu_handler');
+
+// Handler para adicionar menu personalizado
+function mpa_add_custom_menu_handler() {
+    // Verificar permissões
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Sem permissão para gerenciar menus.');
+    }
+
+    // Verificar nonce
+    check_ajax_referer('mpa_custom_menu', '_ajax_nonce');
+
+    // Validar e sanitizar dados
+    $role = sanitize_text_field($_POST['role'] ?? '');
+    $title = sanitize_text_field($_POST['title'] ?? '');
+    $icon = sanitize_text_field($_POST['icon'] ?? 'dashicons-admin-generic');
+    $url = esc_url_raw($_POST['url'] ?? '');
+
+    if (empty($role) || empty($title) || empty($url)) {
+        wp_send_json_error('Todos os campos são obrigatórios.');
+    }
+
+    try {
+        // Obter menus personalizados existentes
+        $custom_menus = get_option('mpa_custom_menus', array());
+        
+        // Inicializar array para a role se não existir
+        if (!isset($custom_menus[$role])) {
+            $custom_menus[$role] = array();
+        }
+
+        // Gerar ID único para o menu
+        $menu_id = 'custom_menu_' . time() . '_' . wp_rand(100, 999);
+
+        // Garantir que o ícone tenha o prefixo correto
+        if (!str_starts_with($icon, 'dashicons-')) {
+            $icon = 'dashicons-' . ltrim($icon, 'dashicons-');
+        }
+
+        // Adicionar o novo menu
+        $custom_menus[$role][$menu_id] = array(
+            'title' => $title,
+            'icon' => $icon,
+            'url' => $url,
+            'created_at' => current_time('mysql')
+        );
+
+        // Salvar no banco de dados
+        if (update_option('mpa_custom_menus', $custom_menus)) {
+            wp_send_json_success(array(
+                'message' => 'Menu personalizado adicionado com sucesso!',
+                'menu_id' => $menu_id,
+                'menu_data' => $custom_menus[$role][$menu_id]
+            ));
+        } else {
+            wp_send_json_error('Erro ao salvar menu no banco de dados.');
+        }
+
+    } catch (Exception $e) {
+        error_log('Erro ao adicionar menu personalizado: ' . $e->getMessage());
+        wp_send_json_error('Erro interno do servidor.');
+    }
+}
+
+// Handler para excluir menu personalizado
+function mpa_delete_custom_menu_handler() {
+    // Verificar permissões
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Sem permissão para gerenciar menus.');
+    }
+
+    // Verificar nonce
+    if (!wp_verify_nonce($_POST['nonce'] ?? '', 'mpa_custom_menu')) {
+        wp_send_json_error('Nonce inválido.');
+    }
+
+    // Validar dados
+    $role = sanitize_text_field($_POST['role'] ?? '');
+    $menu_id_raw = sanitize_text_field($_POST['menu_id'] ?? '');
+
+    if (empty($role) || empty($menu_id_raw)) {
+        wp_send_json_error('Role e ID do menu são obrigatórios.');
+    }
+
+    // O menu_id já vem completo (com prefixo 'custom_menu_') do frontend
+    // Não precisamos modificar o ID, pois ele é armazenado com o prefixo
+    $menu_id = $menu_id_raw;
+
+    try {
+        // Obter menus personalizados existentes
+        $custom_menus = get_option('mpa_custom_menus', array());
+        
+        // Verificar se a role e o menu existem
+        if (!isset($custom_menus[$role]) || !isset($custom_menus[$role][$menu_id])) {
+            wp_send_json_error('Menu personalizado não encontrado.');
+        }
+
+        // Salvar informações do menu antes de excluir (para log)
+        $deleted_menu = $custom_menus[$role][$menu_id];
+        
+        // Excluir o menu
+        unset($custom_menus[$role][$menu_id]);
+
+        // Se não há mais menus personalizados para esta role, limpar o array
+        if (empty($custom_menus[$role])) {
+            unset($custom_menus[$role]);
+        }
+
+        // Salvar alterações dos menus personalizados
+        update_option('mpa_custom_menus', $custom_menus);
+        
+        // Remover também das permissões de menu para sincronização
+        $menu_permissions = get_option('mpa_menu_permissions', array());
+        $custom_slug = 'custom_' . $menu_id;
+        
+        foreach ($menu_permissions as $role_key => $role_perms) {
+            if (isset($role_perms['menus'][$custom_slug])) {
+                unset($menu_permissions[$role_key]['menus'][$custom_slug]);
+            }
+        }
+        
+        update_option('mpa_menu_permissions', $menu_permissions);
+        
+        // Remover da ordem de menus
+        $menu_order = get_option('mpa_menu_order', array());
+        foreach ($menu_order as $role_key => $order) {
+            if (is_array($order) && ($key = array_search($custom_slug, $order)) !== false) {
+                unset($menu_order[$role_key][$key]);
+                $menu_order[$role_key] = array_values($menu_order[$role_key]);
+            }
+        }
+        
+        update_option('mpa_menu_order', $menu_order);
+        
+        // Log da exclusão
+        error_log("Menu personalizado completamente removido - Role: {$role}, ID: {$menu_id}, Título: {$deleted_menu['title']}");
+        
+        wp_send_json_success(array(
+            'message' => 'Menu personalizado removido completamente de todas as telas!',
+            'deleted_menu' => $deleted_menu
+        ));
+
+    } catch (Exception $e) {
+        error_log('Erro ao excluir menu personalizado: ' . $e->getMessage());
+        wp_send_json_error('Erro interno do servidor.');
+    }
+}
+
+// Handler para editar menu personalizado
+function mpa_edit_custom_menu_handler() {
+    // Verificar permissões
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Sem permissão para gerenciar menus.');
+    }
+
+    // Verificar nonce
+    check_ajax_referer('mpa_custom_menu', '_ajax_nonce');
+
+    // Validar dados
+    $role = sanitize_text_field($_POST['role'] ?? '');
+    $menu_id = sanitize_text_field($_POST['menu_id'] ?? '');
+    $new_title = sanitize_text_field($_POST['title'] ?? '');
+    $new_icon = sanitize_text_field($_POST['icon'] ?? 'dashicons-admin-generic');
+    $new_url = esc_url_raw($_POST['url'] ?? '');
+
+    if (empty($role) || empty($menu_id) || empty($new_title) || empty($new_url)) {
+        wp_send_json_error('Todos os campos são obrigatórios.');
+    }
+
+    try {
+        // Obter menus personalizados existentes
+        $custom_menus = get_option('mpa_custom_menus', array());
+        
+        // Verificar se a role e o menu existem
+        if (!isset($custom_menus[$role]) || !isset($custom_menus[$role][$menu_id])) {
+            wp_send_json_error('Menu personalizado não encontrado.');
+        }
+
+        // Atualizar o menu
+        $custom_menus[$role][$menu_id]['title'] = $new_title;
+        $custom_menus[$role][$menu_id]['icon'] = $new_icon;
+        $custom_menus[$role][$menu_id]['url'] = $new_url;
+        $custom_menus[$role][$menu_id]['updated_at'] = current_time('mysql');
+        
+        // Salvar alterações no sistema de menus personalizados
+        update_option('mpa_custom_menus', $custom_menus);
+        
+        // Sincronizar com o sistema de customizações de menu (para a barra lateral)
+        $menu_slug = 'mpa_custom_' . $menu_id;
+        $menu_customizations = get_option('mpa_menu_customizations', array());
+        
+        if (!isset($menu_customizations[$menu_slug])) {
+            $menu_customizations[$menu_slug] = array();
+        }
+        
+        $menu_customizations[$menu_slug]['title'] = $new_title;
+        $menu_customizations[$menu_slug]['icon'] = $new_icon;
+        
+        // Salvar alterações no sistema de customizações
+        update_option('mpa_menu_customizations', $menu_customizations);
+        
+        // Log da edição
+        error_log("Menu personalizado editado - Role: {$role}, ID: {$menu_id}, Novo Título: {$new_title}");
+        
+        wp_send_json_success(array(
+            'message' => 'Menu personalizado atualizado com sucesso!',
+            'updated_menu' => $custom_menus[$role][$menu_id]
+        ));
+        
+    } catch (Exception $e) {
+        error_log('Erro ao editar menu personalizado: ' . $e->getMessage());
+        wp_send_json_error('Erro interno do servidor.');
+    }
+}
+
+// ============================================================
+// INTEGRAÇÃO DOS MENUS PERSONALIZADOS NO ADMIN
+// ============================================================
+
+// Adicionar menus personalizados ao admin do WordPress
+add_action('admin_menu', 'mpa_add_custom_menus_to_admin', 998); // Ativar antes da reordenação
+
+function mpa_add_custom_menus_to_admin() {
+    // Debug visível temporário - adicionar um menu de teste primeiro
+    add_menu_page(
+        'DEBUG MENU TEST',
+        '🔧 DEBUG TEST',
+        'read',
+        'mpa_debug_test',
+        function() {
+            $user = wp_get_current_user();
+            $custom_menus = get_option('mpa_custom_menus', array());
+            
+            echo '<div class="wrap">';
+            echo '<h1>Debug Test Menu</h1>';
+            echo '<p>Se você vê isto, a função está sendo executada!</p>';
+            
+            // Botão de limpeza de emergência
+            if (isset($_POST['emergency_clean'])) {
+                delete_option('mpa_custom_menus');
+                echo '<div class="notice notice-success"><p><strong>LIMPEZA REALIZADA!</strong> Todos os menus personalizados foram removidos.</p></div>';
+                $custom_menus = array();
+            }
+            
+            echo '<h2>🚨 LIMPEZA DE EMERGÊNCIA:</h2>';
+            echo '<form method="post" style="margin: 20px 0;">';
+            echo '<input type="hidden" name="emergency_clean" value="1">';
+            echo '<button type="submit" class="button button-primary" style="background: #dc3232;">🗑️ LIMPAR TODOS OS MENUS PERSONALIZADOS</button>';
+            echo '</form>';
+            
+            echo '<h2>Debug Info:</h2>';
+            echo '<p><strong>User:</strong> ' . ($user ? $user->user_login : 'Not found') . '</p>';
+            echo '<p><strong>Roles:</strong> ' . (isset($user->roles) ? implode(', ', $user->roles) : 'None') . '</p>';
+            echo '<p><strong>Custom Menus Data:</strong></p>';
+            echo '<pre style="background: #f0f0f0; padding: 10px; overflow: auto; max-height: 400px;">';
+            echo empty($custom_menus) ? 'EMPTY ARRAY' : print_r($custom_menus, true);
+            echo '</pre>';
+            echo '</div>';
+        },
+        'dashicons-admin-tools',
+        999
+    );
+    
+    // Verificar se o usuário está logado
+    if (!is_user_logged_in()) {
+        return;
+    }
+
+    // Obter o usuário atual
+    $user = wp_get_current_user();
+    if (!$user || empty($user->roles)) {
+        return;
+    }
+
+    // Obter menus personalizados
+    $custom_menus = get_option('mpa_custom_menus', array());
+    error_log('[MPA DEBUG] Custom menus data: ' . print_r($custom_menus, true));
+    error_log('[MPA DEBUG] User roles: ' . print_r($user->roles, true));
+    
+    if (empty($custom_menus)) {
+        error_log('[MPA DEBUG] Custom menus array is empty');
+        return;
+    }
+
+    // Adicionar menus personalizados para cada role do usuário
+    foreach ($user->roles as $user_role) {
+        error_log('[MPA DEBUG] Verificando role: ' . $user_role);
+        
+        // Lista de roles para verificar (incluindo variações plural/singular)
+        $roles_to_check = [$user_role];
+        
+        // Adicionar variações comuns
+        if ($user_role === 'gerentes') {
+            $roles_to_check[] = 'gerente';
+        } elseif ($user_role === 'gerente') {
+            $roles_to_check[] = 'gerentes';
+        } elseif ($user_role === 'editores') {
+            $roles_to_check[] = 'editor';
+        } elseif ($user_role === 'editor') {
+            $roles_to_check[] = 'editores';
+        }
+        
+        $role_menus = array();
+        
+        // Coletar menus de todas as variações do role
+        foreach ($roles_to_check as $role_variation) {
+            if (isset($custom_menus[$role_variation]) && !empty($custom_menus[$role_variation])) {
+                $role_menus = array_merge($role_menus, $custom_menus[$role_variation]);
+                error_log('[MPA DEBUG] Encontrados menus para variação ' . $role_variation . ': ' . count($custom_menus[$role_variation]));
+            }
+        }
+        
+        if (empty($role_menus)) {
+            error_log('[MPA DEBUG] Nenhum menu para role: ' . $user_role . ' (variações verificadas: ' . implode(', ', $roles_to_check) . ')');
+            continue;
+        }
+
+        error_log('[MPA DEBUG] Total de menus encontrados para role ' . $user_role . ': ' . count($role_menus));
+
+        // Obter ordem dos menus salvos para determinar posições corretas
+        $custom_order = get_option('mpa_menu_order', array());
+        
+        // Obter ordem global dos menus para posicionamento correto
+        $current_role_order = !empty($custom_order) ? $custom_order : array();
+        
+        // Criar array de menus na ordem correta
+        $ordered_role_menus = array();
+        
+        // Primeiro, adicionar menus que estão na ordem definida
+        foreach ($current_role_order as $ordered_slug) {
+            // Converter tanto custom_ quanto mpa_custom_ para pegar o ID
+            if (strpos($ordered_slug, 'mpa_custom_') === 0) {
+                $menu_id_from_slug = str_replace('mpa_custom_', '', $ordered_slug);
+            } elseif (strpos($ordered_slug, 'custom_') === 0) {
+                $menu_id_from_slug = str_replace('custom_', '', $ordered_slug);
+            } else {
+                continue;
+            }
+            
+            if (isset($role_menus[$menu_id_from_slug])) {
+                $ordered_role_menus[$menu_id_from_slug] = $role_menus[$menu_id_from_slug];
+                unset($role_menus[$menu_id_from_slug]);
+            }
+        }
+        
+        // Depois, adicionar menus que não estão na ordem (novos menus)
+        foreach ($role_menus as $menu_id => $menu_data) {
+            $ordered_role_menus[$menu_id] = $menu_data;
+        }
+        
+        // Adicionar cada menu personalizado SEM posicionamento específico
+        // O posicionamento será feito pela função mpa_apply_menu_order()
+        foreach ($ordered_role_menus as $menu_id => $menu_data) {
+            $title = sanitize_text_field($menu_data['title'] ?? 'Menu Personalizado');
+            $icon = sanitize_text_field($menu_data['icon'] ?? 'dashicons-admin-generic');
+            $url = $menu_data['url'] ?? '#';
+
+            // Gerar um slug único para o menu
+            $menu_slug = 'mpa_custom_' . $menu_id;
+            
+            error_log('[MPA DEBUG] Adicionando menu: ' . $title . ' | Slug: ' . $menu_slug . ' | Icon: ' . $icon . ' | URL: ' . $url);
+            
+            $result = add_menu_page(
+                $title,                              // page_title
+                $title,                              // menu_title
+                'read',                              // capability
+                $menu_slug,                          // menu_slug
+                function() use ($url) {              // callback - redirecionar diretamente
+                    wp_redirect($url);
+                    exit;
+                },
+                $icon,                               // icon_url
+                null                                 // Deixar WordPress escolher posição, mpa_apply_menu_order() reorganizará
+            );
+            
+            error_log('[MPA DEBUG] Resultado add_menu_page: ' . ($result ? 'SUCCESS' : 'FAILED'));
+        }
+    }
+}
+
+// Callback vazio para menus de redirect
+function mpa_custom_menu_redirect() {
+    // Esta função nunca será chamada pois o redirect acontece antes
+    wp_die('Redirecionamento não funcionou corretamente.');
+}
+
+// Página para URLs que não são redirects
+function mpa_custom_menu_page($title, $url) {
+    echo '<div class="wrap">';
+    echo '<h1>' . esc_html($title) . '</h1>';
+    
+    if (filter_var($url, FILTER_VALIDATE_URL)) {
+        // URL externa - mostrar iframe ou link
+        echo '<div class="notice notice-info">';
+        echo '<p><strong>Este menu aponta para um link externo:</strong></p>';
+        echo '<p><a href="' . esc_url($url) . '" target="_blank" class="button button-primary">' . esc_html($title) . ' ➚</a></p>';
+        echo '</div>';
+        
+        echo '<iframe src="' . esc_url($url) . '" style="width: 100%; height: 600px; border: 1px solid #ddd;" title="' . esc_attr($title) . '"></iframe>';
+    } else {
+        // URL inválida ou não reconhecida
+        echo '<div class="notice notice-warning">';
+        echo '<p><strong>Configuração do menu:</strong></p>';
+        echo '<p>URL configurada: <code>' . esc_html($url) . '</code></p>';
+        echo '<p>Este menu personalizado pode estar configurado incorretamente. Entre em contato com o administrador.</p>';
+        echo '</div>';
+    }
+    
+    echo '</div>';
+}
+
+// Enfileirar scripts necessários para AJAX na página de administração
+add_action('admin_enqueue_scripts', function($hook) {
+    // Verificar se estamos na página correta
+    if (strpos($hook, 'mpa-menu-roles') !== false) {
+        // Enfileirar jQuery primeiro
+        wp_enqueue_script('jquery');
+        
+        // Usar ajaxurl padrão do WordPress para AJAX
+        wp_localize_script('jquery', 'mpa_ajax_object', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'ajax_nonce' => wp_create_nonce('mpa_custom_menu')
+        ));
+    }
+});
+
+// Log de debug para menus personalizados (apenas em desenvolvimento)
+add_action('wp_loaded', function() {
+    if (defined('WP_DEBUG') && WP_DEBUG && isset($_GET['debug_custom_menus'])) {
+        $user = wp_get_current_user();
+        $custom_menus = get_option('mpa_custom_menus', array());
+        
+        echo '<pre style="background: #f1f1f1; padding: 15px; margin: 10px; border: 1px solid #ddd;">';
+        echo '<h3>DEBUG: Menus Personalizados</h3>';
+        echo '<strong>Usuário:</strong> ' . $user->user_login . ' (ID: ' . $user->ID . ')<br>';
+        echo '<strong>Roles:</strong> ' . implode(', ', $user->roles) . '<br><br>';
+        echo '<strong>Menus personalizados no banco:</strong><br>';
+        print_r($custom_menus);
+        echo '</pre>';
+    }
+});
 
