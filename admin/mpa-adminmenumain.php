@@ -232,13 +232,13 @@ add_action('admin_menu', function () {
         'Dashboard',
         'manage_options',
         'mpa-dashboard',
-        'mpa_redirect_to_analytics',
+        'mpa_dashboard_redirect_to_analytics',
         'dashicons-chart-area',
         2
     );
 });
 
-function mpa_redirect_to_analytics() {
+function mpa_dashboard_redirect_to_analytics() {
     // Redirecionar para a página de Analytics
     wp_redirect(admin_url('admin.php?page=mpa-analytics'));
     exit;
