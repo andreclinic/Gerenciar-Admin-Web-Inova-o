@@ -67,7 +67,7 @@ function mpa_add_main_menu() {
         'Analytics - Configurações',   // Page title
         'Analytics Config',             // Menu title
         'manage_options',               // Capability
-        'mpa-analytics-settings',       // Menu slug
+        'mpa-config-analytics',         // Menu slug (mudado para evitar conflito de destaque)
         'mpa_render_analytics_settings_page' // Function wrapper
     );
 }
@@ -2703,31 +2703,105 @@ function mpa_get_admin_menus($selected_role = null) {
 
 // Página de configurações gerais
 function mpa_settings_page() {
+    // Processar formulário se foi enviado
+    if (isset($_POST['submit']) && wp_verify_nonce($_POST['mpa_settings_nonce'], 'mpa_save_settings')) {
+        $logo_url = sanitize_url($_POST['mpa_logo_url']);
+        update_option('mpa_logo_url', $logo_url);
+        
+        echo '<div class="notice notice-success is-dismissible"><p>Configurações salvas com sucesso!</p></div>';
+    }
+    
+    // Obter configuração atual
+    $logo_url = get_option('mpa_logo_url', 'https://www.webinovacao.com.br/wp-content/uploads/2024/07/logo-web-inovacao-horizontal-escura.png');
     ?>
     <div class="wrap">
         <h1>Configurações Gerais</h1>
-        <p>Configurações gerais do plugin Gerenciar Admin estarão disponíveis em breve.</p>
+        <p>Configure o comportamento do plugin Gerenciar Admin.</p>
         
-        <div class="mpa-settings-info">
-            <h3>Recursos Atuais</h3>
-            <ul>
-                <li>✅ Header customizado com notificações</li>
-                <li>✅ Sistema de notificações com persistência</li>
-                <li>✅ Redirecionamento automático para dashboard</li>
-                <li>✅ Gerenciamento de menus por role</li>
-            </ul>
+        <form method="post" action="">
+            <?php wp_nonce_field('mpa_save_settings', 'mpa_settings_nonce'); ?>
             
-            <h3>Próximos Recursos</h3>
-            <ul>
-                <li>⏳ Sistema de busca global</li>
-                <li>⏳ Calendário integrado</li>
-                <li>⏳ Customização de cores e temas</li>
-            </ul>
-        </div>
+            <div class="mpa-settings-section">
+                <h2>Personalização</h2>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">Logomarca do Header</th>
+                        <td>
+                            <input type="url" 
+                                   name="mpa_logo_url" 
+                                   value="<?php echo esc_attr($logo_url); ?>" 
+                                   class="regular-text"
+                                   placeholder="https://exemplo.com/logo.png" />
+                            <p class="description">
+                                URL da logomarca a ser exibida no header. Recomenda-se formato PNG com fundo transparente.
+                                <br><strong>Padrão:</strong> https://www.webinovacao.com.br/wp-content/uploads/2024/07/logo-web-inovacao-horizontal-escura.png
+                            </p>
+                            <?php if($logo_url): ?>
+                            <div style="margin-top: 10px;">
+                                <strong>Preview:</strong><br>
+                                <img src="<?php echo esc_url($logo_url); ?>" 
+                                     alt="Preview da logomarca" 
+                                     style="max-height: 40px; max-width: 200px; border: 1px solid #ddd; padding: 5px; background: #f9f9f9;">
+                            </div>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="mpa-settings-section">
+                <h2>Recursos Implementados</h2>
+                <div class="mpa-settings-info">
+                    <div class="mpa-features-grid">
+                        <div class="mpa-feature-group">
+                            <h3>✅ Interface Personalizada</h3>
+                            <ul>
+                                <li>Header customizado com notificações</li>
+                                <li>Sidebar moderna com navegação</li>
+                                <li>Dashboard Analytics integrado</li>
+                                <li>Modo escuro/claro automático</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mpa-feature-group">
+                            <h3>✅ Sistema de Menus</h3>
+                            <ul>
+                                <li>Gerenciamento por roles de usuário</li>
+                                <li>Menus personalizados por role</li>
+                                <li>Ordenação por drag-and-drop</li>
+                                <li>Controle granular de permissões</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mpa-feature-group">
+                            <h3>✅ Analytics Dashboard</h3>
+                            <ul>
+                                <li>Integração com Google Analytics GA4</li>
+                                <li>Métricas em tempo real</li>
+                                <li>Gráficos interativos</li>
+                                <li>Relatórios exportáveis</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mpa-feature-group">
+                            <h3>⚙️ Configurações Avançadas</h3>
+                            <ul>
+                                <li>Redirecionamento automático</li>
+                                <li>Sistema de notificações</li>
+                                <li>Compatibilidade com plugins</li>
+                                <li>Modo de compatibilidade admin</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <?php submit_button('Salvar Configurações'); ?>
+        </form>
     </div>
     
     <style>
-        .mpa-settings-info {
+        .mpa-settings-section {
             background: #fff;
             border: 1px solid #ccd0d4;
             border-radius: 4px;
@@ -2735,12 +2809,65 @@ function mpa_settings_page() {
             margin-top: 20px;
         }
         
-        .mpa-settings-info ul {
-            margin-left: 20px;
+        .mpa-settings-section h2 {
+            margin-top: 0;
+            color: #23282d;
+            border-bottom: 2px solid #0073aa;
+            padding-bottom: 8px;
         }
         
-        .mpa-settings-info li {
-            margin-bottom: 5px;
+        .mpa-settings-info {
+            background: #f9f9f9;
+            border-left: 4px solid #0073aa;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .mpa-features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .mpa-feature-group {
+            background: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #e1e1e1;
+        }
+        
+        .mpa-feature-group h3 {
+            margin-top: 0;
+            color: #0073aa;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .mpa-feature-group ul {
+            margin: 10px 0 0 18px;
+        }
+        
+        .mpa-feature-group li {
+            margin-bottom: 4px;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .form-table th {
+            width: 200px;
+        }
+        
+        .form-table .description {
+            margin-top: 5px;
+            font-style: italic;
+        }
+        
+        @media (max-width: 768px) {
+            .mpa-features-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
     <?php
@@ -3948,6 +4075,7 @@ add_action('admin_enqueue_scripts', function($hook) {
         ));
     }
 });
+
 
 // Log de debug para menus personalizados (apenas em desenvolvimento)
 add_action('wp_loaded', function() {

@@ -1126,6 +1126,32 @@ body.dark-mode .mpa-dashboard-analytics,
     
     .mpa-analytics-header-right {
         justify-content: center;
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .mpa-date-filter-container {
+        display: flex !important;
+        width: 100%;
+        justify-content: center;
+        margin-top: 0.5rem;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    .mpa-date-filter-container label {
+        display: inline !important;
+        visibility: visible !important;
+    }
+    
+    .mpa-date-filter {
+        display: block !important;
+        min-width: 200px;
+        width: 100%;
+        max-width: 300px;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
     
     .mpa-card-grid-3 {
@@ -1175,6 +1201,43 @@ body.dark-mode .mpa-dashboard-analytics,
     
     .mpa-analytics-header {
         padding: 1rem;
+    }
+    
+    .mpa-analytics-header-right {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+    
+    .mpa-date-filter-container {
+        display: flex !important;
+        width: 100%;
+        justify-content: center;
+        margin-top: 1rem;
+        visibility: visible !important;
+        opacity: 1 !important;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .mpa-date-filter-container label {
+        display: block !important;
+        visibility: visible !important;
+        text-align: center;
+        font-size: 1rem;
+    }
+    
+    .mpa-date-filter {
+        display: block !important;
+        width: 100%;
+        max-width: 280px;
+        min-width: 200px;
+        visibility: visible !important;
+        opacity: 1 !important;
+        font-size: 1rem;
+        padding: 0.75rem;
     }
     
     .mpa-modal-content {

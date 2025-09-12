@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
     <div class="mpa-analytics-header">
         <div class="mpa-analytics-header-left">
             <h1 class="mpa-analytics-title">📊 Analytics Dashboard</h1>
-            <p class="mpa-analytics-subtitle">Métricas em tempo real do seu site WordPress</p>
+            <p class="mpa-analytics-subtitle">Métricas em tempo real do seu site</p>
         </div>
         <div class="mpa-analytics-header-right">
             <div class="mpa-date-filter-container">

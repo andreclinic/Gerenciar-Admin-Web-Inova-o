@@ -1,4 +1,9 @@
 <?php
+// Verificar se deve desativar para administradores
+if (function_exists('mpa_should_disable_for_admin') && mpa_should_disable_for_admin()) {
+    return; // Não carregar customizações se modo compatibilidade estiver ativo
+}
+
 // Carregar os arquivos CSS e JS corretamente
 add_action('admin_enqueue_scripts', 'mpa_wpbody_assets');
 

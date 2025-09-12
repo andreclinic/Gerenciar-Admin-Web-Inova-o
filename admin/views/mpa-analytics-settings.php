@@ -140,6 +140,12 @@ $is_connected = !empty($ga4_settings['access_token']) && time() < $ga4_settings[
             </button>
             
             <?php if (!empty($ga4_settings['client_id']) && !empty($ga4_settings['property_id'])): ?>
+                <?php if (!$is_connected): ?>
+                    <button type="button" id="startOAuth" class="mpa-btn mpa-btn-primary">
+                        🔗 Conectar com Google Analytics
+                    </button>
+                <?php endif; ?>
+                
                 <button type="button" id="testConnection" class="mpa-btn mpa-btn-secondary">
                     🔍 Testar Conexão
                 </button>
@@ -234,6 +240,43 @@ $is_connected = !empty($ga4_settings['access_token']) && time() < $ga4_settings[
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Iniciar OAuth
+    const oauthBtn = document.getElementById('startOAuth');
+    if (oauthBtn) {
+        oauthBtn.addEventListener('click', function() {
+            oauthBtn.disabled = true;
+            oauthBtn.innerHTML = '🔄 Conectando...';
+            
+            // Fazer requisição AJAX para iniciar OAuth
+            fetch(ajaxurl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    action: 'mpa_start_oauth',
+                    nonce: '<?php echo wp_create_nonce('mpa_analytics_nonce'); ?>'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirecionar para autorização do Google
+                    window.location.href = data.data.auth_url;
+                } else {
+                    alert('Erro ao iniciar autorização: ' + (data.data || 'Erro desconhecido'));
+                    oauthBtn.disabled = false;
+                    oauthBtn.innerHTML = '🔗 Conectar com Google Analytics';
+                }
+            })
+            .catch(error => {
+                alert('Erro na requisição: ' + error.message);
+                oauthBtn.disabled = false;
+                oauthBtn.innerHTML = '🔗 Conectar com Google Analytics';
+            });
+        });
+    }
+    
     // Testar conexão
     const testBtn = document.getElementById('testConnection');
     if (testBtn) {
@@ -331,3 +374,78 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<style>
+/* Estilos específicos para botões da página Analytics Config */
+.mpa-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    border: 1px solid;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+
+.mpa-btn-primary {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+}
+
+.mpa-btn-primary:hover {
+    background-color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+    color: #ffffff !important;
+}
+
+.mpa-btn-secondary {
+    background-color: #f3f4f6 !important;
+    border-color: #d1d5db !important;
+    color: #374151 !important;
+}
+
+.mpa-btn-secondary:hover {
+    background-color: #e5e7eb !important;
+    border-color: #9ca3af !important;
+    color: #111827 !important;
+}
+
+.mpa-btn-danger {
+    background-color: #ef4444 !important;
+    border-color: #ef4444 !important;
+    color: #ffffff !important;
+}
+
+.mpa-btn-danger:hover {
+    background-color: #dc2626 !important;
+    border-color: #dc2626 !important;
+    color: #ffffff !important;
+}
+
+.mpa-btn:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+}
+
+/* Dark mode support */
+body.dark-mode .mpa-btn-secondary,
+.dark-mode .mpa-btn-secondary {
+    background-color: #374151 !important;
+    border-color: #4b5563 !important;
+    color: #d1d5db !important;
+}
+
+body.dark-mode .mpa-btn-secondary:hover,
+.dark-mode .mpa-btn-secondary:hover {
+    background-color: #4b5563 !important;
+    border-color: #6b7280 !important;
+    color: #f9fafb !important;
+}
+</style>

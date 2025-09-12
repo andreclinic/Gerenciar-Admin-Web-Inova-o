@@ -14,11 +14,12 @@ Este plugin WordPress transforma completamente o painel administrativo, implemen
 - **EVITE conflitos** entre múltiplas funções tentando controlar posicionamento simultaneamente
 
 **Exemplo de Implementação Correta:**
+
 ```php
 // ✅ CORRETO: Integrar na global $menu
 function mpa_apply_menu_order() {
     global $menu;
-    
+
     // Construir menus personalizados como estruturas WordPress nativas
     $custom_menus_to_add[$slug] = array(
         $title,        // [0] menu_title
@@ -30,7 +31,7 @@ function mpa_apply_menu_order() {
         $icon,         // [6] icon_url
         $position      // [7] position
     );
-    
+
     // Aplicar à global $menu diretamente
     $menu = $ordered_menu;
 }
@@ -109,16 +110,19 @@ add_menu_page(...); // Sem controle sobre onde será posicionado
 ## 📝 **Padrões de Código**
 
 **Nomenclatura:**
+
 - Prefixo: `mpa_` para todas as funções
 - Hooks AJAX: `wp_ajax_mpa_[acao]`
 - Options: `mpa_[nome_opcao]`
 
 **Segurança:**
+
 - Sempre usar `wp_verify_nonce()` para verificações
 - Sanitizar inputs com `sanitize_text_field()`, `esc_url_raw()`, etc.
 - Verificar permissões com `current_user_can()`
 
 **Respostas AJAX:**
+
 - Usar `wp_send_json_success()` para sucesso
 - Usar `wp_send_json_error()` para erros
 - Sempre incluir mensagens descritivas
@@ -126,6 +130,7 @@ add_menu_page(...); // Sem controle sobre onde será posicionado
 ## 🗂️ **Estrutura de Dados**
 
 **Menus Personalizados:**
+
 ```php
 // Option: mpa_custom_menus
 [
@@ -140,12 +145,14 @@ add_menu_page(...); // Sem controle sobre onde será posicionado
 ```
 
 **Ordem dos Menus:**
+
 ```php
 // Option: mpa_menu_order
 ['dashboard', 'custom_123', 'posts', 'mpa_custom_456', ...]
 ```
 
 **Permissões de Menus:**
+
 ```php
 // Option: mpa_menu_permissions
 [
@@ -158,11 +165,13 @@ add_menu_page(...); // Sem controle sobre onde será posicionado
 ## ⚠️ **Problemas Conhecidos e Soluções**
 
 1. **Posicionamento de Menus:**
+
    - Sempre integrar na `global $menu` via `mpa_apply_menu_order()`
    - Usar posições fracionárias (3.5, 4.5) para evitar conflitos
    - Evitar posições padrão do WordPress (2, 5, 10, 15, 20, 25, 60, 65, 70, 75, 80)
 
 2. **Slugs de Menus:**
+
    - Formato padrão: `mpa_custom_[ID]` para menus personalizados
    - Compatibilidade com formato antigo: `custom_[ID]`
 
@@ -225,6 +234,7 @@ O arquivo `modelo_dashboard.html` na raiz do plugin serve como **referência vis
 ## 🔧 **Comandos de Teste e Debug**
 
 **Linting e Checagem de Tipos:**
+
 - O projeto não possui comandos específicos de lint/typecheck configurados
 - Sempre verificar manualmente a sintaxe PHP e funcionalidades WordPress
 
@@ -320,3 +330,5 @@ Plugin desenvolvido para estudo e implementação de painéis administrativos mo
 **Nota**: Este plugin modifica substancialmente a interface do WordPress. Use apenas em ambientes de desenvolvimento ou com backup completo.
 
 **Nota**: As respostas devem ser em Português Brasil.
+
+**Nota**: Faça o commit no github apenas quando for solicitado.

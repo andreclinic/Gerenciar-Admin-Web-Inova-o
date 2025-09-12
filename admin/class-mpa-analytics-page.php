@@ -29,7 +29,7 @@ class MPA_Analytics_Page {
     /**
      * Slug da página de configurações
      */
-    const SETTINGS_SLUG = 'mpa-analytics-settings';
+    const SETTINGS_SLUG = 'mpa-config-analytics';
     
     /**
      * Constructor

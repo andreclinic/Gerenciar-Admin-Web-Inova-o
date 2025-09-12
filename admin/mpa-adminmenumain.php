@@ -1,5 +1,5 @@
 <?php
-// Carregar os arquivos CSS e JS corretamente
+// Carregar os arquivos CSS e JS corretamente (verificar compatibilidade no hook)
 add_action('admin_enqueue_scripts', 'mpa_adminmenumain_assets');
 
 function mpa_adminmenumain_assets($hook)

@@ -19,11 +19,18 @@
                 start_date: this.getDateString(-30),
                 end_date: this.getDateString(0)
             };
+            this.cache = {};
+            this.cacheExpiry = 10 * 60 * 1000; // 10 minutos em ms
+            this.isInitialLoad = !sessionStorage.getItem('mpa_dashboard_loaded');
+            this.isLoading = false; // Prevenir loops de carregamento
             this.init();
         }
 
         init() {
             console.log('🔍 [MPA DEBUG] Inicializando MPAAnalyticsDashboard');
+            
+            // Corrigir menu ativo - fazer Painel ficar ativo ao invés de Analytics
+            this.fixActiveMenu();
             
             // Verificar se objeto mpaAnalytics existe
             if (typeof mpaAnalytics === 'undefined') {
@@ -162,6 +169,9 @@
                 end_date: endDate
             };
 
+            // Forçar recarregamento dos dados quando o período muda
+            this.isInitialLoad = true;
+            
             this.showLoading();
             this.loadAllData();
         }
@@ -173,13 +183,145 @@
         }
 
         // ===================================
+        // CACHE MANAGEMENT
+        // ===================================
+        getCacheKey(endpoint, params = {}) {
+            const paramsStr = JSON.stringify(params);
+            return `mpa_cache_${endpoint}_${btoa(paramsStr)}`;
+        }
+
+        getCachedData(endpoint, params = {}) {
+            const cacheKey = this.getCacheKey(endpoint, params);
+            const cached = sessionStorage.getItem(cacheKey);
+            
+            if (!cached) return null;
+            
+            try {
+                const data = JSON.parse(cached);
+                const now = Date.now();
+                
+                if (now - data.timestamp > this.cacheExpiry) {
+                    sessionStorage.removeItem(cacheKey);
+                    return null;
+                }
+                
+                console.log(`📦 [MPA CACHE] Dados encontrados no cache para ${endpoint}`);
+                return data.value;
+            } catch (e) {
+                sessionStorage.removeItem(cacheKey);
+                return null;
+            }
+        }
+
+        setCachedData(endpoint, params = {}, data) {
+            const cacheKey = this.getCacheKey(endpoint, params);
+            const cacheData = {
+                timestamp: Date.now(),
+                value: data
+            };
+            
+            try {
+                sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
+                console.log(`💾 [MPA CACHE] Dados salvos no cache para ${endpoint}`);
+            } catch (e) {
+                console.warn('⚠️ [MPA CACHE] Erro ao salvar no cache:', e);
+            }
+        }
+
+        shouldLoadInitialData() {
+            // Carrega dados na primeira visita da sessão ou quando o filtro de período muda
+            console.log('🔍 [MPA DEBUG] shouldLoadInitialData - isInitialLoad:', this.isInitialLoad);
+            return this.isInitialLoad;
+        }
+
+        markAsLoaded() {
+            sessionStorage.setItem('mpa_dashboard_loaded', 'true');
+            this.isInitialLoad = false;
+        }
+
+        loadCachedDataIfAvailable() {
+            console.log('📦 [MPA CACHE] Verificando cache disponível...');
+            const cacheParams = this.currentDateRange;
+            
+            // Tentar carregar dados principais do cache
+            const metrics = this.getCachedData('metrics', cacheParams);
+            const visitors = this.getCachedData('visitors', cacheParams);
+            const devices = this.getCachedData('devices', cacheParams);
+            const sources = this.getCachedData('sources', cacheParams);
+            const cities = this.getCachedData('cities', cacheParams);
+            const pages = this.getCachedData('pages', cacheParams);
+            const events = this.getCachedData('events', cacheParams);
+            
+            console.log('📦 [MPA CACHE] Status do cache:', {
+                metrics: !!metrics,
+                visitors: !!visitors, 
+                devices: !!devices,
+                sources: !!sources,
+                cities: !!cities,
+                pages: !!pages,
+                events: !!events
+            });
+            
+            // Se todos os dados principais estão em cache, usar eles
+            if (metrics && visitors && devices && sources) {
+                console.log('✅ [MPA CACHE] Todos os dados principais em cache, carregando...');
+                
+                this.updateMetricsDisplay(metrics);
+                this.updateVisitorsChart(visitors);
+                this.updateDeviceChart(devices);
+                this.updateTrafficSources(sources);
+                
+                if (cities) this.updateTopCities(cities);
+                if (pages) this.updateTopPages(pages);
+                if (events) {
+                    console.log('🔥 [MPA CACHE] Carregando eventos do cache:', events);
+                    this.updateEventsChart(events);
+                    this.updateTopEvents(events);
+                } else {
+                    console.log('⚠️ [MPA CACHE] Dados de eventos não encontrados no cache, carregando da API...');
+                    this.loadEventsData();
+                }
+                
+                // Sempre carregar dados em tempo real (não cachear dados real-time)
+                this.loadRealtimeData();
+                
+                // Esconder loading se estava sendo mostrado
+                this.hideLoading();
+                
+                return true;
+            }
+            
+            console.log('❌ [MPA CACHE] Cache incompleto, será necessário carregar da API');
+            return false;
+        }
+
+        // ===================================
         // DATA LOADING
         // ===================================
         loadAllData() {
             console.log('🔍 [MPA DEBUG] loadAllData() iniciado');
             console.log('🔍 [MPA DEBUG] currentDateRange:', this.currentDateRange);
             console.log('🔍 [MPA DEBUG] mpaAnalytics object:', mpaAnalytics);
+            console.log('🔍 [MPA DEBUG] shouldLoadInitialData:', this.shouldLoadInitialData());
             
+            // Verificar se já está carregando para evitar loops
+            if (this.isLoading) {
+                console.log('⚠️ [MPA DEBUG] Já está carregando dados, ignorando nova chamada');
+                return;
+            }
+            
+            // Se não é o carregamento inicial, apenas mostrar dados em cache se existirem
+            if (!this.shouldLoadInitialData()) {
+                console.log('📦 [MPA DEBUG] Tentando usar cache...');
+                const cachedData = this.loadCachedDataIfAvailable();
+                if (cachedData) {
+                    console.log('📦 [MPA CACHE] Usando dados em cache, pulando requisições API');
+                    return;
+                }
+                console.log('📦 [MPA DEBUG] Cache não disponível, carregando da API...');
+            }
+            
+            this.isLoading = true;
             this.showLoading();
             
             Promise.all([
@@ -195,18 +337,32 @@
                 console.log('✅ [MPA DEBUG] Todos os dados carregados com sucesso');
                 this.hideLoading();
                 this.showNotification('Dados atualizados com sucesso!', 'success');
+                this.markAsLoaded();
+                this.isLoading = false;
             }).catch((error) => {
                 console.error('❌ [MPA DEBUG] Erro ao carregar dados:', error);
                 this.hideLoading();
                 this.showNotification('Erro ao carregar dados: ' + error.message, 'error');
                 console.error('Erro ao carregar dados do analytics:', error);
+                this.isLoading = false;
             });
         }
 
         async loadMetrics() {
             try {
+                // Verificar cache primeiro
+                const cachedData = this.getCachedData('metrics', this.currentDateRange);
+                if (cachedData) {
+                    this.updateMetricsDisplay(cachedData);
+                    return;
+                }
+
                 const response = await this.makeRequest('metrics', this.currentDateRange);
-                this.updateMetricsDisplay(response.data);
+                const data = response.data;
+                
+                // Salvar no cache
+                this.setCachedData('metrics', this.currentDateRange, data);
+                this.updateMetricsDisplay(data);
             } catch (error) {
                 console.error('Erro ao carregar métricas:', error);
                 throw error;
@@ -215,8 +371,19 @@
 
         async loadVisitorsData() {
             try {
+                // Verificar cache primeiro
+                const cachedData = this.getCachedData('visitors', this.currentDateRange);
+                if (cachedData) {
+                    this.updateVisitorsChart(cachedData);
+                    return;
+                }
+
                 const response = await this.makeRequest('visitors', this.currentDateRange);
-                this.updateVisitorsChart(response.data);
+                const data = response.data;
+                
+                // Salvar no cache
+                this.setCachedData('visitors', this.currentDateRange, data);
+                this.updateVisitorsChart(data);
             } catch (error) {
                 console.error('Erro ao carregar dados de visitantes:', error);
                 throw error;
@@ -225,9 +392,21 @@
 
         async loadDeviceData() {
             try {
+                // Verificar cache primeiro
+                const cachedData = this.getCachedData('devices', this.currentDateRange);
+                if (cachedData) {
+                    this.updateDeviceChart(cachedData);
+                    this.updateDeviceStats(cachedData);
+                    return;
+                }
+
                 const response = await this.makeRequest('devices', this.currentDateRange);
-                this.updateDeviceChart(response.data);
-                this.updateDeviceStats(response.data);
+                const data = response.data;
+                
+                // Salvar no cache
+                this.setCachedData('devices', this.currentDateRange, data);
+                this.updateDeviceChart(data);
+                this.updateDeviceStats(data);
             } catch (error) {
                 console.error('Erro ao carregar dados de dispositivos:', error);
                 throw error;
@@ -236,8 +415,19 @@
 
         async loadTrafficSources() {
             try {
+                // Verificar cache primeiro
+                const cachedData = this.getCachedData('sources', this.currentDateRange);
+                if (cachedData) {
+                    this.updateTrafficSources(cachedData);
+                    return;
+                }
+
                 const response = await this.makeRequest('traffic-sources', this.currentDateRange);
-                this.updateTrafficSources(response.data);
+                const data = response.data;
+                
+                // Salvar no cache
+                this.setCachedData('sources', this.currentDateRange, data);
+                this.updateTrafficSources(data);
             } catch (error) {
                 console.error('Erro ao carregar fontes de tráfego:', error);
                 throw error;
@@ -246,8 +436,19 @@
 
         async loadTopCities() {
             try {
+                // Verificar cache primeiro
+                const cachedData = this.getCachedData('cities', this.currentDateRange);
+                if (cachedData) {
+                    this.updateTopCities(cachedData);
+                    return;
+                }
+
                 const response = await this.makeRequest('cities', this.currentDateRange);
-                this.updateTopCities(response.data);
+                const data = response.data;
+                
+                // Salvar no cache
+                this.setCachedData('cities', this.currentDateRange, data);
+                this.updateTopCities(data);
             } catch (error) {
                 console.error('Erro ao carregar principais cidades:', error);
                 throw error;
@@ -256,8 +457,19 @@
 
         async loadTopPages() {
             try {
+                // Verificar cache primeiro
+                const cachedData = this.getCachedData('pages', this.currentDateRange);
+                if (cachedData) {
+                    this.updateTopPages(cachedData);
+                    return;
+                }
+
                 const response = await this.makeRequest('pages', this.currentDateRange);
-                this.updateTopPages(response.data);
+                const data = response.data;
+                
+                // Salvar no cache
+                this.setCachedData('pages', this.currentDateRange, data);
+                this.updateTopPages(data);
             } catch (error) {
                 console.error('Erro ao carregar páginas principais:', error);
                 throw error;
@@ -266,12 +478,54 @@
 
         async loadEventsData() {
             try {
+                // Verificar cache primeiro
+                const cachedData = this.getCachedData('events', this.currentDateRange);
+                if (cachedData) {
+                    this.updateEventsChart(cachedData);
+                    this.updateTopEvents(cachedData);
+                    return;
+                }
+
                 const response = await this.makeRequest('events', this.currentDateRange);
-                this.updateEventsChart(response.data);
-                this.updateTopEvents(response.data);
+                const data = response.data;
+                
+                // Salvar no cache
+                this.setCachedData('events', this.currentDateRange, data);
+                this.updateEventsChart(data);
+                this.updateTopEvents(data);
             } catch (error) {
                 console.error('Erro ao carregar dados de eventos:', error);
                 throw error;
+            }
+        }
+
+        /**
+         * Corrigir menu ativo - fazer Painel ficar ativo ao invés de Analytics
+         */
+        fixActiveMenu() {
+            console.log('🔄 [MPA DEBUG] Corrigindo menu ativo...');
+            
+            // Remover classes 'current' e 'wp-has-current-submenu' do menu Gerenciar Admin
+            $('#adminmenu a[href*="mpa-main"], #adminmenu .wp-submenu a[href*="mpa-analytics"]').removeClass('current');
+            $('#adminmenu li.menu-top').removeClass('wp-has-current-submenu wp-menu-open current');
+            $('#adminmenu li.wp-submenu-wrap li').removeClass('current');
+            
+            // Ativar o menu Dashboard (Painel)
+            const dashboardMenu = $('#adminmenu a[href="index.php"]').parent();
+            if (dashboardMenu.length > 0) {
+                dashboardMenu.addClass('current wp-has-current-submenu wp-menu-open');
+                dashboardMenu.find('a').addClass('current');
+                console.log('✅ [MPA DEBUG] Menu Dashboard ativado');
+            } else {
+                console.log('⚠️ [MPA DEBUG] Menu Dashboard não encontrado');
+            }
+            
+            // Se não encontrar por href, tentar por classe
+            if ($('#adminmenu .current').length === 0) {
+                const firstDashboardItem = $('#adminmenu li').first();
+                firstDashboardItem.addClass('current wp-has-current-submenu');
+                firstDashboardItem.find('a').first().addClass('current');
+                console.log('✅ [MPA DEBUG] Primeiro item do menu ativado como fallback');
             }
         }
 
@@ -648,11 +902,14 @@
         }
 
         updateTopEvents(data) {
+            console.log('🔥 [MPA DEBUG] updateTopEvents chamado com data:', data);
             const container = $('#topEvents');
+            console.log('🔥 [MPA DEBUG] Container #topEvents encontrado:', container.length > 0);
             if (!container.length) return;
 
             let html = '';
             const events = data?.events || [];
+            console.log('🔥 [MPA DEBUG] Eventos para processar:', events.length, events);
 
             events.forEach((event, index) => {
                 const eventName = event.event_name || 'Evento';
@@ -746,11 +1003,13 @@
         // UI STATES
         // ===================================
         showLoading() {
+            console.log('⏳ [MPA DEBUG] Mostrando loading...');
             $('#mpaAnalyticsLoading').show();
             $('.mpa-analytics-section, .mpa-card-grid').css('opacity', '0.6');
         }
 
         hideLoading() {
+            console.log('✅ [MPA DEBUG] Escondendo loading...');
             $('#mpaAnalyticsLoading').hide();
             $('.mpa-analytics-section, .mpa-card-grid').css('opacity', '1');
         }
@@ -853,15 +1112,17 @@ Gerado em: ${new Date().toLocaleString('pt-BR')}`;
         // AUTO REFRESH
         // ===================================
         setupAutoRefresh() {
-            // Atualizar dados completos a cada 5 minutos
+            // Forçar atualização de dados completos a cada 15 minutos (respeitando cache)
             setInterval(() => {
+                console.log('🔄 [MPA AUTO-REFRESH] Forçando recarregamento de dados');
+                this.isInitialLoad = true; // Força o recarregamento ignorando cache
                 this.loadAllData();
-            }, 5 * 60 * 1000);
+            }, 15 * 60 * 1000);
 
-            // Atualizar dados em tempo real a cada 30 segundos
+            // Atualizar apenas dados em tempo real a cada 60 segundos (não cachear real-time)
             setInterval(() => {
                 this.loadRealtimeData();
-            }, 30 * 1000);
+            }, 60 * 1000);
         }
     }
 

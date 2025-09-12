@@ -12,7 +12,9 @@ error_log('[MPA NOVO DEBUG] Plugin gerenciar-admin carregando...');
 // Caminho absoluto até a pasta do plugin
 define('ADMIN_BAR_MENU_PATH', plugin_dir_path(__FILE__));
 define('ADMIN_BAR_MENU_URL', plugin_dir_url(__FILE__));
-// echo '<!-- ' . ADMIN_BAR_MENU_PATH . '/admin/mpa-admin.css';
+
+
+// Carregar todos os módulos (voltando ao método simples para corrigir problemas de permissão)
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-admin.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-adminmenumain.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-wpadminbar.php';
@@ -20,12 +22,13 @@ include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-wpbody.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-wpcontent.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-wpfooter.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-menu-manager.php';
-include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-capability-manager.php'; // Novo: Gerenciar capabilities
-include_once ADMIN_BAR_MENU_PATH . '/admin/class-mpa-analytics-page.php'; // Novo: Analytics Dashboard
-include_once ADMIN_BAR_MENU_PATH . '/includes/class-mpa-analytics-client.php'; // Novo: GA4 Integration
+include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-capability-manager.php';
+include_once ADMIN_BAR_MENU_PATH . '/admin/class-mpa-analytics-page.php';
+include_once ADMIN_BAR_MENU_PATH . '/includes/class-mpa-analytics-client.php';
 include_once ADMIN_BAR_MENU_PATH . '/debug-menu-slugs.php'; // Debug ativo temporariamente
 include_once ADMIN_BAR_MENU_PATH . '/admin/debugar.php';
 include_once ADMIN_BAR_MENU_PATH . '/debug-permissions.php'; // Debug de permissões
+
 
 // Adicionar debug temporário para verificar o que está acontecendo
 add_action('admin_notices', function () {
