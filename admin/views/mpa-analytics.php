@@ -274,8 +274,8 @@ if (!defined('ABSPATH')) {
             </div>
         </section>
 
-        <!-- User Acquisition & Engagement -->
-        <div class="mpa-card-grid mpa-card-grid-2">
+        <!-- User Acquisition, Events & Engagement -->
+        <div class="mpa-card-grid mpa-card-grid-3">
             <!-- User Acquisition -->
             <div class="mpa-card">
                 <h3 class="mpa-section-title">🎯 Aquisição de Usuários</h3>
@@ -292,11 +292,26 @@ if (!defined('ABSPATH')) {
                 </div>
             </div>
 
+            <!-- Eventos -->
+            <div class="mpa-card">
+                <h3 class="mpa-section-title">📊 Eventos</h3>
+                <div class="mpa-events-chart">
+                    <canvas id="eventsChart"></canvas>
+                </div>
+                
+                <!-- Top Events List -->
+                <div class="mpa-events-stats">
+                    <h4>🔥 Principais Eventos</h4>
+                    <div id="topEvents">
+                        <!-- Eventos serão inseridos via JS -->
+                    </div>
+                </div>
+            </div>
+
             <!-- Engagement & Content -->
             <div class="mpa-card">
                 <h3 class="mpa-section-title">🔥 Site Overview</h3>
                 
-
                 <!-- Páginas Mais Visitadas -->
                 <div class="mpa-top-pages">
                     <h4>📄 Páginas Mais Visitadas</h4>

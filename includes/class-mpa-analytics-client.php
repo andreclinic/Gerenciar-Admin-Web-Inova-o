@@ -36,6 +36,8 @@ class MPA_Analytics_Client {
     public function __construct() {
         add_action('rest_api_init', array($this, 'register_rest_routes'));
         add_action('wp_ajax_mpa_disconnect_ga4', array($this, 'disconnect_ga4'));
+        add_action('wp_ajax_mpa_start_oauth', array($this, 'start_oauth_flow'));
+        add_action('admin_init', array($this, 'handle_oauth_callback'));
     }
     
     /**
@@ -93,6 +95,14 @@ class MPA_Analytics_Client {
             'args' => $this->get_date_range_args()
         ));
         
+        // Eventos
+        register_rest_route($namespace, '/events', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_events_data'),
+            'permission_callback' => array($this, 'check_permissions'),
+            'args' => $this->get_date_range_args()
+        ));
+        
         // Dados em tempo real
         register_rest_route($namespace, '/realtime', array(
             'methods' => 'GET',
@@ -104,7 +114,8 @@ class MPA_Analytics_Client {
     /**
      * Verificar permissões para endpoints
      */
-    public function check_permissions() {
+    public function check_permissions($request = null) {
+        // Sempre permitir para usuários com manage_options
         return current_user_can('manage_options');
     }
     
@@ -155,7 +166,7 @@ class MPA_Analytics_Client {
             }
             
             // Fazer uma requisição de teste simples
-            $test_result = $this->make_ga4_request('reports:runReport', array(
+            $test_result = $this->make_ga4_request('properties/' . $settings['property_id'] . ':runReport', array(
                 'property' => 'properties/' . $settings['property_id'],
                 'dateRanges' => array(
                     array(
@@ -198,25 +209,38 @@ class MPA_Analytics_Client {
      */
     public function get_metrics($request) {
         try {
+            error_log('[MPA DEBUG] get_metrics() chamado');
+            
             $start_date = $request->get_param('start_date');
             $end_date = $request->get_param('end_date');
             
+            error_log('[MPA DEBUG] Período solicitado: ' . $start_date . ' até ' . $end_date);
+            
             $current_period = $this->fetch_metrics($start_date, $end_date);
+            error_log('[MPA DEBUG] Período atual obtido: ' . print_r($current_period, true));
+            
             $previous_period = $this->fetch_metrics(
                 date('Y-m-d', strtotime($start_date . ' -' . $this->get_date_diff($start_date, $end_date) . ' days')),
                 date('Y-m-d', strtotime($start_date . ' -1 day'))
             );
+            error_log('[MPA DEBUG] Período anterior obtido: ' . print_r($previous_period, true));
             
-            return rest_ensure_response(array(
+            $response_data = array(
                 'success' => true,
                 'data' => array(
                     'current' => $current_period,
                     'previous' => $previous_period,
                     'changes' => $this->calculate_changes($current_period, $previous_period)
                 )
-            ));
+            );
+            
+            error_log('[MPA DEBUG] Response final: ' . print_r($response_data, true));
+            
+            return rest_ensure_response($response_data);
             
         } catch (Exception $e) {
+            error_log('[MPA DEBUG] Erro em get_metrics: ' . $e->getMessage());
+            error_log('[MPA DEBUG] Stack trace: ' . $e->getTraceAsString());
             return new WP_Error('ga4_error', $e->getMessage(), array('status' => 500));
         }
     }
@@ -229,8 +253,7 @@ class MPA_Analytics_Client {
             $start_date = $request->get_param('start_date');
             $end_date = $request->get_param('end_date');
             
-            $data = $this->make_ga4_request('reports:runReport', array(
-                'property' => 'properties/' . $this->get_property_id(),
+            $data = $this->make_ga4_request('properties/' . $this->get_property_id() . ':runReport', array(
                 'dateRanges' => array(
                     array(
                         'startDate' => $start_date,
@@ -272,8 +295,7 @@ class MPA_Analytics_Client {
             $start_date = $request->get_param('start_date');
             $end_date = $request->get_param('end_date');
             
-            $data = $this->make_ga4_request('reports:runReport', array(
-                'property' => 'properties/' . $this->get_property_id(),
+            $data = $this->make_ga4_request('properties/' . $this->get_property_id() . ':runReport', array(
                 'dateRanges' => array(
                     array(
                         'startDate' => $start_date,
@@ -308,8 +330,7 @@ class MPA_Analytics_Client {
             $start_date = $request->get_param('start_date');
             $end_date = $request->get_param('end_date');
             
-            $data = $this->make_ga4_request('reports:runReport', array(
-                'property' => 'properties/' . $this->get_property_id(),
+            $data = $this->make_ga4_request('properties/' . $this->get_property_id() . ':runReport', array(
                 'dateRanges' => array(
                     array(
                         'startDate' => $start_date,
@@ -345,8 +366,7 @@ class MPA_Analytics_Client {
             $start_date = $request->get_param('start_date');
             $end_date = $request->get_param('end_date');
             
-            $data = $this->make_ga4_request('reports:runReport', array(
-                'property' => 'properties/' . $this->get_property_id(),
+            $data = $this->make_ga4_request('properties/' . $this->get_property_id() . ':runReport', array(
                 'dateRanges' => array(
                     array(
                         'startDate' => $start_date,
@@ -388,8 +408,7 @@ class MPA_Analytics_Client {
             $start_date = $request->get_param('start_date');
             $end_date = $request->get_param('end_date');
             
-            $data = $this->make_ga4_request('reports:runReport', array(
-                'property' => 'properties/' . $this->get_property_id(),
+            $data = $this->make_ga4_request('properties/' . $this->get_property_id() . ':runReport', array(
                 'dateRanges' => array(
                     array(
                         'startDate' => $start_date,
@@ -425,12 +444,55 @@ class MPA_Analytics_Client {
     }
     
     /**
+     * Obter dados de eventos
+     */
+    public function get_events_data($request) {
+        try {
+            $start_date = $request->get_param('start_date') ?: date('Y-m-d', strtotime('-30 days'));
+            $end_date = $request->get_param('end_date') ?: date('Y-m-d');
+            
+            $data = $this->make_ga4_request('properties/' . $this->get_property_id() . ':runReport', array(
+                'dateRanges' => array(
+                    array(
+                        'startDate' => $start_date,
+                        'endDate' => $end_date
+                    )
+                ),
+                'dimensions' => array(
+                    array('name' => 'eventName')
+                ),
+                'metrics' => array(
+                    array('name' => 'eventCount')
+                ),
+                'orderBys' => array(
+                    array(
+                        'metric' => array(
+                            'metricName' => 'eventCount'
+                        ),
+                        'desc' => true
+                    )
+                ),
+                'limit' => 10
+            ));
+            
+            $events_data = $this->format_events_data($data);
+            
+            return rest_ensure_response(array(
+                'success' => true,
+                'data' => $events_data
+            ));
+            
+        } catch (Exception $e) {
+            return new WP_Error('ga4_error', $e->getMessage(), array('status' => 500));
+        }
+    }
+    
+    /**
      * Obter dados em tempo real
      */
     public function get_realtime_data($request) {
         try {
-            $data = $this->make_ga4_request('reports:runRealtimeReport', array(
-                'property' => 'properties/' . $this->get_property_id(),
+            $data = $this->make_ga4_request('properties/' . $this->get_property_id() . ':runRealtimeReport', array(
                 'metrics' => array(
                     array('name' => 'activeUsers'),
                     array('name' => 'screenPageViews'),
@@ -464,7 +526,7 @@ class MPA_Analytics_Client {
             'https://analyticsdata.googleapis.com/v1beta' : 
             'https://analyticsdata.googleapis.com/v1beta';
             
-        $url = $base_url . '/properties/' . $this->get_property_id() . ':' . $endpoint;
+        $url = $base_url . '/' . $endpoint;
         
         $response = wp_remote_post($url, array(
             'headers' => array(
@@ -556,8 +618,7 @@ class MPA_Analytics_Client {
      * Buscar métricas básicas
      */
     private function fetch_metrics($start_date, $end_date) {
-        $data = $this->make_ga4_request('reports:runReport', array(
-            'property' => 'properties/' . $this->get_property_id(),
+        $data = $this->make_ga4_request('properties/' . $this->get_property_id() . ':runReport', array(
             'dateRanges' => array(
                 array(
                     'startDate' => $start_date,
@@ -572,7 +633,12 @@ class MPA_Analytics_Client {
             )
         ));
         
+        // Debug: Log da resposta da API
+        error_log('GA4 API Response: ' . print_r($data, true));
+        
         if (!isset($data['rows'][0]['metricValues'])) {
+            // Debug: Log quando não há dados
+            error_log('GA4 No rows or metricValues found');
             return array(
                 'users' => 0,
                 'pageviews' => 0,
@@ -750,6 +816,28 @@ class MPA_Analytics_Client {
     }
     
     /**
+     * Formatar dados de eventos
+     */
+    private function format_events_data($data) {
+        $formatted = array(
+            'events' => array()
+        );
+        
+        if (isset($data['rows'])) {
+            foreach ($data['rows'] as $row) {
+                if (isset($row['dimensionValues'][0]['value']) && isset($row['metricValues'][0]['value'])) {
+                    $formatted['events'][] = array(
+                        'event_name' => $row['dimensionValues'][0]['value'],
+                        'event_count' => intval($row['metricValues'][0]['value'])
+                    );
+                }
+            }
+        }
+        
+        return $formatted;
+    }
+    
+    /**
      * Calcular diferença em dias entre duas datas
      */
     private function get_date_diff($start_date, $end_date) {
@@ -780,6 +868,142 @@ class MPA_Analytics_Client {
         $this->log_activity('GA4 desconectado manualmente', 'info');
         
         wp_send_json_success('GA4 desconectado com sucesso');
+    }
+    
+    /**
+     * Iniciar fluxo OAuth
+     */
+    public function start_oauth_flow() {
+        // Verificar nonce
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'mpa_analytics_nonce')) {
+            wp_send_json_error('Nonce inválido');
+        }
+        
+        // Verificar permissões
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Sem permissão');
+        }
+        
+        $settings = MPA_Analytics_Page::get_ga4_settings();
+        
+        if (empty($settings['client_id'])) {
+            wp_send_json_error('Client ID não configurado');
+        }
+        
+        // Gerar state para segurança
+        $state = wp_generate_password(32, false);
+        update_option('mpa_ga4_oauth_state', $state);
+        
+        // URL de callback
+        $redirect_uri = admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG);
+        
+        // Construir URL de autorização
+        $auth_url = self::OAUTH_ENDPOINT . '?' . http_build_query(array(
+            'client_id' => $settings['client_id'],
+            'redirect_uri' => $redirect_uri,
+            'scope' => implode(' ', self::REQUIRED_SCOPES),
+            'response_type' => 'code',
+            'access_type' => 'offline',
+            'prompt' => 'consent',
+            'state' => $state
+        ));
+        
+        $this->log_activity('Iniciando fluxo OAuth para GA4', 'info');
+        
+        wp_send_json_success(array(
+            'auth_url' => $auth_url,
+            'message' => 'Redirecionando para autorização do Google...'
+        ));
+    }
+    
+    /**
+     * Processar callback do OAuth
+     */
+    public function handle_oauth_callback() {
+        // Verificar se é callback do OAuth
+        if (!isset($_GET['code']) || !isset($_GET['state'])) {
+            return;
+        }
+        
+        // Verificar se estamos na página correta
+        if (!isset($_GET['page']) || $_GET['page'] !== MPA_Analytics_Page::SETTINGS_SLUG) {
+            return;
+        }
+        
+        try {
+            // Verificar state
+            $saved_state = get_option('mpa_ga4_oauth_state', '');
+            if (empty($saved_state) || $saved_state !== $_GET['state']) {
+                throw new Exception('State inválido - possível ataque CSRF');
+            }
+            
+            // Limpar state usado
+            delete_option('mpa_ga4_oauth_state');
+            
+            // Trocar código por token
+            $this->exchange_code_for_token($_GET['code']);
+            
+            // Redirecionar com sucesso
+            wp_redirect(admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG . '&oauth=success'));
+            exit;
+            
+        } catch (Exception $e) {
+            $this->log_activity('Erro no callback OAuth: ' . $e->getMessage(), 'error');
+            
+            // Redirecionar com erro
+            wp_redirect(admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG . '&oauth=error&message=' . urlencode($e->getMessage())));
+            exit;
+        }
+    }
+    
+    /**
+     * Trocar código de autorização por token de acesso
+     */
+    private function exchange_code_for_token($code) {
+        $settings = MPA_Analytics_Page::get_ga4_settings();
+        $redirect_uri = admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG);
+        
+        $response = wp_remote_post(self::TOKEN_ENDPOINT, array(
+            'body' => array(
+                'client_id' => $settings['client_id'],
+                'client_secret' => $settings['client_secret'],
+                'code' => $code,
+                'grant_type' => 'authorization_code',
+                'redirect_uri' => $redirect_uri
+            ),
+            'timeout' => 30
+        ));
+        
+        if (is_wp_error($response)) {
+            throw new Exception('Erro na requisição de token: ' . $response->get_error_message());
+        }
+        
+        $response_code = wp_remote_retrieve_response_code($response);
+        $response_body = wp_remote_retrieve_body($response);
+        
+        if ($response_code !== 200) {
+            $error_data = json_decode($response_body, true);
+            $error_message = isset($error_data['error_description']) ? 
+                $error_data['error_description'] : 
+                'Erro HTTP ' . $response_code;
+            throw new Exception($error_message);
+        }
+        
+        $data = json_decode($response_body, true);
+        
+        if (!isset($data['access_token'])) {
+            throw new Exception('Token de acesso não recebido');
+        }
+        
+        // Salvar tokens
+        update_option('mpa_ga4_access_token', $data['access_token']);
+        update_option('mpa_ga4_token_expires', time() + $data['expires_in']);
+        
+        if (isset($data['refresh_token'])) {
+            update_option('mpa_ga4_refresh_token', $data['refresh_token']);
+        }
+        
+        $this->log_activity('Tokens OAuth obtidos com sucesso', 'success');
     }
     
     /**

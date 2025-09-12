@@ -23,6 +23,32 @@
         }
 
         init() {
+            console.log('🔍 [MPA DEBUG] Inicializando MPAAnalyticsDashboard');
+            
+            // Verificar se objeto mpaAnalytics existe
+            if (typeof mpaAnalytics === 'undefined') {
+                console.error('❌ [MPA DEBUG] Objeto mpaAnalytics não existe!');
+                this.showNotification('Erro: Configurações JavaScript não carregadas', 'error');
+                return;
+            }
+            
+            console.log('🔍 [MPA DEBUG] Objeto mpaAnalytics encontrado:', mpaAnalytics);
+            console.log('🔍 [MPA DEBUG] Chart.js disponível:', typeof Chart !== 'undefined' ? 'SIM' : 'NÃO');
+            
+            // Se Chart.js não está disponível, aguardar um pouco
+            if (typeof Chart === 'undefined') {
+                console.log('⏳ [MPA DEBUG] Aguardando Chart.js carregar...');
+                setTimeout(() => {
+                    console.log('🔍 [MPA DEBUG] Verificação Chart.js após delay:', typeof Chart !== 'undefined' ? 'SIM' : 'NÃO');
+                    this.continueInit();
+                }, 2000);
+                return;
+            }
+            
+            this.continueInit();
+        }
+        
+        continueInit() {
             this.bindEvents();
             this.setupDateFilters();
             this.loadAllData();
@@ -150,6 +176,10 @@
         // DATA LOADING
         // ===================================
         loadAllData() {
+            console.log('🔍 [MPA DEBUG] loadAllData() iniciado');
+            console.log('🔍 [MPA DEBUG] currentDateRange:', this.currentDateRange);
+            console.log('🔍 [MPA DEBUG] mpaAnalytics object:', mpaAnalytics);
+            
             this.showLoading();
             
             Promise.all([
@@ -159,14 +189,17 @@
                 this.loadTrafficSources(),
                 this.loadTopCities(),
                 this.loadTopPages(),
+                this.loadEventsData(),
                 this.loadRealtimeData()
             ]).then(() => {
+                console.log('✅ [MPA DEBUG] Todos os dados carregados com sucesso');
                 this.hideLoading();
                 this.showNotification('Dados atualizados com sucesso!', 'success');
             }).catch((error) => {
+                console.error('❌ [MPA DEBUG] Erro ao carregar dados:', error);
                 this.hideLoading();
                 this.showNotification('Erro ao carregar dados: ' + error.message, 'error');
-                console.error('Error loading analytics data:', error);
+                console.error('Erro ao carregar dados do analytics:', error);
             });
         }
 
@@ -175,7 +208,7 @@
                 const response = await this.makeRequest('metrics', this.currentDateRange);
                 this.updateMetricsDisplay(response.data);
             } catch (error) {
-                console.error('Error loading metrics:', error);
+                console.error('Erro ao carregar métricas:', error);
                 throw error;
             }
         }
@@ -185,7 +218,7 @@
                 const response = await this.makeRequest('visitors', this.currentDateRange);
                 this.updateVisitorsChart(response.data);
             } catch (error) {
-                console.error('Error loading visitors data:', error);
+                console.error('Erro ao carregar dados de visitantes:', error);
                 throw error;
             }
         }
@@ -196,7 +229,7 @@
                 this.updateDeviceChart(response.data);
                 this.updateDeviceStats(response.data);
             } catch (error) {
-                console.error('Error loading device data:', error);
+                console.error('Erro ao carregar dados de dispositivos:', error);
                 throw error;
             }
         }
@@ -206,7 +239,7 @@
                 const response = await this.makeRequest('traffic-sources', this.currentDateRange);
                 this.updateTrafficSources(response.data);
             } catch (error) {
-                console.error('Error loading traffic sources:', error);
+                console.error('Erro ao carregar fontes de tráfego:', error);
                 throw error;
             }
         }
@@ -216,7 +249,7 @@
                 const response = await this.makeRequest('cities', this.currentDateRange);
                 this.updateTopCities(response.data);
             } catch (error) {
-                console.error('Error loading top cities:', error);
+                console.error('Erro ao carregar principais cidades:', error);
                 throw error;
             }
         }
@@ -226,7 +259,18 @@
                 const response = await this.makeRequest('pages', this.currentDateRange);
                 this.updateTopPages(response.data);
             } catch (error) {
-                console.error('Error loading top pages:', error);
+                console.error('Erro ao carregar páginas principais:', error);
+                throw error;
+            }
+        }
+
+        async loadEventsData() {
+            try {
+                const response = await this.makeRequest('events', this.currentDateRange);
+                this.updateEventsChart(response.data);
+                this.updateTopEvents(response.data);
+            } catch (error) {
+                console.error('Erro ao carregar dados de eventos:', error);
                 throw error;
             }
         }
@@ -236,7 +280,7 @@
                 const response = await this.makeRequest('realtime');
                 this.updateRealtimeDisplay(response.data);
             } catch (error) {
-                console.error('Error loading realtime data:', error);
+                console.error('Erro ao carregar dados em tempo real:', error);
                 // Não lançar erro para dados em tempo real para não interromper outras operações
             }
         }
@@ -251,6 +295,12 @@
             if (params.start_date) url.searchParams.append('start_date', params.start_date);
             if (params.end_date) url.searchParams.append('end_date', params.end_date);
 
+            console.log(`🌐 [MPA DEBUG] Fazendo requisição para: ${url.toString()}`);
+            console.log('🌐 [MPA DEBUG] Headers enviados:', {
+                'X-WP-Nonce': mpaAnalytics.nonce,
+                'Content-Type': 'application/json'
+            });
+
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -259,12 +309,17 @@
                 }
             });
 
+            console.log(`🌐 [MPA DEBUG] Response status: ${response.status} ${response.statusText}`);
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
+                console.error(`❌ [MPA DEBUG] Erro na requisição:`, errorData);
                 throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
             }
 
-            return await response.json();
+            const result = await response.json();
+            console.log(`✅ [MPA DEBUG] Response recebida para ${endpoint}:`, result);
+            return result;
         }
 
         // ===================================
@@ -302,6 +357,13 @@
         updateVisitorsChart(data) {
             const ctx = document.getElementById('visitorsChart');
             if (!ctx) return;
+
+            // Verificar se Chart.js está disponível
+            if (typeof Chart === 'undefined') {
+                console.log('⚠️ [MPA DEBUG] Chart.js não disponível, exibindo dados sem gráfico');
+                ctx.outerHTML = '<div style="padding: 20px; text-align: center; color: #666;">📊 Dados carregados com sucesso<br>Gráfico indisponível (Chart.js não carregado)</div>';
+                return;
+            }
 
             // Destruir gráfico existente se houver
             if (this.charts.visitors) {
@@ -355,17 +417,36 @@
             const ctx = document.getElementById('deviceChart');
             if (!ctx) return;
 
+            // Verificar se Chart.js está disponível
+            if (typeof Chart === 'undefined') {
+                console.log('⚠️ [MPA DEBUG] Chart.js não disponível para device chart');
+                ctx.outerHTML = '<div style="padding: 20px; text-align: center; color: #666;">📱 Dados de dispositivos carregados<br>Gráfico indisponível</div>';
+                return;
+            }
+
             // Destruir gráfico existente se houver
             if (this.charts.device) {
                 this.charts.device.destroy();
             }
 
             const colors = ['#2563eb', '#9333ea', '#10b981', '#f59e0b'];
+            
+            // Traduções dos dispositivos
+            const deviceTranslations = {
+                'mobile': 'Celular',
+                'desktop': 'Desktop',
+                'tablet': 'Tablet'
+            };
+            
+            // Traduzir labels
+            const translatedLabels = (data.labels || []).map(label => 
+                deviceTranslations[label.toLowerCase()] || label
+            );
 
             this.charts.device = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: data.labels || [],
+                    labels: translatedLabels,
                     datasets: [{
                         data: data.data || [],
                         backgroundColor: colors.slice(0, data.labels?.length || 0),
@@ -391,17 +472,25 @@
 
             let html = '';
             const total = data.total || 1;
+            
+            // Traduções dos dispositivos
+            const deviceTranslations = {
+                'mobile': 'Celular',
+                'desktop': 'Desktop',
+                'tablet': 'Tablet'
+            };
 
             (data.labels || []).forEach((label, index) => {
                 const value = data.data[index] || 0;
                 const percentage = ((value / total) * 100).toFixed(1);
                 const dotClass = label.toLowerCase();
+                const translatedLabel = deviceTranslations[label.toLowerCase()] || label;
 
                 html += `
                     <div class="mpa-device-stat">
                         <div class="mpa-device-stat-left">
                             <div class="mpa-device-dot ${dotClass}"></div>
-                            <span class="mpa-device-label">${label}</span>
+                            <span class="mpa-device-label">${translatedLabel}</span>
                         </div>
                         <span class="mpa-device-percentage">${percentage}%</span>
                     </div>
@@ -416,14 +505,29 @@
             if (!container.length) return;
 
             let html = '';
+            
+            // Traduções das fontes de tráfego
+            const trafficTranslations = {
+                'Paid Search': 'Busca Paga',
+                'Referral': 'Referência',
+                'Direct': 'Direto',
+                'Organic Search': 'Busca Orgânica',
+                'Organic Social': 'Social Orgânico',
+                'Cross-network': 'Cross-network',
+                'Unassigned': 'Não Atribuído',
+                'Social': 'Social',
+                'Email': 'E-mail',
+                'Display': 'Display'
+            };
 
             (data || []).forEach(source => {
                 const barWidth = Math.max(source.percentage, 5); // Mínimo 5% para visibilidade
                 const fillClass = this.getTrafficSourceClass(source.source);
+                const translatedSource = trafficTranslations[source.source] || source.source;
 
                 html += `
                     <div class="mpa-progress-item">
-                        <span class="mpa-progress-label">${source.source}</span>
+                        <span class="mpa-progress-label">${translatedSource}</span>
                         <div class="mpa-progress-right">
                             <div class="mpa-progress-bar">
                                 <div class="mpa-progress-fill ${fillClass}" style="width: ${barWidth}%"></div>
@@ -474,6 +578,114 @@
             });
 
             container.html(html || '<p class="mpa-no-data">Nenhum dado disponível</p>');
+        }
+
+        updateEventsChart(data) {
+            const canvas = document.getElementById('eventsChart');
+            if (!canvas) return;
+
+            // Destruir gráfico existente se houver
+            if (this.eventsChart) {
+                this.eventsChart.destroy();
+            }
+
+            // Preparar dados para o gráfico
+            const events = data?.events || [];
+            const labels = events.map(event => event.event_name || 'Evento');
+            const values = events.map(event => event.event_count || 0);
+            const colors = [
+                '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+                '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
+            ];
+
+            try {
+                this.eventsChart = new Chart(canvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: colors.slice(0, values.length),
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 12,
+                                    padding: 15,
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: 10
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Erro ao criar gráfico de eventos:', error);
+                canvas.parentElement.innerHTML = '<p style="text-align: center; color: #666;">Erro ao carregar gráfico</p>';
+            }
+        }
+
+        updateTopEvents(data) {
+            const container = $('#topEvents');
+            if (!container.length) return;
+
+            let html = '';
+            const events = data?.events || [];
+
+            events.forEach((event, index) => {
+                const eventName = event.event_name || 'Evento';
+                const eventCount = event.event_count || 0;
+                
+                // Traduzir nomes de eventos comuns do GA4
+                const eventTranslations = {
+                    'page_view': 'Visualização de Página',
+                    'click': 'Clique',
+                    'scroll': 'Rolagem',
+                    'file_download': 'Download de Arquivo',
+                    'form_submit': 'Envio de Formulário',
+                    'video_start': 'Início de Vídeo',
+                    'video_complete': 'Vídeo Completo',
+                    'search': 'Pesquisa',
+                    'login': 'Login',
+                    'sign_up': 'Cadastro'
+                };
+                
+                const translatedName = eventTranslations[eventName] || eventName;
+                
+                html += `
+                    <div class="mpa-event-item">
+                        <div class="mpa-event-rank">${index + 1}</div>
+                        <div class="mpa-event-info">
+                            <div class="mpa-event-name">${translatedName}</div>
+                        </div>
+                        <div class="mpa-event-count">${this.formatNumber(eventCount)}</div>
+                    </div>
+                `;
+            });
+
+            container.html(html || '<p class="mpa-no-data">Nenhum evento disponível</p>');
         }
 
         updateRealtimeDisplay(data) {
@@ -603,15 +815,15 @@
             // Gerar relatório CSV simples baseado nos dados atuais
             const current = this.getCurrentMetrics();
             
-            return `Analytics Report - ${this.currentDateRange.start_date} to ${this.currentDateRange.end_date}
+            return `Relatório Analytics - ${this.currentDateRange.start_date} até ${this.currentDateRange.end_date}
             
-Metric,Value
-Users,${current.users || 0}
-Page Views,${current.pageviews || 0}
-Engagement Rate,${current.engagement_rate || 0}%
-Avg Session Duration,${this.formatDuration(current.avg_session_duration || 0)}
+Métrica,Valor
+Usuários,${current.users || 0}
+Visualizações,${current.pageviews || 0}
+Taxa de Engajamento,${current.engagement_rate || 0}%
+Duração Média da Sessão,${this.formatDuration(current.avg_session_duration || 0)}
 
-Generated on: ${new Date().toLocaleString()}`;
+Gerado em: ${new Date().toLocaleString('pt-BR')}`;
         }
 
         downloadCSV(content, filename) {
@@ -657,12 +869,24 @@ Generated on: ${new Date().toLocaleString()}`;
     // INITIALIZATION
     // ===================================
     $(document).ready(function() {
+        console.log('🔍 [MPA DEBUG] DOM ready, verificando se estamos na página Analytics');
+        console.log('🔍 [MPA DEBUG] Elemento .mpa-dashboard-analytics encontrado:', $('.mpa-dashboard-analytics').length > 0);
+        console.log('🔍 [MPA DEBUG] Elemento #mpaAnalyticsLoading encontrado:', $('#mpaAnalyticsLoading').length > 0);
+        console.log('🔍 [MPA DEBUG] mpaAnalytics object disponível:', typeof mpaAnalytics !== 'undefined');
+        
         // Verificar se estamos na página de analytics
         if ($('.mpa-dashboard-analytics').length > 0) {
+            console.log('✅ [MPA DEBUG] Estamos na página Analytics');
+            
             // Verificar se o GA4 está configurado
             if ($('#mpaAnalyticsLoading').length > 0) {
-                new MPAAnalyticsDashboard();
+                console.log('✅ [MPA DEBUG] GA4 configurado, inicializando dashboard');
+                window.mpaAnalyticsDashboard = new MPAAnalyticsDashboard();
+            } else {
+                console.log('⚠️ [MPA DEBUG] GA4 não configurado');
             }
+        } else {
+            console.log('⚠️ [MPA DEBUG] Não estamos na página Analytics');
         }
     });
 
