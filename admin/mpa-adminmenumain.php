@@ -225,24 +225,7 @@ add_action('admin_head', function() {
     </style>';
 });
 
-// Adicionar página de dashboard personalizada que redireciona para Analytics
-add_action('admin_menu', function () {
-    add_menu_page(
-        'Analytics Dashboard',
-        'Dashboard',
-        'manage_options',
-        'mpa-dashboard',
-        'mpa_dashboard_redirect_to_analytics',
-        'dashicons-chart-area',
-        2
-    );
-});
-
-function mpa_dashboard_redirect_to_analytics() {
-    // Redirecionar para a página de Analytics
-    wp_redirect(admin_url('admin.php?page=mpa-analytics'));
-    exit;
-}
+// Dashboard será adicionado como submenu de "Gerenciar Admin" no mpa-menu-manager.php
 
 // NOVAS FUNÇÕES PARA CONTROLE DE RESTRIÇÕES DE MENU
 

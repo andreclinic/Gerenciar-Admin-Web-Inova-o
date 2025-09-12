@@ -35,58 +35,65 @@ class MPA_Analytics_Page {
      * Constructor
      */
     public function __construct() {
-        add_action('admin_menu', array($this, 'register_menu_pages'));
+        // Usar prioridade 15 para garantir que execute DEPOIS do menu principal (prioridade 10)
+        add_action('admin_menu', array($this, 'register_menu_pages'), 15);
         add_action('admin_enqueue_scripts', array($this, 'enqueue_assets'));
         add_action('wp_ajax_mpa_test_ga4_connection', array($this, 'test_ga4_connection'));
+        
+        // Carregar Analytics Client
+        $this->load_analytics_client();
+    }
+    
+    /**
+     * Carregar a classe Analytics Client
+     */
+    private function load_analytics_client() {
+        if (!class_exists('MPA_Analytics_Client')) {
+            require_once plugin_dir_path(__FILE__) . '../includes/class-mpa-analytics-client.php';
+            new MPA_Analytics_Client();
+        }
     }
     
     /**
      * Registrar páginas do menu/submenu
+     * NOTA: Os menus agora são registrados em mpa-menu-manager.php como submenus de "Gerenciar Admin"
      */
     public function register_menu_pages() {
-        // Verificar se o usuário tem permissão
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-        
-        // Adicionar página principal do Analytics ao submenu do plugin
-        add_submenu_page(
-            'mpa-dashboard',                    // Slug do menu pai (do plugin principal)
-            'Analytics',                        // Título da página
-            'Analytics',                        // Título do menu
-            'manage_options',                   // Capability
-            self::PAGE_SLUG,                   // Slug da página
-            array($this, 'render_analytics_page') // Callback
-        );
-        
-        // Adicionar página de configurações do GA4
-        add_submenu_page(
-            'mpa-dashboard',                    // Slug do menu pai
-            'Analytics - Configurações',       // Título da página
-            'Analytics Config',                 // Título do menu
-            'manage_options',                   // Capability
-            self::SETTINGS_SLUG,               // Slug da página
-            array($this, 'render_settings_page') // Callback
-        );
+        // Menus movidos para mpa-menu-manager.php - manter este método por compatibilidade
+        // mas não registrar os menus aqui para evitar duplicação
+        return;
     }
     
     /**
      * Enfileirar assets CSS e JS
      */
     public function enqueue_assets($hook_suffix) {
-        // Verificar se estamos na página do analytics
-        if (!$this->is_analytics_page($hook_suffix)) {
+        // Debug: Log do hook suffix
+        error_log('[MPA DEBUG] Hook suffix atual: ' . $hook_suffix);
+        
+        // Verificar se estamos na página do analytics (método mais abrangente)
+        $current_page = isset($_GET['page']) ? $_GET['page'] : '';
+        $is_analytics_page = ($current_page === self::PAGE_SLUG || $current_page === self::SETTINGS_SLUG);
+        
+        error_log('[MPA DEBUG] Current page: ' . $current_page);
+        error_log('[MPA DEBUG] Is analytics page: ' . ($is_analytics_page ? 'YES' : 'NO'));
+        
+        if (!$is_analytics_page) {
             return;
         }
         
-        // Enfileirar Chart.js
+        error_log('[MPA DEBUG] Carregando assets para página Analytics');
+        
+        // Enfileirar Chart.js - mover para header para garantir carregamento
         wp_enqueue_script(
             'chartjs',
-            'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js',
+            'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js',
             array(),
             '4.4.0',
-            true
+            false  // Carregar no header ao invés do footer
         );
+        
+        error_log('[MPA DEBUG] Chart.js enfileirado');
         
         // Enfileirar CSS do Analytics
         wp_enqueue_style(
@@ -109,7 +116,8 @@ class MPA_Analytics_Page {
         wp_localize_script('mpa-analytics-js', 'mpaAnalytics', array(
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'restUrl' => rest_url('mpa/v1/analytics/'),
-            'nonce' => wp_create_nonce('mpa_analytics_nonce'),
+            'nonce' => wp_create_nonce('wp_rest'), // Usar nonce correto para REST API
+            'ajaxNonce' => wp_create_nonce('mpa_analytics_nonce'), // Manter nonce separado para AJAX
             'strings' => array(
                 'loading' => __('Carregando...', 'gerenciar-admin'),
                 'error' => __('Erro ao carregar dados', 'gerenciar-admin'),
@@ -277,4 +285,19 @@ class MPA_Analytics_Page {
 }
 
 // Inicializar a classe
-new MPA_Analytics_Page();
+$mpa_analytics_instance = new MPA_Analytics_Page();
+
+// Funções wrapper para compatibilidade com menu callbacks
+function mpa_render_analytics_page() {
+    global $mpa_analytics_instance;
+    if ($mpa_analytics_instance) {
+        $mpa_analytics_instance->render_analytics_page();
+    }
+}
+
+function mpa_render_analytics_settings_page() {
+    global $mpa_analytics_instance;
+    if ($mpa_analytics_instance) {
+        $mpa_analytics_instance->render_settings_page();
+    }
+}

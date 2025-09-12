@@ -40,6 +40,42 @@ function mpa_add_main_menu() {
         'mpa-settings',                 // Menu slug
         'mpa_settings_page'             // Function
     );
+    
+    // Submenu Dashboard (redireciona para Analytics)
+    add_submenu_page(
+        'mpa-main',                     // Parent slug
+        'Dashboard Analytics',          // Page title
+        'Dashboard',                    // Menu title
+        'manage_options',               // Capability
+        'mpa-dashboard',                // Menu slug
+        'mpa_dashboard_redirect_to_analytics' // Function
+    );
+    
+    // Submenu Analytics
+    add_submenu_page(
+        'mpa-main',                     // Parent slug
+        'Analytics',                    // Page title
+        'Analytics',                    // Menu title
+        'manage_options',               // Capability
+        'mpa-analytics',                // Menu slug
+        'mpa_render_analytics_page'     // Function wrapper
+    );
+    
+    // Submenu Analytics Config
+    add_submenu_page(
+        'mpa-main',                     // Parent slug
+        'Analytics - Configurações',   // Page title
+        'Analytics Config',             // Menu title
+        'manage_options',               // Capability
+        'mpa-analytics-settings',       // Menu slug
+        'mpa_render_analytics_settings_page' // Function wrapper
+    );
+}
+
+// Função para redirecionar o Dashboard para Analytics
+function mpa_dashboard_redirect_to_analytics() {
+    wp_redirect(admin_url('admin.php?page=mpa-analytics'));
+    exit;
 }
 
 // Página principal do plugin
