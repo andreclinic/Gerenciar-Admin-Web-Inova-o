@@ -28,6 +28,7 @@ include_once ADMIN_BAR_MENU_PATH . '/includes/class-mpa-analytics-client.php';
 include_once ADMIN_BAR_MENU_PATH . '/debug-menu-slugs.php'; // Debug ativo temporariamente
 include_once ADMIN_BAR_MENU_PATH . '/admin/debugar.php';
 include_once ADMIN_BAR_MENU_PATH . '/debug-permissions.php'; // Debug de permissões
+include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-custom-login.php'; // Tela de login personalizada
 
 
 // Adicionar debug temporário para verificar o que está acontecendo
