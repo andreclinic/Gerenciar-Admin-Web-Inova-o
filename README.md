@@ -6,6 +6,7 @@ Plugin WordPress que moderniza completamente a interface de administração, tra
 
 ### Interface Moderna
 - **Dashboard Redesenhado**: Interface limpa e profissional baseada em design moderno
+- **Tela de Login Customizada**: Interface de login moderna e interativa
 - **Layout Responsivo**: Adaptação perfeita para desktop, tablet e mobile
 - **Tipografia Otimizada**: Fonte Inter para melhor legibilidade
 - **Cores Consistentes**: Paleta de cores profissional e harmoniosa
@@ -16,6 +17,15 @@ Plugin WordPress que moderniza completamente a interface de administração, tra
 - **Toggle de Sidebar**: Botão para expandir/recolher o menu lateral
 - **Estado Persistente**: Lembra a preferência do usuário (expandido/recolhido)
 - **Navegação Ativa**: Destaque visual da página atual
+
+### Sistema de Login Personalizado
+- **Interface Moderna**: Design limpo seguindo padrões contemporâneos
+- **Logo Configurável**: Integração com configurações do plugin
+- **Toggle de Senha**: Botão para mostrar/ocultar senha com ícones animados
+- **Seletor de Idioma**: Suporte a PT-BR, EN, ES com tradução em tempo real
+- **Animações Suaves**: Transições elegantes e microinterações
+- **Compatibilidade Total**: Mantém funcionalidade nativa do WordPress
+- **Telas de Recuperação**: Suporte completo a reset de senha
 
 ### Dashboard de Métricas
 - **Analytics em Tempo Real**: Visualização de métricas importantes
@@ -48,14 +58,19 @@ Plugin WordPress que moderniza completamente a interface de administração, tra
 ### Arquitetura Modular
 ```
 admin/
-├── mpa-wpadminbar.php    # Header customizado
-├── mpa-adminmenumain.php # Sistema de menu dinâmico
-├── mpa-wpbody.php        # Layout principal e CSS
-└── mpa-wpfooter.php      # Footer personalizado
+├── mpa-wpadminbar.php     # Header customizado
+├── mpa-adminmenumain.php  # Sistema de menu dinâmico
+├── mpa-wpbody.php         # Layout principal e CSS
+├── mpa-wpfooter.php       # Footer personalizado
+└── mpa-custom-login.php   # Sistema de login customizado
 
 assets/
-├── css/                  # Estilos organizados por módulo
-└── js/                   # Scripts interativos
+├── css/
+│   ├── mpa-custom-login.css  # Estilos da tela de login
+│   └── ...                   # Outros estilos por módulo
+└── js/
+    ├── mpa-custom-login.js   # Scripts interativos do login
+    └── ...                   # Outros scripts
 ```
 
 ### Hooks WordPress Utilizados
@@ -63,6 +78,9 @@ assets/
 - `admin_enqueue_scripts` - Carregamento de assets
 - `admin_head` - Estilos críticos inline
 - `admin_footer` - Scripts de inicialização
+- `login_enqueue_scripts` - Assets da tela de login
+- `login_head` - Customizações no head do login
+- `login_footer` - Scripts interativos do login
 
 ### JavaScript Avançado
 - **Gestão de Estado**: LocalStorage para persistência
@@ -139,7 +157,7 @@ assets/
 - **Estado Ativo**: Destaca a página atual
 - **URLs Limpas**: Corrige automaticamente URLs malformadas
 
-### Exemplo de Implementação
+### Exemplo de Implementação - Menu Dinâmico
 ```php
 // Menu principal detectado automaticamente
 foreach ($menu as $menu_item) {
@@ -153,25 +171,92 @@ foreach ($menu as $menu_item) {
 }
 ```
 
+### Exemplo de Implementação - Login Customizado
+```php
+// Hook principal para customização do login
+add_action('login_enqueue_scripts', 'mpa_custom_login_styles');
+add_action('login_footer', 'mpa_custom_login_footer');
+
+function mpa_custom_login_styles() {
+    // Carrega CSS e JS customizados
+    wp_enqueue_style('mpa-custom-login', /* ... */);
+    wp_enqueue_script('mpa-custom-login-js', /* ... */);
+}
+
+function mpa_custom_login_footer() {
+    // Logo configurável das configurações
+    $logo_url = get_option('mpa_logo_url', $default);
+    
+    // JavaScript inteligente que detecta contexto
+    // - Tela principal: Aplica transformação completa
+    // - Recuperação de senha: Mantém estrutura nativa
+}
+```
+
+### Recursos da Tela de Login
+```javascript
+// Funcionalidades implementadas em JavaScript
+const loginFeatures = {
+    // Toggle de senha com ícones SVG animados
+    passwordToggle: () => {
+        const input = document.getElementById('user_pass');
+        input.type = input.type === 'password' ? 'text' : 'password';
+    },
+    
+    // Seletor de idioma com tradução em tempo real
+    languageSelector: {
+        languages: ['pt', 'en', 'es'],
+        changeLanguage: (lang) => {
+            // Atualiza textos da interface dinamicamente
+            updateLabels(lang);
+            updatePlaceholders(lang);
+        }
+    },
+    
+    // Animações suaves de entrada
+    animations: {
+        containerEntry: 'mpa-animate-in',
+        duration: '0.6s ease'
+    }
+};
+```
+
 ## 🎨 Customização de Estilos
 
 ### Variáveis CSS Principais
 ```css
 :root {
+    /* Dashboard */
     --mpa-primary: #2563eb;
     --mpa-background: #f9fafb;
     --mpa-sidebar-width: 16rem;
     --mpa-header-height: 50px;
     --mpa-border-radius: 0.75rem;
+    
+    /* Login */
+    --mpa-login-container-bg: white;
+    --mpa-login-input-bg: #fafafa;
+    --mpa-login-border: #dfdfdf;
+    --mpa-login-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    --mpa-login-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 ```
 
 ### Classes Principais
+**Dashboard:**
 - `.mpa-sidebar` - Menu lateral
 - `.mpa-nav-item` - Itens de navegação
 - `.mpa-submenu` - Submenus retráteis
 - `.mpa-nav-item.active` - Item ativo
 - `.mpa-main-content` - Conteúdo principal
+
+**Login:**
+- `#login` - Container principal da tela de login
+- `.mpa-welcome-title` - Títulos personalizados (Recuperar Senha, etc.)
+- `.form-input`, `.input` - Campos de entrada
+- `.password-toggle` - Botão de mostrar/ocultar senha
+- `.language-selector` - Seletor de idioma
+- `.flag-br`, `.flag-us`, `.flag-es` - Bandeiras dos países
 
 ## 🚨 Solução de Problemas
 
@@ -190,10 +275,32 @@ add_action('in_admin_header', 'mpa_render_header');
 }
 ```
 
+### Tela de Login Não Aparece Customizada
+```php
+// Verifique se os hooks estão carregando:
+add_action('login_enqueue_scripts', 'mpa_custom_login_styles');
+add_action('login_footer', 'mpa_custom_login_footer');
+
+// Limpe o cache do navegador
+// Verifique se não há conflitos com outros plugins de login
+```
+
+### Seletor de Idioma Cortado
+```css
+/* Problema comum com overflow hidden */
+#login {
+    overflow: visible !important;
+}
+.language-options {
+    z-index: 200 !important;
+}
+```
+
 ### Conflitos com Plugins
 - O sistema usa regras CSS defensivas
 - Seletores específicos previnem conflitos
 - Compatibilidade universal implementada
+- Detecção inteligente de contexto (login vs recuperação)
 
 ## 📈 Performance
 
@@ -218,6 +325,18 @@ add_action('in_admin_header', 'mpa_render_header');
 - **Input Validation**: Validação de dados de entrada
 
 ## 📝 Changelog
+
+### v1.1.0 - Sistema de Login Personalizado
+- ✅ **Nova tela de login moderna** seguindo padrões de design contemporâneo
+- ✅ **Logo configurável** integrado com as configurações do plugin
+- ✅ **Toggle de senha interativo** com ícones SVG animados
+- ✅ **Seletor de idioma** com suporte a PT-BR, EN, ES e tradução em tempo real
+- ✅ **Bandeira do Brasil realista** com cores e proporções oficiais
+- ✅ **Compatibilidade total** com sistema de autenticação WordPress
+- ✅ **Suporte às telas de recuperação** mantendo funcionalidade nativa
+- ✅ **Animações suaves** e microinterações elegantes
+- ✅ **JavaScript inteligente** que detecta contexto automaticamente
+- ✅ **Design responsivo** adaptado para mobile e desktop
 
 ### v1.0.0 - Release Inicial
 - ✅ Interface administrativa moderna
