@@ -274,8 +274,8 @@ if (!defined('ABSPATH')) {
             </div>
         </section>
 
-        <!-- User Acquisition, Events & Engagement -->
-        <div class="mpa-card-grid mpa-card-grid-3">
+        <!-- User Acquisition & Events -->
+        <div class="mpa-card-grid mpa-card-grid-2">
             <!-- User Acquisition -->
             <div class="mpa-card">
                 <h3 class="mpa-section-title">🎯 Aquisição de Usuários</h3>
@@ -307,8 +307,10 @@ if (!defined('ABSPATH')) {
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Engagement & Content -->
+        <!-- Site Overview Section - Full Width -->
+        <section class="mpa-analytics-section">
             <div class="mpa-card">
                 <h3 class="mpa-section-title">🔥 Site Overview</h3>
                 
@@ -320,7 +322,7 @@ if (!defined('ABSPATH')) {
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- Real Time Section -->
         <section class="mpa-analytics-section">
