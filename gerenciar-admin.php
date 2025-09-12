@@ -53,10 +53,10 @@ add_action('admin_notices', function () {
     }
 });
 
-// Redirecionar para mpa-dashboard para usuários com permissões administrativas
-add_action('admin_init', 'mpa_redirect_to_dashboard');
+// Redirecionar para mpa-analytics para usuários com permissões administrativas
+add_action('admin_init', 'mpa_redirect_to_analytics');
 
-function mpa_redirect_to_dashboard()
+function mpa_redirect_to_analytics()
 {
     global $pagenow;
 
@@ -67,8 +67,8 @@ function mpa_redirect_to_dashboard()
             // Verificar se não é uma requisição AJAX ou REST
             if (!defined('DOING_AJAX') || !DOING_AJAX) {
                 if (!defined('REST_REQUEST') || !REST_REQUEST) {
-                    // Redirecionar para mpa-dashboard
-                    wp_redirect(admin_url('admin.php?page=mpa-dashboard'));
+                    // Redirecionar para mpa-analytics (Dashboard Analytics)
+                    wp_redirect(admin_url('admin.php?page=mpa-analytics'));
                     exit;
                 }
             }

@@ -225,26 +225,23 @@ add_action('admin_head', function() {
     </style>';
 });
 
-// Adicionar página de dashboard personalizada
+// Adicionar página de dashboard personalizada que redireciona para Analytics
 add_action('admin_menu', function () {
     add_menu_page(
         'Analytics Dashboard',
         'Dashboard',
         'manage_options',
         'mpa-dashboard',
-        'mpa_render_dashboard_page',
+        'mpa_redirect_to_analytics',
         'dashicons-chart-area',
         2
     );
 });
 
-function mpa_render_dashboard_page() {
-    ?>
-    <div class="mpa-dashboard-page">
-        <h1>Dashboard Analytics</h1>
-        <p>Conteúdo do dashboard será implementado aqui...</p>
-    </div>
-    <?php
+function mpa_redirect_to_analytics() {
+    // Redirecionar para a página de Analytics
+    wp_redirect(admin_url('admin.php?page=mpa-analytics'));
+    exit;
 }
 
 // NOVAS FUNÇÕES PARA CONTROLE DE RESTRIÇÕES DE MENU
