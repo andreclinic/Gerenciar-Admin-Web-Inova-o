@@ -420,9 +420,6 @@ if (!defined('ABSPATH')) {
             <button id="exportData" class="mpa-btn mpa-btn-secondary">
                 📊 Exportar Relatório
             </button>
-            <a href="<?php echo admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG); ?>" class="mpa-btn mpa-btn-secondary">
-                ⚙️ Configurações
-            </a>
         </div>
     <?php endif; ?>
 </div>

@@ -9,18 +9,18 @@
 if (!defined('ABSPATH'))
     exit;
 
-// Adiciona página no admin
-add_action('admin_menu', function () {
-    add_menu_page(
-        'MPA Menu Permissions',
-        'MPA Permissions',
-        'manage_options',
-        'mpa-permissions-tools',
-        'mpa_permissions_tools_page_html',
-        'dashicons-download',
-        80
-    );
-});
+// Menu removido - funcionalidade migrada para mpa-capabilities
+// add_action('admin_menu', function () {
+//     add_menu_page(
+//         'MPA Menu Permissions',
+//         'MPA Permissions',
+//         'manage_options',
+//         'mpa-permissions-tools',
+//         'mpa_permissions_tools_page_html',
+//         'dashicons-download',
+//         80
+//     );
+// });
 
 // HTML da página do plugin
 function mpa_permissions_tools_page_html()
@@ -138,17 +138,17 @@ add_action('admin_notices', function () {
 
 
 
-// Adiciona submenu para gerenciamento de capabilities
-add_action('admin_menu', function () {
-    add_submenu_page(
-        'mpa-permissions-tools',
-        'Gerenciar Capabilities',
-        'Gerenciar Capabilities',
-        'manage_options',
-        'mpa-manage-capabilities',
-        'mpa_manage_capabilities_page'
-    );
-});
+// Submenu removido - funcionalidade migrada para mpa-capabilities
+// add_action('admin_menu', function () {
+//     add_submenu_page(
+//         'mpa-permissions-tools',
+//         'Gerenciar Capabilities',
+//         'Gerenciar Capabilities',
+//         'manage_options',
+//         'mpa-manage-capabilities',
+//         'mpa_manage_capabilities_page'
+//     );
+// });
 
 // Página principal com abas por grupo
 function mpa_manage_capabilities_page()
