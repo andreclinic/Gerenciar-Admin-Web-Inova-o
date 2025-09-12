@@ -426,6 +426,72 @@ body.dark-mode .mpa-dashboard-analytics,
     color: var(--mpa-text-primary);
 }
 
+/* ===================================
+   EVENTOS
+   =================================== */
+.mpa-events-chart {
+    position: relative;
+    height: 200px;
+    margin-top: 1rem;
+}
+
+.mpa-events-stats {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--mpa-border-color);
+}
+
+.mpa-events-stats h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+    margin: 0 0 1rem 0;
+}
+
+.mpa-event-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0;
+}
+
+.mpa-event-rank {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    background: var(--mpa-accent-primary);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.mpa-event-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.mpa-event-name {
+    font-size: 0.875rem;
+    color: var(--mpa-text-secondary);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mpa-event-count {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mpa-text-primary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 .mpa-recent-date, .mpa-recent-excerpt {
     font-size: 0.75rem;
     color: var(--mpa-text-muted);
