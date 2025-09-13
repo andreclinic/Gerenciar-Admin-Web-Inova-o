@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - AnalyticsPro</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+      }
+
+      .login-container {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        width: 100%;
+        max-width: 400px;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .login-container::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #2563eb, #9333ea);
+      }
+
+      .language-selector {
+        display: flex;
+        justify-content: center;
+        margin-top: 1rem;
+        z-index: 10;
+      }
+
+      .language-dropdown {
+        position: relative;
+        display: inline-block;
+      }
+
+      .language-btn {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        color: #6b7280;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+      }
+
+      .language-btn:hover {
+        background-color: #f3f4f6;
+        border-color: #d1d5db;
+      }
+
+      .language-options {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        min-width: 120px;
+        z-index: 20;
+        display: none;
+        margin-top: 0.25rem;
+      }
+
+      .language-options.show {
+        display: block;
+      }
+
+      .language-option {
+        padding: 0.75rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: #374151;
+        transition: background-color 0.2s;
+      }
+
+      .language-option:hover {
+        background-color: #f9fafb;
+      }
+
+      .language-option:first-child {
+        border-radius: 0.5rem 0.5rem 0 0;
+      }
+
+      .language-option:last-child {
+        border-radius: 0 0 0.5rem 0.5rem;
+      }
+
+      .logo-section {
+        text-align: center;
+        margin-bottom: 2rem;
+        margin-top: 1rem;
+      }
+
+      .logo {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 0.5rem;
+      }
+
+      .logo-accent {
+        color: #2563eb;
+      }
+
+      .logo-subtitle {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 500;
+      }
+
+      .login-header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .login-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 0.5rem;
+      }
+
+      .login-subtitle {
+        font-size: 0.875rem;
+        color: #6b7280;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: #111827;
+        background-color: white;
+        transition: all 0.2s;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+
+      .form-input::placeholder {
+        color: #9ca3af;
+      }
+
+      .password-container {
+        position: relative;
+      }
+
+      .password-toggle {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+        transition: color 0.2s;
+      }
+
+      .password-toggle:hover {
+        color: #374151;
+      }
+
+      .form-options {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .remember-me {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .checkbox {
+        width: 1rem;
+        height: 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.25rem;
+        cursor: pointer;
+      }
+
+      .checkbox:checked {
+        background-color: #2563eb;
+        border-color: #2563eb;
+      }
+
+      .remember-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        cursor: pointer;
+      }
+
+      .forgot-password {
+        font-size: 0.875rem;
+        color: #2563eb;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+      }
+
+      .forgot-password:hover {
+        color: #1d4ed8;
+        text-decoration: underline;
+      }
+
+      .login-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.875rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 1.5rem;
+      }
+
+      .login-btn:hover {
+        background: linear-gradient(135deg, #1d4ed8, #1e40af);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+      }
+
+      .login-btn:active {
+        transform: translateY(0);
+      }
+
+      .login-btn:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .loading-spinner {
+        display: none;
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid transparent;
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .icon {
+        width: 1rem;
+        height: 1rem;
+        fill: currentColor;
+      }
+
+      .flag {
+        width: 1rem;
+        height: 0.75rem;
+        border-radius: 0.125rem;
+        display: inline-block;
+      }
+
+      .flag-br {
+        background: linear-gradient(
+          to bottom,
+          #009739 33%,
+          #fedd00 33%,
+          #fedd00 66%,
+          #012169 66%
+        );
+      }
+
+      .flag-us {
+        background: linear-gradient(
+          to bottom,
+          #b22234 7.69%,
+          white 7.69%,
+          white 15.38%,
+          #b22234 15.38%
+        );
+      }
+
+      .flag-es {
+        background: linear-gradient(
+          to bottom,
+          #c60b1e 25%,
+          #ffc400 25%,
+          #ffc400 75%,
+          #c60b1e 75%
+        );
+      }
+
+      /* Responsive */
+      @media (max-width: 480px) {
+        .login-container {
+          padding: 1.5rem;
+          margin: 0.5rem;
+        }
+
+        .logo {
+          font-size: 1.75rem;
+        }
+
+        .login-title {
+          font-size: 1.25rem;
+        }
+
+        .form-options {
+          flex-direction: column;
+          gap: 1rem;
+          align-items: flex-start;
+        }
+      }
+
+      /* Error states */
+      .form-input.error {
+        border-color: #dc2626;
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+      }
+
+      .error-message {
+        color: #dc2626;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        display: none;
+      }
+
+      .error-message.show {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <!-- Logo Section -->
+      <div class="logo-section">
+        <div class="logo">
+          Analytics
+          <span class="logo-accent">Pro</span>
+        </div>
+        <p class="logo-subtitle" data-translate="powered-by">
+          Powered by WordPress
+        </p>
+      </div>
+
+      <!-- Login Header -->
+      <div class="login-header">
+        <h1 class="login-title" data-translate="welcome-back">
+          Bem-vindo de volta
+        </h1>
+        <p class="login-subtitle" data-translate="sign-in-subtitle">
+          Faça login na sua conta para continuar
+        </p>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username" class="form-label" data-translate="username">
+            Usuário ou E-mail
+          </label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            class="form-input"
+            data-translate-placeholder="username-placeholder"
+            placeholder="Digite seu usuário ou e-mail"
+            required
+          />
+          <div class="error-message" id="usernameError">Campo obrigatório</div>
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label" data-translate="password">
+            Senha
+          </label>
+          <div class="password-container">
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-input"
+              data-translate-placeholder="password-placeholder"
+              placeholder="Digite sua senha"
+              required
+            />
+            <button type="button" class="password-toggle" id="passwordToggle">
+              <svg class="icon" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                <path
+                  fill-rule="evenodd"
+                  d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+          <div class="error-message" id="passwordError">Campo obrigatório</div>
+        </div>
+
+        <div class="form-options">
+          <label class="remember-me">
+            <input type="checkbox" id="rememberMe" class="checkbox" />
+            <span class="remember-label" data-translate="remember-me">
+              Lembrar de mim
+            </span>
+          </label>
+          <a
+            href="#"
+            class="forgot-password"
+            id="forgotPasswordLink"
+            data-translate="forgot-password"
+          >
+            Esqueci a senha
+          </a>
+        </div>
+
+        <button type="submit" class="login-btn" id="loginBtn">
+          <span class="loading-spinner" id="loadingSpinner"></span>
+          <span id="loginBtnText" data-translate="sign-in">Entrar</span>
+        </button>
+      </form>
+
+      <!-- Language Selector -->
+      <div class="language-selector">
+        <div class="language-dropdown">
+          <button class="language-btn" id="languageBtn">
+            <span class="flag flag-br"></span>
+            <span id="currentLang">PT-BR</span>
+            <svg class="icon" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fill-rule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+          <div class="language-options" id="languageOptions">
+            <div class="language-option" data-lang="pt">
+              <span class="flag flag-br"></span>
+              <span>Português (Brasil)</span>
+            </div>
+            <div class="language-option" data-lang="en">
+              <span class="flag flag-us"></span>
+              <span>English</span>
+            </div>
+            <div class="language-option" data-lang="es">
+              <span class="flag flag-es"></span>
+              <span>Español</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Translations
+      const translations = {
+        pt: {
+          "powered-by": "Powered by WordPress",
+          "welcome-back": "Bem-vindo de volta",
+          "sign-in-subtitle": "Faça login na sua conta para continuar",
+          username: "Usuário ou E-mail",
+          "username-placeholder": "Digite seu usuário ou e-mail",
+          password: "Senha",
+          "password-placeholder": "Digite sua senha",
+          "remember-me": "Lembrar de mim",
+          "forgot-password": "Esqueci a senha",
+          "sign-in": "Entrar",
+        },
+        en: {
+          "powered-by": "Powered by WordPress",
+          "welcome-back": "Welcome back",
+          "sign-in-subtitle": "Sign in to your account to continue",
+          username: "Username or Email",
+          "username-placeholder": "Enter your username or email",
+          password: "Password",
+          "password-placeholder": "Enter your password",
+          "remember-me": "Remember me",
+          "forgot-password": "Forgot password",
+          "sign-in": "Sign In",
+        },
+        es: {
+          "powered-by": "Powered by WordPress",
+          "welcome-back": "Bienvenido de vuelta",
+          "sign-in-subtitle": "Inicia sesión en tu cuenta para continuar",
+          username: "Usuario o Email",
+          "username-placeholder": "Ingresa tu usuario o email",
+          password: "Contraseña",
+          "password-placeholder": "Ingresa tu contraseña",
+          "remember-me": "Recordarme",
+          "forgot-password": "Olvidé mi contraseña",
+          "sign-in": "Iniciar Sesión",
+        },
+      };
+
+      // Language functionality
+      const languageBtn = document.getElementById("languageBtn");
+      const languageOptions = document.getElementById("languageOptions");
+      const currentLang = document.getElementById("currentLang");
+      let selectedLanguage = "pt";
+
+      languageBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        languageOptions.classList.toggle("show");
+      });
+
+      document.addEventListener("click", () => {
+        languageOptions.classList.remove("show");
+      });
+
+      document.querySelectorAll(".language-option").forEach((option) => {
+        option.addEventListener("click", (e) => {
+          const lang = e.currentTarget.dataset.lang;
+          selectedLanguage = lang;
+
+          // Update button
+          const flag = e.currentTarget.querySelector(".flag").className;
+          languageBtn.querySelector(".flag").className = flag;
+
+          // Update language display text
+          if (lang === "pt") {
+            currentLang.textContent = "PT-BR";
+          } else {
+            currentLang.textContent = lang.toUpperCase();
+          }
+
+          // Update translations
+          updateTranslations(lang);
+
+          languageOptions.classList.remove("show");
+        });
+      });
+
+      function updateTranslations(lang) {
+        const elements = document.querySelectorAll("[data-translate]");
+        elements.forEach((element) => {
+          const key = element.dataset.translate;
+          if (translations[lang] && translations[lang][key]) {
+            element.textContent = translations[lang][key];
+          }
+        });
+
+        // Update placeholders
+        const placeholderElements = document.querySelectorAll(
+          "[data-translate-placeholder]"
+        );
+        placeholderElements.forEach((element) => {
+          const key = element.dataset.translatePlaceholder;
+          if (translations[lang] && translations[lang][key]) {
+            element.placeholder = translations[lang][key];
+          }
+        });
+      }
+
+      // Password toggle functionality
+      const passwordToggle = document.getElementById("passwordToggle");
+      const passwordInput = document.getElementById("password");
+
+      passwordToggle.addEventListener("click", () => {
+        const type =
+          passwordInput.getAttribute("type") === "password"
+            ? "text"
+            : "password";
+        passwordInput.setAttribute("type", type);
+
+        // Update icon
+        const icon = passwordToggle.querySelector("svg");
+        if (type === "text") {
+          icon.innerHTML =
+            '<path d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 11-4.243-4.243m4.242 4.242L9.88 9.88"/>';
+        } else {
+          icon.innerHTML =
+            '<path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>';
+        }
+      });
+
+      // Form validation and submission
+      const loginForm = document.getElementById("loginForm");
+      const loginBtn = document.getElementById("loginBtn");
+      const loadingSpinner = document.getElementById("loadingSpinner");
+      const loginBtnText = document.getElementById("loginBtnText");
+
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+
+        // Reset errors
+        document.querySelectorAll(".form-input").forEach((input) => {
+          input.classList.remove("error");
+        });
+        document.querySelectorAll(".error-message").forEach((error) => {
+          error.classList.remove("show");
+        });
+
+        // Validate
+        let hasErrors = false;
+
+        if (!username) {
+          document.getElementById("username").classList.add("error");
+          document.getElementById("usernameError").classList.add("show");
+          hasErrors = true;
+        }
+
+        if (!password) {
+          document.getElementById("password").classList.add("error");
+          document.getElementById("passwordError").classList.add("show");
+          hasErrors = true;
+        }
+
+        if (hasErrors) return;
+
+        // Show loading
+        loginBtn.disabled = true;
+        loadingSpinner.style.display = "block";
+        loginBtnText.textContent =
+          selectedLanguage === "pt"
+            ? "Entrando..."
+            : selectedLanguage === "en"
+            ? "Signing in..."
+            : "Iniciando sesión...";
+
+        // Simulate login (replace with actual WordPress login)
+        try {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+
+          // Success - redirect to dashboard
+          window.location.href = "/dashboard";
+        } catch (error) {
+          // Handle error
+          alert(
+            selectedLanguage === "pt"
+              ? "Erro ao fazer login. Tente novamente."
+              : selectedLanguage === "en"
+              ? "Login error. Please try again."
+              : "Error al iniciar sesión. Inténtalo de nuevo."
+          );
+        } finally {
+          // Reset button
+          loginBtn.disabled = false;
+          loadingSpinner.style.display = "none";
+          loginBtnText.textContent = translations[selectedLanguage]["sign-in"];
+        }
+      });
+
+      // Forgot password functionality
+      document
+        .getElementById("forgotPasswordLink")
+        .addEventListener("click", (e) => {
+          e.preventDefault();
+
+          const message =
+            selectedLanguage === "pt"
+              ? "Redirecionando para recuperação de senha..."
+              : selectedLanguage === "en"
+              ? "Redirecting to password recovery..."
+              : "Redirigiendo a recuperación de contraseña...";
+
+          alert(message);
+
+          // Redirect to WordPress forgot password page
+          window.location.href = "/wp-login.php?action=lostpassword";
+        });
+
+      // Input focus effects
+      document.querySelectorAll(".form-input").forEach((input) => {
+        input.addEventListener("focus", () => {
+          input.classList.remove("error");
+          input.parentNode
+            .querySelector(".error-message")
+            ?.classList.remove("show");
+        });
+      });
+    </script>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'97e25bb0312400fa',t:'MTc1NzcxMTA3Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

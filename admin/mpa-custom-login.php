@@ -424,7 +424,6 @@ add_action('wp_login', 'mpa_log_successful_login', 10, 2);
 function mpa_log_successful_login($user_login, $user) {
     // Log básico de acesso (opcional)
     if (defined('WP_DEBUG') && WP_DEBUG) {
-        error_log('MPA Custom Login: User ' . $user_login . ' logged in at ' . current_time('mysql'));
     }
 }
 

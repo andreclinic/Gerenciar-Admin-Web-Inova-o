@@ -471,6 +471,11 @@ add_action('all_admin_notices', function () {
 });
 
 function mpa_render_dashboard_content() {
+    // Verificar se usuário tem permissão manage_options
+    if (!current_user_can('manage_options')) {
+        wp_die('Acesso negado: você não tem permissão para acessar esta página.', 'Erro de Permissão', array('response' => 403));
+    }
+
     ?>
     <div class="mpa-main-content">
         <!-- Visitor Analytics Section -->

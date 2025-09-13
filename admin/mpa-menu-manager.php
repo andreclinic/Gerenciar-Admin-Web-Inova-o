@@ -80,6 +80,11 @@ function mpa_dashboard_redirect_to_analytics() {
 
 // Página principal do plugin
 function mpa_main_page() {
+    // Verificar se usuário tem permissão manage_options
+    if (!current_user_can('manage_options')) {
+        wp_die('Acesso negado: você não tem permissão para acessar esta página.', 'Erro de Permissão', array('response' => 403));
+    }
+
     ?>
     <div class="wrap">
         <h1>Gerenciar Admin - Web Inovação</h1>
@@ -139,7 +144,11 @@ function mpa_main_page() {
 
 // Página de gerenciamento de menus por role
 function mpa_menu_roles_page() {
-    
+    // Verificar se usuário tem permissão manage_options
+    if (!current_user_can('manage_options')) {
+        wp_die('Acesso negado: você não tem permissão para acessar esta página.', 'Erro de Permissão', array('response' => 403));
+    }
+
     // Salvar configurações se formulário foi submetido
     if (isset($_POST['submit'])) {
         check_admin_referer('mpa_menu_roles_nonce');
@@ -227,12 +236,10 @@ function mpa_menu_roles_page() {
                 $custom_title = sanitize_text_field($custom_title);
                 if (!empty(trim($custom_title))) {
                     $menu_customizations['submenu_custom_title'][$submenu_key] = $custom_title;
-                    error_log("[MPA SUBMENU DEBUG] Salvando submenu: $submenu_key = $custom_title");
                 } else {
                     // Se estiver vazio, remover a customização para voltar ao original
                     if (isset($menu_customizations['submenu_custom_title'][$submenu_key])) {
                         unset($menu_customizations['submenu_custom_title'][$submenu_key]);
-                        error_log("[MPA SUBMENU DEBUG] Removendo customização: $submenu_key");
                     }
                     // Se não há mais customizações de submenu, limpar o array
                     if (empty($menu_customizations['submenu_custom_title'])) {
@@ -2703,6 +2710,10 @@ function mpa_get_admin_menus($selected_role = null) {
 
 // Página de configurações gerais
 function mpa_settings_page() {
+    // Verificar se usuário tem permissão manage_options
+    if (!current_user_can('manage_options')) {
+        wp_die('Acesso negado: você não tem permissão para acessar esta página.', 'Erro de Permissão', array('response' => 403));
+    }
     // Processar formulário se foi enviado
     if (isset($_POST['submit']) && wp_verify_nonce($_POST['mpa_settings_nonce'], 'mpa_save_settings')) {
         $logo_url = sanitize_url($_POST['mpa_logo_url']);
@@ -2894,40 +2905,49 @@ function mpa_user_can_see_menu($menu_slug, array $user_roles, array $menu_permis
     $decision = true; // padrão habilitado
     $found_config = false;
 
-    // Debug detalhado SEMPRE ATIVO para debugging
-    error_log("[MPA NOVO DEBUG] === mpa_user_can_see_menu ===");
-    error_log("[MPA NOVO DEBUG] Verificando menu: $menu_slug");
-    error_log("[MPA NOVO DEBUG] User roles: " . implode(', ', $user_roles));
-    error_log("[MPA NOVO DEBUG] Permissões disponíveis: " . print_r($menu_permissions, true));
+    // EXCEÇÃO ESPECIAL: WooCommerce - SEMPRE permitir acesso a URLs wc-admin
+    // Retorna IMEDIATAMENTE sem validação adicional para roles autorizados
+    if (strpos($menu_slug, 'wc-admin') !== false ||
+        (isset($_GET['page']) && $_GET['page'] === 'wc-admin')) {
+
+        $wc_allowed_roles = ['shop_manager', 'gerentes', 'administrator'];
+
+        foreach ($user_roles as $role) {
+            if (in_array($role, $wc_allowed_roles)) {
+                // IMPORTANTE: Retorna TRUE imediatamente, ignorando QUALQUER configuração de menu
+                // Para WooCommerce, o sistema nunca deve bloquear acesso às URLs funcionais
+                return true;
+            }
+        }
+
+        // Se não tem role autorizado, aplica validação normal
+        // (mas isso não deveria acontecer com WooCommerce configurado corretamente)
+    }
+
 
     foreach ($user_roles as $role) {
         $rolePerms = $menu_permissions[$role] ?? null;
         if (!$rolePerms) {
-            error_log("[MPA NOVO DEBUG] Role $role: Sem permissões configuradas");
             continue;
         }
 
         if (array_key_exists($menu_slug, $rolePerms)) {
             $found_config = true;
             $perm_value = $rolePerms[$menu_slug];
-            error_log("[MPA NOVO DEBUG] Role $role: Encontrou config para $menu_slug = " . var_export($perm_value, true));
             
             // Se QUALQUER role marcar TRUE, libera imediatamente
             if ($perm_value === true) {
-                error_log("[MPA NOVO DEBUG] RESULTADO: PERMITIDO (role $role marcou true)");
                 return true;
             }
             // Se esta role marca FALSE, continua verificando outras roles
             $decision = false;
         } else {
-            error_log("[MPA NOVO DEBUG] Role $role: Menu $menu_slug não encontrado nas permissões");
         }
     }
 
     // Comportamento padrão: Se não encontrou configuração, mantém padrão (permitir)
     // Se encontrou configuração mas todas marcaram false, retorna false
     $result = $found_config ? $decision : true;
-    error_log("[MPA NOVO DEBUG] RESULTADO FINAL: " . ($result ? 'PERMITIDO' : 'BLOQUEADO') . " (found_config: " . ($found_config ? 'SIM' : 'NÃO') . ", decision: " . ($decision ? 'PERMITIR' : 'BLOQUEAR') . ")");
 
     return $result;
 }
@@ -2979,11 +2999,21 @@ add_action('admin_menu', function() {
         $slug = mpa_normalize_slug($menu_item['slug']);
         
         if (!mpa_user_can_see_menu($slug, $roles, $opts)) {
-            remove_menu_page($menu_item['slug']); // usar slug original para remoção
-            $debug_info[] = "REMOVIDO menu: {$menu_item['slug']} (normalizado: $slug)";
-            
-            if ($slug === 'edit.php') {
-                $debug_info[] = "*** POSTS REMOVIDO ***";
+            // EXCEÇÃO ESPECIAL: Para WooCommerce, apenas esconder visualmente, não remover funcionalidade
+            if (strpos($menu_item['slug'], 'wc-admin') !== false) {
+                // Para WooCommerce: apenas esconder o menu visualmente via CSS, mantém funcionalidade
+                add_action('admin_head', function() use ($menu_item) {
+                    echo '<style>a[href="admin.php?page=' . esc_attr($menu_item['slug']) . '"] { display: none !important; }</style>';
+                });
+                $debug_info[] = "ESCONDIDO (apenas visual) menu WooCommerce: {$menu_item['slug']} (normalizado: $slug)";
+            } else {
+                // Para outros menus: remover completamente
+                remove_menu_page($menu_item['slug']); // usar slug original para remoção
+                $debug_info[] = "REMOVIDO menu: {$menu_item['slug']} (normalizado: $slug)";
+
+                if ($slug === 'edit.php') {
+                    $debug_info[] = "*** POSTS REMOVIDO ***";
+                }
             }
         }
 
@@ -2993,8 +3023,18 @@ add_action('admin_menu', function() {
                 $sub_slug = mpa_normalize_slug($sub['slug']);
                 
                 if (!mpa_user_can_see_submenu($slug, $sub_slug, $roles, $opts)) {
-                    remove_submenu_page($menu_item['slug'], $sub['slug']); // usar slugs originais
-                    $debug_info[] = "REMOVIDO submenu: {$menu_item['slug']} -> {$sub['slug']}";
+                    // EXCEÇÃO ESPECIAL: Para submenus do WooCommerce, apenas esconder visualmente
+                    if (strpos($sub['slug'], 'wc-admin') !== false || strpos($menu_item['slug'], 'wc-admin') !== false) {
+                        // Para WooCommerce: apenas esconder o submenu visualmente via CSS, mantém funcionalidade
+                        add_action('admin_head', function() use ($menu_item, $sub) {
+                            echo '<style>a[href="admin.php?page=' . esc_attr($sub['slug']) . '"] { display: none !important; }</style>';
+                        });
+                        $debug_info[] = "ESCONDIDO (apenas visual) submenu WooCommerce: {$menu_item['slug']} -> {$sub['slug']}";
+                    } else {
+                        // Para outros submenus: remover completamente
+                        remove_submenu_page($menu_item['slug'], $sub['slug']); // usar slugs originais
+                        $debug_info[] = "REMOVIDO submenu: {$menu_item['slug']} -> {$sub['slug']}";
+                    }
                 }
             }
         }
@@ -3305,14 +3345,19 @@ add_action('admin_menu', 'mpa_apply_menu_customizations', 999);
 add_action('wp_ajax_mpa_save_menu_order', 'mpa_save_menu_order_callback');
 
 function mpa_save_menu_order_callback() {
+    // Verificar se usuário está logado
+    if (!is_user_logged_in()) {
+        wp_die('Acesso negado: usuário não autenticado', 'Erro de Segurança', array('response' => 401));
+    }
+
     // Verificar nonce
     if (!wp_verify_nonce($_POST['nonce'], 'mpa_menu_order')) {
-        wp_die('Nonce inválido');
+        wp_die('Nonce inválido', 'Erro de Segurança', array('response' => 403));
     }
-    
+
     // Verificar permissões
     if (!current_user_can('manage_options')) {
-        wp_die('Sem permissões suficientes');
+        wp_die('Sem permissões suficientes', 'Erro de Segurança', array('response' => 403));
     }
     
     // Obter nova ordem
@@ -3478,10 +3523,8 @@ function mpa_apply_menu_customizations() {
     
     // Debug: mostrar todos os menus encontrados
     if (isset($_GET['debug_menus'])) {
-        error_log('=== MENUS ENCONTRADOS ===');
         foreach ($menu as $key => $menu_item) {
             if (!empty($menu_item[0]) && !empty($menu_item[2])) {
-                error_log("Menu $key: Título='{$menu_item[0]}', Slug='{$menu_item[2]}'");
             }
         }
     }
@@ -3535,7 +3578,6 @@ function mpa_apply_menu_customizations() {
                 $menu[$key][0] = $custom_data['title'];
                 
                 if (isset($_GET['debug_menus'])) {
-                    error_log("CUSTOMIZAÇÃO APLICADA: '{$menu_title}' -> '{$custom_data['title']}'");
                 }
             }
             
@@ -3568,7 +3610,6 @@ function mpa_apply_menu_customizations() {
                 
                 // Debug: mostrar chave do submenu
                 if (isset($_GET['debug_menus'])) {
-                    error_log("[MPA SUBMENU DEBUG] Verificando submenu: $submenu_key (parent: $parent_slug, slug: $submenu_slug)");
                 }
                 
                 // Buscar customização do submenu
@@ -3580,12 +3621,10 @@ function mpa_apply_menu_customizations() {
                         $submenu[$parent_slug][$sub_key][0] = $custom_title;
                         
                         if (isset($_GET['debug_menus'])) {
-                            error_log("CUSTOMIZAÇÃO SUBMENU APLICADA: '{$submenu_title}' -> '{$custom_title}'");
                         }
                     }
                 } else {
                     if (isset($_GET['debug_menus'])) {
-                        error_log("[MPA SUBMENU DEBUG] Customização não encontrada para: $submenu_key");
                     }
                 }
             }
@@ -3601,11 +3640,16 @@ function mpa_apply_menu_customizations() {
 add_action('wp_ajax_mpa_auto_save_customization', 'mpa_auto_save_customization_handler');
 
 function mpa_auto_save_customization_handler() {
+    // Verificar se usuário está logado
+    if (!is_user_logged_in()) {
+        wp_send_json_error('Acesso negado: usuário não autenticado');
+    }
+
     // Verificar nonce de segurança
     if (!wp_verify_nonce($_POST['nonce'], 'mpa_auto_save')) {
         wp_send_json_error('Erro de segurança');
     }
-    
+
     // Verificar permissões
     if (!current_user_can('manage_options')) {
         wp_send_json_error('Sem permissões');
@@ -3758,7 +3802,6 @@ function mpa_add_custom_menu_handler() {
         }
 
     } catch (Exception $e) {
-        error_log('Erro ao adicionar menu personalizado: ' . $e->getMessage());
         wp_send_json_error('Erro interno do servidor.');
     }
 }
@@ -3834,7 +3877,6 @@ function mpa_delete_custom_menu_handler() {
         update_option('mpa_menu_order', $menu_order);
         
         // Log da exclusão
-        error_log("Menu personalizado completamente removido - Role: {$role}, ID: {$menu_id}, Título: {$deleted_menu['title']}");
         
         wp_send_json_success(array(
             'message' => 'Menu personalizado removido completamente de todas as telas!',
@@ -3842,7 +3884,6 @@ function mpa_delete_custom_menu_handler() {
         ));
 
     } catch (Exception $e) {
-        error_log('Erro ao excluir menu personalizado: ' . $e->getMessage());
         wp_send_json_error('Erro interno do servidor.');
     }
 }
@@ -3901,7 +3942,6 @@ function mpa_edit_custom_menu_handler() {
         update_option('mpa_menu_customizations', $menu_customizations);
         
         // Log da edição
-        error_log("Menu personalizado editado - Role: {$role}, ID: {$menu_id}, Novo Título: {$new_title}");
         
         wp_send_json_success(array(
             'message' => 'Menu personalizado atualizado com sucesso!',
@@ -3909,7 +3949,6 @@ function mpa_edit_custom_menu_handler() {
         ));
         
     } catch (Exception $e) {
-        error_log('Erro ao editar menu personalizado: ' . $e->getMessage());
         wp_send_json_error('Erro interno do servidor.');
     }
 }

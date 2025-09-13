@@ -211,7 +211,7 @@ add_action('admin_head', function () {
             .mpa-header .mpa-logo .mpa-logo-image,
             img.mpa-logo-image {
                 max-height: 30px !important;
-                max-width: 120px !important;
+                max-width: 200px !important;
             }
         }
         
@@ -367,6 +367,11 @@ add_action('wp_ajax_mpa_mark_notification_read', 'mpa_mark_notification_read');
 
 function mpa_mark_notification_read()
 {
+    // Verificar se usuário está logado
+    if (!is_user_logged_in()) {
+        wp_send_json_error('Acesso negado: usuário não autenticado');
+    }
+
     check_ajax_referer('mpa_notifications', 'nonce');
 
     $notification_id = sanitize_text_field($_POST['notification_id']);
@@ -396,6 +401,11 @@ add_action('wp_ajax_mpa_mark_all_notifications_read', 'mpa_mark_all_notification
 
 function mpa_mark_all_notifications_read()
 {
+    // Verificar se usuário está logado
+    if (!is_user_logged_in()) {
+        wp_send_json_error('Acesso negado: usuário não autenticado');
+    }
+
     check_ajax_referer('mpa_notifications', 'nonce');
 
     $user_id = get_current_user_id();

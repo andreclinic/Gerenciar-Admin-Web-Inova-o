@@ -69,20 +69,16 @@ class MPA_Analytics_Page {
      */
     public function enqueue_assets($hook_suffix) {
         // Debug: Log do hook suffix
-        error_log('[MPA DEBUG] Hook suffix atual: ' . $hook_suffix);
         
         // Verificar se estamos na página do analytics (método mais abrangente)
         $current_page = isset($_GET['page']) ? $_GET['page'] : '';
         $is_analytics_page = ($current_page === self::PAGE_SLUG || $current_page === self::SETTINGS_SLUG);
         
-        error_log('[MPA DEBUG] Current page: ' . $current_page);
-        error_log('[MPA DEBUG] Is analytics page: ' . ($is_analytics_page ? 'YES' : 'NO'));
         
         if (!$is_analytics_page) {
             return;
         }
         
-        error_log('[MPA DEBUG] Carregando assets para página Analytics');
         
         // Enfileirar Chart.js - mover para header para garantir carregamento
         wp_enqueue_script(
@@ -93,7 +89,6 @@ class MPA_Analytics_Page {
             false  // Carregar no header ao invés do footer
         );
         
-        error_log('[MPA DEBUG] Chart.js enfileirado');
         
         // Enfileirar CSS do Analytics
         wp_enqueue_style(
@@ -223,6 +218,11 @@ class MPA_Analytics_Page {
      * Testar conexão com GA4 via AJAX
      */
     public function test_ga4_connection() {
+        // Verificar se usuário está logado
+        if (!is_user_logged_in()) {
+            wp_send_json_error('Acesso negado: usuário não autenticado');
+        }
+
         // Verificar nonce
         if (!wp_verify_nonce($_POST['nonce'] ?? '', 'mpa_analytics_nonce')) {
             wp_send_json_error('Nonce inválido');
@@ -289,6 +289,11 @@ $mpa_analytics_instance = new MPA_Analytics_Page();
 
 // Funções wrapper para compatibilidade com menu callbacks
 function mpa_render_analytics_page() {
+    // Verificar se usuário tem permissão manage_options
+    if (!current_user_can('manage_options')) {
+        wp_die('Acesso negado: você não tem permissão para acessar esta página.', 'Erro de Permissão', array('response' => 403));
+    }
+
     global $mpa_analytics_instance;
     if ($mpa_analytics_instance) {
         $mpa_analytics_instance->render_analytics_page();
@@ -296,6 +301,11 @@ function mpa_render_analytics_page() {
 }
 
 function mpa_render_analytics_settings_page() {
+    // Verificar se usuário tem permissão manage_options
+    if (!current_user_can('manage_options')) {
+        wp_die('Acesso negado: você não tem permissão para acessar esta página.', 'Erro de Permissão', array('response' => 403));
+    }
+
     global $mpa_analytics_instance;
     if ($mpa_analytics_instance) {
         $mpa_analytics_instance->render_settings_page();

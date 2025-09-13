@@ -209,21 +209,17 @@ class MPA_Analytics_Client {
      */
     public function get_metrics($request) {
         try {
-            error_log('[MPA DEBUG] get_metrics() chamado');
             
             $start_date = $request->get_param('start_date');
             $end_date = $request->get_param('end_date');
             
-            error_log('[MPA DEBUG] Período solicitado: ' . $start_date . ' até ' . $end_date);
             
             $current_period = $this->fetch_metrics($start_date, $end_date);
-            error_log('[MPA DEBUG] Período atual obtido: ' . print_r($current_period, true));
             
             $previous_period = $this->fetch_metrics(
                 date('Y-m-d', strtotime($start_date . ' -' . $this->get_date_diff($start_date, $end_date) . ' days')),
                 date('Y-m-d', strtotime($start_date . ' -1 day'))
             );
-            error_log('[MPA DEBUG] Período anterior obtido: ' . print_r($previous_period, true));
             
             $response_data = array(
                 'success' => true,
@@ -234,13 +230,10 @@ class MPA_Analytics_Client {
                 )
             );
             
-            error_log('[MPA DEBUG] Response final: ' . print_r($response_data, true));
             
             return rest_ensure_response($response_data);
             
         } catch (Exception $e) {
-            error_log('[MPA DEBUG] Erro em get_metrics: ' . $e->getMessage());
-            error_log('[MPA DEBUG] Stack trace: ' . $e->getTraceAsString());
             return new WP_Error('ga4_error', $e->getMessage(), array('status' => 500));
         }
     }
@@ -634,11 +627,9 @@ class MPA_Analytics_Client {
         ));
         
         // Debug: Log da resposta da API
-        error_log('GA4 API Response: ' . print_r($data, true));
         
         if (!isset($data['rows'][0]['metricValues'])) {
             // Debug: Log quando não há dados
-            error_log('GA4 No rows or metricValues found');
             return array(
                 'users' => 0,
                 'pageviews' => 0,
@@ -850,6 +841,11 @@ class MPA_Analytics_Client {
      * Desconectar GA4 (remover tokens)
      */
     public function disconnect_ga4() {
+        // Verificar se usuário está logado
+        if (!is_user_logged_in()) {
+            wp_send_json_error('Acesso negado: usuário não autenticado');
+        }
+
         // Verificar nonce
         if (!wp_verify_nonce($_POST['nonce'] ?? '', 'mpa_analytics_nonce')) {
             wp_send_json_error('Nonce inválido');
@@ -874,6 +870,11 @@ class MPA_Analytics_Client {
      * Iniciar fluxo OAuth
      */
     public function start_oauth_flow() {
+        // Verificar se usuário está logado
+        if (!is_user_logged_in()) {
+            wp_send_json_error('Acesso negado: usuário não autenticado');
+        }
+
         // Verificar nonce
         if (!wp_verify_nonce($_POST['nonce'] ?? '', 'mpa_analytics_nonce')) {
             wp_send_json_error('Nonce inválido');
