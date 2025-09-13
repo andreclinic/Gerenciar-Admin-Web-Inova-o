@@ -25,6 +25,7 @@ include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-capability-manager.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/class-mpa-analytics-page.php';
 include_once ADMIN_BAR_MENU_PATH . '/includes/class-mpa-analytics-client.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-custom-login.php'; // Tela de login personalizada
+include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-hide-updates.php'; // Sistema para esconder updates
 
 
 
