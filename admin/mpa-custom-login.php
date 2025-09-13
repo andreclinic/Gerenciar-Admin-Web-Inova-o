@@ -336,17 +336,118 @@ function mpa_custom_login_footer() {
     <style>
         /* Esconder elementos WordPress que podem aparecer */
         #nav, #backtoblog { display: none !important; }
-        
+
         /* Classe para animação */
         .mpa-animate-in {
             opacity: 1;
             transform: translateY(0);
         }
-        
+
         /* Loading state */
         .mpa-loading {
             opacity: 0.7;
             pointer-events: none;
+        }
+
+        /* Otimizações para mobile - reduzir espaçamento */
+        @media (max-width: 480px) {
+            body.login {
+                padding: 1rem 0.5rem !important;
+                min-height: 100vh !important;
+                height: auto !important;
+                display: flex !important;
+                align-items: flex-start !important;
+                justify-content: center !important;
+                padding-top: 3rem !important;
+                overflow-y: auto !important;
+            }
+
+            .login-container {
+                margin: 0 !important;
+                padding: 2rem !important;
+                min-height: auto !important;
+                width: 100% !important;
+                max-width: 380px !important;
+            }
+
+            #login {
+                padding: 25px !important;
+                margin: 0 !important;
+                width: 100% !important;
+                position: relative !important;
+            }
+
+            /* Reduzir espaçamento interno do formulário */
+            .logo {
+                font-size: 1.75rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            .login-header {
+                margin-bottom: 1.5rem !important;
+            }
+
+            .login-title {
+                font-size: 1.25rem !important;
+                margin-bottom: 0.75rem !important;
+            }
+
+            .login-subtitle {
+                font-size: 0.9rem !important;
+                margin-bottom: 1.5rem !important;
+            }
+
+            .form-group {
+                margin-bottom: 1.25rem !important;
+            }
+
+            .form-options {
+                flex-direction: column !important;
+                gap: 1rem !important;
+                align-items: flex-start !important;
+            }
+
+            .login-btn {
+                margin-top: 1rem !important;
+                margin-bottom: 1.5rem !important;
+            }
+
+            .language-selector {
+                margin-top: 1rem !important;
+            }
+        }
+
+        /* Para telas muito pequenas em altura */
+        @media (max-width: 480px) and (max-height: 700px) {
+            body.login {
+                padding-top: 2rem !important;
+            }
+
+            .login-container {
+                padding: 1.75rem !important;
+            }
+
+            .logo {
+                font-size: 1.5rem !important;
+                margin-bottom: 0.75rem !important;
+            }
+
+            .login-header {
+                margin-bottom: 1rem !important;
+            }
+        }
+
+        /* Para iPhone SE e similares */
+        @media (max-width: 375px) {
+            body.login {
+                padding: 0.5rem 0.25rem !important;
+                padding-top: 1.5rem !important;
+            }
+
+            .login-container {
+                padding: 1.5rem !important;
+                border-radius: 0.75rem !important;
+            }
         }
     </style>
     <?php
