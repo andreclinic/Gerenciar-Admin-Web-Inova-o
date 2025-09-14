@@ -326,7 +326,7 @@ jQuery(function ($) {
         $('.mpa-nav-item').on('dragend', function(e) {
             if (draggedItem) {
                 $(draggedItem).removeClass('dragging');
-                $('.mpa-nav-item-container').removeClass('drag-over');
+                $('.mpa-nav-item-container').removeClass('drag-over submenu-drop-zone');
                 $('.mpa-submenu').removeClass('submenu-drop-zone');
             }
             draggedItem = null;
@@ -338,7 +338,18 @@ jQuery(function ($) {
             e.originalEvent.dataTransfer.dropEffect = 'move';
 
             if (this !== draggedItem) {
-                $(this).addClass('drag-over');
+                const rect = this.getBoundingClientRect();
+                const mouseY = e.originalEvent.clientY;
+                const centerY = rect.top + rect.height / 2;
+                const isSubmenuZone = Math.abs(mouseY - centerY) < rect.height * 0.3;
+
+                if (isSubmenuZone) {
+                    $(this).addClass('submenu-drop-zone');
+                    $(this).removeClass('drag-over');
+                } else {
+                    $(this).addClass('drag-over');
+                    $(this).removeClass('submenu-drop-zone');
+                }
             }
         });
 
@@ -347,12 +358,12 @@ jQuery(function ($) {
         });
 
         $('.mpa-nav-item-container').on('dragleave', function(e) {
-            $(this).removeClass('drag-over');
+            $(this).removeClass('drag-over submenu-drop-zone');
         });
 
         $('.mpa-nav-item-container').on('drop', function(e) {
             e.preventDefault();
-            $(this).removeClass('drag-over');
+            $(this).removeClass('drag-over submenu-drop-zone');
 
             // Don't handle submenu items here - let the main drop zone handle them
             if (draggedItem && $(draggedItem).hasClass('mpa-submenu-item')) {
@@ -362,6 +373,32 @@ jQuery(function ($) {
             if (this !== draggedItem && draggedItem) {
                 const rect = this.getBoundingClientRect();
                 const mouseY = e.originalEvent.clientY;
+                const centerY = rect.top + rect.height / 2;
+
+                // Check if dropping in the center area (submenu zone)
+                const isSubmenuZone = Math.abs(mouseY - centerY) < rect.height * 0.3;
+
+                if (isSubmenuZone) {
+                    // Transform dragged item into submenu of this item
+                    e.stopPropagation();
+
+                    const $draggedContainer = $(draggedItem);
+                    const $parentContainer = $(this);
+
+                    const draggedMenuSlug = $draggedContainer.attr('data-menu-slug');
+                    const parentMenuSlug = $parentContainer.attr('data-menu-slug');
+                    const draggedMenuTitle = $draggedContainer.find('.mpa-nav-title, h3').text().trim();
+
+                    // Check if trying to make a menu submenu of itself
+                    if (draggedMenuSlug === parentMenuSlug) {
+                        showSidebarNotification('Um menu não pode ser submenu dele mesmo!', 'error');
+                        return;
+                    }
+
+                    // Transform menu to submenu
+                    transformSidebarMenuToSubmenu($draggedContainer, $parentContainer, draggedMenuSlug, parentMenuSlug, draggedMenuTitle);
+                    return;
+                }
                 const itemMiddle = rect.top + rect.height / 2;
 
                 if (mouseY < itemMiddle) {
@@ -501,6 +538,41 @@ jQuery(function ($) {
                     .mpa-nav-item-container.drag-over {
                         border-left: 3px solid #0073aa;
                         background: rgba(0, 115, 170, 0.05);
+                    }
+
+                    .mpa-nav-item-container.submenu-drop-zone {
+                        background: linear-gradient(90deg, #fff3cd 0%, #ffeeba 100%);
+                        border: 2px dashed #856404;
+                        border-radius: 4px;
+                        animation: submenuDropPulse 1.5s infinite;
+                        position: relative;
+                    }
+
+                    .mpa-nav-item-container.submenu-drop-zone::after {
+                        content: "↳ Solte aqui para criar submenu";
+                        display: block;
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        background: rgba(133, 100, 4, 0.9);
+                        color: white;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                        white-space: nowrap;
+                        z-index: 1000;
+                    }
+
+                    @keyframes submenuDropPulse {
+                        0%, 100% {
+                            border-color: #856404;
+                            background: linear-gradient(90deg, #fff3cd 0%, #ffeeba 100%);
+                        }
+                        50% {
+                            border-color: #533f03;
+                            background: linear-gradient(90deg, #ffeaa7 0%, #fdcb6e 100%);
+                        }
                     }
 
                     .mpa-submenu.submenu-drop-zone {
@@ -789,7 +861,7 @@ jQuery(function ($) {
         $newElement.find('.mpa-nav-item').on('dragend', function(e) {
             if (draggedItem) {
                 $(draggedItem).removeClass('dragging');
-                $('.mpa-nav-item-container').removeClass('drag-over');
+                $('.mpa-nav-item-container').removeClass('drag-over submenu-drop-zone');
                 $('.mpa-submenu').removeClass('submenu-drop-zone');
             }
             draggedItem = null;
@@ -809,12 +881,12 @@ jQuery(function ($) {
         });
 
         $newElement.on('dragleave', function(e) {
-            $(this).removeClass('drag-over');
+            $(this).removeClass('drag-over submenu-drop-zone');
         });
 
         $newElement.on('drop', function(e) {
             e.preventDefault();
-            $(this).removeClass('drag-over');
+            $(this).removeClass('drag-over submenu-drop-zone');
             // Handle reordering logic if needed
         });
 

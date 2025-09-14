@@ -944,6 +944,27 @@ function mpa_menu_roles_page() {
             margin: 8px;
             border: 1px solid rgba(0, 115, 170, 0.3);
         }
+
+        /* Estilos para zona de drop de submenu em itens de menu */
+        .mpa-menu-item.submenu-drop-zone {
+            background: linear-gradient(90deg, #fff3cd 0%, #ffeeba 100%);
+            border: 2px dashed #856404;
+            border-radius: 4px;
+            animation: submenuDropPulse 1.5s infinite;
+        }
+
+        .mpa-menu-item.submenu-drop-zone::after {
+            content: "↳ Solte aqui para criar submenu";
+            display: block;
+            text-align: center;
+            padding: 8px;
+            color: #856404;
+            font-weight: 600;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 3px;
+            margin: 4px 8px;
+        }
         
         .mpa-menu-slug {
             font-size: 11px;
@@ -1969,7 +1990,18 @@ function mpa_menu_roles_page() {
                     e.dataTransfer.dropEffect = 'move';
 
                     if (this !== draggedItem) {
-                        this.classList.add('drag-over');
+                        const rect = this.getBoundingClientRect();
+                        const mouseY = e.clientY;
+                        const centerY = rect.top + rect.height / 2;
+                        const isSubmenuZone = Math.abs(mouseY - centerY) < rect.height * 0.3;
+
+                        if (isSubmenuZone) {
+                            this.classList.add('submenu-drop-zone');
+                            this.classList.remove('drag-over');
+                        } else {
+                            this.classList.add('drag-over');
+                            this.classList.remove('submenu-drop-zone');
+                        }
                     }
                 });
 
@@ -1978,16 +2010,36 @@ function mpa_menu_roles_page() {
                 });
 
                 item.addEventListener('dragleave', function(e) {
-                    this.classList.remove('drag-over');
+                    this.classList.remove('drag-over', 'submenu-drop-zone');
                 });
 
                 item.addEventListener('drop', function(e) {
                     e.preventDefault();
-                    this.classList.remove('drag-over');
+                    this.classList.remove('drag-over', 'submenu-drop-zone');
 
                     if (this !== draggedItem) {
                         const rect = this.getBoundingClientRect();
                         const mouseY = e.clientY;
+                        const centerY = rect.top + rect.height / 2;
+                        const isSubmenuZone = Math.abs(mouseY - centerY) < rect.height * 0.3;
+
+                        if (isSubmenuZone) {
+                            // Transform dragged item into submenu of this item
+                            const draggedMenuSlug = draggedItem.getAttribute('data-menu-slug');
+                            const parentMenuSlug = this.getAttribute('data-menu-slug');
+                            const draggedMenuTitle = draggedItem.querySelector('.mpa-menu-title').textContent.trim();
+
+                            // Check if trying to make a menu submenu of itself
+                            if (draggedMenuSlug === parentMenuSlug) {
+                                showNotification('Um menu não pode ser submenu dele mesmo!', 'error');
+                                return;
+                            }
+
+                            // Transform menu to submenu
+                            transformMenuToSubmenu(draggedItem, this);
+                            return;
+                        }
+
                         const itemMiddle = rect.top + rect.height / 2;
 
                         if (mouseY < itemMiddle) {
