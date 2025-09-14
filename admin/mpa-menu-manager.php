@@ -3209,8 +3209,32 @@ function mpa_get_admin_menus($selected_role = null) {
 
         $admin_menus[] = $menu_data;
     }
-    
-    
+
+    // Adicionar submenus personalizados se existirem
+    $menu_customizations = get_option('mpa_menu_customizations', array());
+    if (isset($menu_customizations['submenu_custom_data']) && !empty($menu_customizations['submenu_custom_data'])) {
+        foreach ($menu_customizations['submenu_custom_data'] as $submenu_key => $submenu_data) {
+            // Extrair parent_slug e child_slug da chave
+            list($parent_slug, $child_slug) = explode('|', $submenu_key, 2);
+
+            // Procurar o menu pai na lista de admin_menus
+            foreach ($admin_menus as &$menu_item) {
+                if ($menu_item['slug'] === $parent_slug) {
+                    // Adicionar o submenu personalizado
+                    $menu_item['submenus'][] = [
+                        'title'    => $submenu_data['title'],
+                        'slug_raw' => $child_slug,
+                        'slug'     => $child_slug,
+                        'custom'   => true,
+                        'custom_url' => $submenu_data['url'],
+                        'custom_icon' => $submenu_data['icon']
+                    ];
+                    break;
+                }
+            }
+        }
+    }
+
     // Adicionar menus personalizados APENAS para a role selecionada
     $custom_menus = get_option('mpa_custom_menus', array());
     if (!empty($custom_menus) && $selected_role) {
@@ -4005,21 +4029,55 @@ function mpa_transform_menu_to_submenu_callback() {
             $menu_permissions[$role]['submenus'][$submenu_key] = true;
         }
 
-        // Se é menu personalizado, precisamos também remover da estrutura de menus personalizados
+        // Se é menu personalizado, precisamos criar um submenu personalizado ao invés de excluir
         if ($is_custom_menu) {
             $custom_menu_id = str_replace('mpa_custom_', '', $menu_slug);
             $custom_menus = get_option('mpa_custom_menus', array());
 
-            // Remover o menu personalizado de todas as roles
+            // Buscar os dados do menu personalizado antes de removê-lo
+            $custom_menu_data = null;
+            $original_role = null;
+
             foreach ($custom_menus as $role => $role_menus) {
                 if (isset($role_menus[$custom_menu_id])) {
-                    unset($custom_menus[$role][$custom_menu_id]);
-                    error_log("MPA Transform Menu Debug - Removido menu personalizado $custom_menu_id da role $role");
+                    $custom_menu_data = $role_menus[$custom_menu_id];
+                    $original_role = $role;
+                    break;
                 }
             }
 
-            update_option('mpa_custom_menus', $custom_menus);
-            error_log("MPA Transform Menu Debug - Custom menus atualizados");
+            if ($custom_menu_data) {
+                error_log("MPA Transform Menu Debug - Menu personalizado encontrado: " . json_encode($custom_menu_data));
+
+                // Criar entrada de submenu personalizado nas customizações
+                $menu_customizations = get_option('mpa_menu_customizations', array());
+
+                if (!isset($menu_customizations['submenu_custom_data'])) {
+                    $menu_customizations['submenu_custom_data'] = array();
+                }
+
+                // Salvar dados do submenu personalizado
+                $menu_customizations['submenu_custom_data'][$submenu_key] = array(
+                    'title' => $custom_menu_data['title'],
+                    'icon' => $custom_menu_data['icon'],
+                    'url' => $custom_menu_data['url'],
+                    'original_role' => $original_role,
+                    'custom_id' => $custom_menu_id
+                );
+
+                update_option('mpa_menu_customizations', $menu_customizations);
+                error_log("MPA Transform Menu Debug - Submenu personalizado criado com dados: " . json_encode($menu_customizations['submenu_custom_data'][$submenu_key]));
+
+                // Agora remover da estrutura de menus principais
+                foreach ($custom_menus as $role => $role_menus) {
+                    if (isset($role_menus[$custom_menu_id])) {
+                        unset($custom_menus[$role][$custom_menu_id]);
+                        error_log("MPA Transform Menu Debug - Removido menu personalizado $custom_menu_id da role $role");
+                    }
+                }
+
+                update_option('mpa_custom_menus', $custom_menus);
+            }
         }
 
         // Salvar permissões atualizadas
