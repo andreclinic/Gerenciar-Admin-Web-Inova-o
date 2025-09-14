@@ -332,3 +332,5 @@ Plugin desenvolvido para estudo e implementação de painéis administrativos mo
 **Nota**: As respostas devem ser em Português Brasil.
 
 **Nota**: Faça o commit no github apenas quando for solicitado.
+
+**Nota**: Faça o commit no github na Branch submenu.
