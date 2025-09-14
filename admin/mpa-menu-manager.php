@@ -606,7 +606,9 @@ function mpa_menu_roles_page() {
                                 </div>
                                 <div class="mpa-submenu-list collapsed" id="submenu-<?php echo esc_attr($menu_item['slug']); ?>">
                                     <?php foreach ($menu_item['submenus'] as $submenu_item): ?>
-                                        <div class="mpa-submenu-item">
+                                        <div class="mpa-submenu-item"
+                                             data-menu-slug="<?php echo esc_attr($submenu_item['slug']); ?>"
+                                             data-parent-slug="<?php echo esc_attr($menu_item['slug']); ?>">
                                             <?php
                                             $submenu_key = $menu_item['slug'] . '|' . $submenu_item['slug'];
                                             $is_sub_checked = isset($current_permissions[$selected_role]['submenus'][$submenu_key])
@@ -908,6 +910,39 @@ function mpa_menu_roles_page() {
         
         .mpa-menu-item.drag-over {
             border-top: 3px solid #0073aa;
+        }
+
+        /* Estilos para zona de drop dos submenus */
+        .mpa-submenu-list.submenu-drop-zone {
+            background: linear-gradient(90deg, #e8f4fd 0%, #cfe8fc 100%);
+            border: 2px dashed #0073aa;
+            border-radius: 4px;
+            animation: submenuDropPulse 1.5s infinite;
+        }
+
+        @keyframes submenuDropPulse {
+            0%, 100% {
+                border-color: #0073aa;
+                background: linear-gradient(90deg, #e8f4fd 0%, #cfe8fc 100%);
+            }
+            50% {
+                border-color: #005a87;
+                background: linear-gradient(90deg, #d0e7fc 0%, #a8d0fa 100%);
+            }
+        }
+
+        .mpa-submenu-list.submenu-drop-zone::after {
+            content: "↳ Solte aqui para tornar submenu";
+            display: block;
+            text-align: center;
+            padding: 12px;
+            color: #0073aa;
+            font-weight: 600;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 3px;
+            margin: 8px;
+            border: 1px solid rgba(0, 115, 170, 0.3);
         }
         
         .mpa-menu-slug {
@@ -1908,7 +1943,7 @@ function mpa_menu_roles_page() {
             
             // Implementação do Drag & Drop para reordenação de menus
             let draggedItem = null;
-            
+
             // Eventos de drag para os menus
             document.querySelectorAll('.mpa-menu-item').forEach(item => {
                 item.addEventListener('dragstart', function(e) {
@@ -1917,40 +1952,44 @@ function mpa_menu_roles_page() {
                     e.dataTransfer.effectAllowed = 'move';
                     e.dataTransfer.setData('text/html', this.outerHTML);
                 });
-                
+
                 item.addEventListener('dragend', function(e) {
                     this.classList.remove('dragging');
                     document.querySelectorAll('.mpa-menu-item').forEach(item => {
                         item.classList.remove('drag-over');
                     });
+                    // Limpar indicadores de drop em submenus
+                    document.querySelectorAll('.mpa-submenu-list').forEach(submenuList => {
+                        submenuList.classList.remove('submenu-drop-zone');
+                    });
                 });
-                
+
                 item.addEventListener('dragover', function(e) {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
-                    
+
                     if (this !== draggedItem) {
                         this.classList.add('drag-over');
                     }
                 });
-                
+
                 item.addEventListener('dragenter', function(e) {
                     e.preventDefault();
                 });
-                
+
                 item.addEventListener('dragleave', function(e) {
                     this.classList.remove('drag-over');
                 });
-                
+
                 item.addEventListener('drop', function(e) {
                     e.preventDefault();
                     this.classList.remove('drag-over');
-                    
+
                     if (this !== draggedItem) {
                         const rect = this.getBoundingClientRect();
                         const mouseY = e.clientY;
                         const itemMiddle = rect.top + rect.height / 2;
-                        
+
                         if (mouseY < itemMiddle) {
                             // Inserir antes
                             this.parentNode.insertBefore(draggedItem, this);
@@ -1958,9 +1997,66 @@ function mpa_menu_roles_page() {
                             // Inserir depois
                             this.parentNode.insertBefore(draggedItem, this.nextSibling);
                         }
-                        
+
                         // Salvar nova ordem
                         saveMenuOrder();
+                    }
+                });
+            });
+
+            // Eventos de drag para submenus expandidos - permitir drop para transformar em submenu
+            document.querySelectorAll('.mpa-submenu-list').forEach(submenuList => {
+                submenuList.addEventListener('dragover', function(e) {
+                    // Só permitir se o submenu estiver expandido
+                    if (!this.classList.contains('expanded')) return;
+
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.dataTransfer.dropEffect = 'move';
+
+                    // Adicionar indicador visual de zona de drop
+                    this.classList.add('submenu-drop-zone');
+                });
+
+                submenuList.addEventListener('dragenter', function(e) {
+                    if (!this.classList.contains('expanded')) return;
+
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+
+                submenuList.addEventListener('dragleave', function(e) {
+                    // Verificar se realmente saiu da zona (evitar falso positivo com elementos filhos)
+                    const rect = this.getBoundingClientRect();
+                    const x = e.clientX;
+                    const y = e.clientY;
+
+                    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+                        this.classList.remove('submenu-drop-zone');
+                    }
+                });
+
+                submenuList.addEventListener('drop', function(e) {
+                    if (!this.classList.contains('expanded')) return;
+
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    this.classList.remove('submenu-drop-zone');
+
+                    if (draggedItem) {
+                        const parentMenuItem = this.closest('.mpa-menu-item');
+                        const draggedMenuSlug = draggedItem.getAttribute('data-menu-slug');
+                        const parentMenuSlug = parentMenuItem.getAttribute('data-menu-slug');
+
+                        // Verificar se não está tentando tornar um menu submenu dele mesmo
+                        if (draggedMenuSlug === parentMenuSlug) {
+                            showNotification('Um menu não pode ser submenu dele mesmo!', 'error');
+                            return;
+                        }
+
+                        // Transformar o menu arrastado em submenu
+                        transformMenuToSubmenu(draggedItem, parentMenuItem);
                     }
                 });
             });
@@ -1997,6 +2093,423 @@ function mpa_menu_roles_page() {
                 });
             }
             
+            // Função para transformar menu em submenu
+            function transformMenuToSubmenu(draggedMenuItem, parentMenuItem) {
+                const draggedMenuSlug = draggedMenuItem.getAttribute('data-menu-slug');
+                const parentMenuSlug = parentMenuItem.getAttribute('data-menu-slug');
+                const draggedMenuTitle = draggedMenuItem.querySelector('.mpa-menu-title').textContent.trim();
+
+                // Remover o menu arrastado da lista principal
+                draggedMenuItem.remove();
+
+                // Criar novo item de submenu
+                const submenuItem = document.createElement('div');
+                submenuItem.className = 'mpa-submenu-item';
+                submenuItem.innerHTML = `
+                    <label class="mpa-submenu-label">
+                        <input type="checkbox"
+                               name="submenu_permissions[${parentMenuSlug}|${draggedMenuSlug}]"
+                               value="1"
+                               checked
+                               class="mpa-submenu-checkbox" />
+                        <span class="mpa-submenu-title" data-submenu-key="${parentMenuSlug}|${draggedMenuSlug}">
+                            ↳ ${draggedMenuTitle}
+                        </span>
+                        <span class="mpa-edit-icon dashicons dashicons-edit" title="Clique para editar"></span>
+                        <code class="mpa-submenu-slug">${draggedMenuSlug}</code>
+                    </label>
+
+                    <div class="mpa-submenu-edit-fields" data-submenu-key="${parentMenuSlug}|${draggedMenuSlug}">
+                        <div class="mpa-edit-row">
+                            <label class="mpa-edit-label">Nome personalizado:</label>
+                            <div class="mpa-edit-input-group">
+                                <input type="text"
+                                       name="submenu_custom_title[${parentMenuSlug}|${draggedMenuSlug}]"
+                                       value=""
+                                       placeholder="${draggedMenuTitle}"
+                                       class="mpa-custom-title-input" />
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Encontrar ou criar a lista de submenus do menu pai
+                let submenuList = parentMenuItem.querySelector('.mpa-submenu-list');
+                if (!submenuList) {
+                    // Criar header e lista de submenu se não existir
+                    const submenuHeader = document.createElement('div');
+                    submenuHeader.className = 'mpa-submenu-header';
+                    submenuHeader.innerHTML = `
+                        <button type="button" class="mpa-submenu-toggle expanded" data-target="submenu-${parentMenuSlug}">
+                            <span class="dashicons dashicons-minus-alt2"></span>
+                            <span class="mpa-toggle-text">Ocultar submenus (1)</span>
+                        </button>
+                    `;
+
+                    submenuList = document.createElement('div');
+                    submenuList.className = 'mpa-submenu-list expanded';
+                    submenuList.id = `submenu-${parentMenuSlug}`;
+
+                    parentMenuItem.appendChild(submenuHeader);
+                    parentMenuItem.appendChild(submenuList);
+
+                    // Adicionar eventos ao novo botão toggle
+                    const newToggleButton = submenuHeader.querySelector('.mpa-submenu-toggle');
+                    newToggleButton.addEventListener('click', toggleSubmenuHandler);
+
+                    // Adicionar eventos de drag ao novo submenu
+                    addSubmenuDragEvents(submenuList);
+                } else {
+                    // Atualizar contador de submenus
+                    const toggleText = parentMenuItem.querySelector('.mpa-toggle-text');
+                    if (toggleText) {
+                        const currentCount = submenuList.children.length;
+                        const newCount = currentCount + 1;
+                        toggleText.textContent = toggleText.textContent.replace(/\(\d+\)/, `(${newCount})`);
+                    }
+                }
+
+                // Adicionar o novo item de submenu
+                submenuList.appendChild(submenuItem);
+
+                // Adicionar eventos de edição ao novo submenu
+                const editIcon = submenuItem.querySelector('.mpa-edit-icon');
+                if (editIcon) {
+                    editIcon.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const editFields = submenuItem.querySelector('.mpa-submenu-edit-fields');
+                        if (editFields) {
+                            editFields.classList.toggle('active');
+                        }
+                    });
+                }
+
+                // Adicionar eventos de drag ao novo submenu para permitir que seja movido de volta
+                submenuItem.setAttribute('draggable', 'true');
+
+                submenuItem.addEventListener('dragstart', function(e) {
+                    draggedItem = this;
+                    this.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                submenuItem.addEventListener('dragend', function(e) {
+                    this.classList.remove('dragging');
+                    // Limpar indicadores visuais
+                    document.querySelectorAll('.mpa-menu-list').forEach(menuList => {
+                        menuList.classList.remove('menu-drop-zone');
+                    });
+                });
+
+                // Salvar alterações no backend
+                saveMenuToSubmenuTransformation(draggedMenuSlug, parentMenuSlug, draggedMenuTitle);
+
+                showNotification(`Menu "${draggedMenuTitle}" transformado em submenu com sucesso! Recarregando...`, 'success');
+            }
+
+            // Função para adicionar eventos de drag aos submenus
+            function addSubmenuDragEvents(submenuList) {
+                submenuList.addEventListener('dragover', function(e) {
+                    if (!this.classList.contains('expanded')) return;
+
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.dataTransfer.dropEffect = 'move';
+
+                    this.classList.add('submenu-drop-zone');
+                });
+
+                submenuList.addEventListener('dragenter', function(e) {
+                    if (!this.classList.contains('expanded')) return;
+
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+
+                submenuList.addEventListener('dragleave', function(e) {
+                    const rect = this.getBoundingClientRect();
+                    const x = e.clientX;
+                    const y = e.clientY;
+
+                    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+                        this.classList.remove('submenu-drop-zone');
+                    }
+                });
+
+                submenuList.addEventListener('drop', function(e) {
+                    if (!this.classList.contains('expanded')) return;
+
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    this.classList.remove('submenu-drop-zone');
+
+                    if (draggedItem) {
+                        const parentMenuItem = this.closest('.mpa-menu-item');
+                        const draggedMenuSlug = draggedItem.getAttribute('data-menu-slug');
+                        const parentMenuSlug = parentMenuItem.getAttribute('data-menu-slug');
+
+                        if (draggedMenuSlug === parentMenuSlug) {
+                            showNotification('Um menu não pode ser submenu dele mesmo!', 'error');
+                            return;
+                        }
+
+                        transformMenuToSubmenu(draggedItem, parentMenuItem);
+                    }
+                });
+            }
+
+            // Eventos de drag para submenus - permitir que sejam arrastados de volta para menus
+            document.querySelectorAll('.mpa-submenu-item').forEach(submenuItem => {
+                submenuItem.setAttribute('draggable', 'true');
+
+                submenuItem.addEventListener('dragstart', function(e) {
+                    draggedItem = this;
+                    this.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                submenuItem.addEventListener('dragend', function(e) {
+                    this.classList.remove('dragging');
+                    // Limpar indicadores visuais
+                    document.querySelectorAll('.mpa-menu-list').forEach(menuList => {
+                        menuList.classList.remove('menu-drop-zone');
+                    });
+                });
+            });
+
+            // Permitir que a área principal de menus receba drops de submenus
+            document.querySelectorAll('.mpa-menu-list').forEach(menuList => {
+                menuList.addEventListener('dragover', function(e) {
+                    // Verificar se é um submenu sendo arrastado
+                    if (draggedItem && draggedItem.classList.contains('mpa-submenu-item')) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        this.classList.add('menu-drop-zone');
+                    }
+                });
+
+                menuList.addEventListener('dragenter', function(e) {
+                    if (draggedItem && draggedItem.classList.contains('mpa-submenu-item')) {
+                        e.preventDefault();
+                    }
+                });
+
+                menuList.addEventListener('dragleave', function(e) {
+                    // Verificar se realmente saiu da zona
+                    const rect = this.getBoundingClientRect();
+                    const x = e.clientX;
+                    const y = e.clientY;
+
+                    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+                        this.classList.remove('menu-drop-zone');
+                    }
+                });
+
+                menuList.addEventListener('drop', function(e) {
+                    if (draggedItem && draggedItem.classList.contains('mpa-submenu-item')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.classList.remove('menu-drop-zone');
+
+                        transformSubmenuToMenu(draggedItem);
+                    }
+                });
+            });
+
+            // Função para lidar com toggle de submenus
+            function toggleSubmenuHandler() {
+                const targetId = this.getAttribute('data-target');
+                const target = document.getElementById(targetId);
+                const icon = this.querySelector('.dashicons');
+                const text = this.querySelector('.mpa-toggle-text');
+
+                if (!target || !icon || !text) return;
+
+                if (target.classList.contains('collapsed')) {
+                    target.classList.remove('collapsed');
+                    target.classList.add('expanded');
+                    icon.classList.remove('dashicons-plus-alt2');
+                    icon.classList.add('dashicons-minus-alt2');
+                    text.textContent = text.textContent.replace('Mostrar', 'Ocultar');
+                    this.classList.add('expanded');
+                } else {
+                    target.classList.remove('expanded');
+                    target.classList.add('collapsed');
+                    icon.classList.remove('dashicons-minus-alt2');
+                    icon.classList.add('dashicons-plus-alt2');
+                    text.textContent = text.textContent.replace('Ocultar', 'Mostrar');
+                    this.classList.remove('expanded');
+                }
+            }
+
+            // Função para salvar transformação no backend
+            function saveMenuToSubmenuTransformation(menuSlug, parentSlug, menuTitle) {
+                const formData = new FormData();
+                formData.append('action', 'mpa_transform_menu_to_submenu');
+                formData.append('menu_slug', menuSlug);
+                formData.append('parent_slug', parentSlug);
+                formData.append('menu_title', menuTitle);
+                formData.append('nonce', '<?php echo wp_create_nonce("mpa_transform_menu"); ?>');
+
+                fetch('<?php echo admin_url("admin-ajax.php"); ?>', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Transformação salva com sucesso!', data.data);
+
+                        // Recarregar página após sucesso para garantir sincronização
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        console.error('Erro ao salvar transformação:', data.data);
+                        showNotification('Erro ao salvar transformação no backend.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro na requisição:', error);
+                    showNotification('Erro ao comunicar com o servidor.', 'error');
+                });
+            }
+
+            // Função para transformar submenu de volta em menu principal
+            function transformSubmenuToMenu(submenuItem) {
+                // Obter informações do submenu
+                const submenuTitle = submenuItem.querySelector('.mpa-submenu-title');
+                if (!submenuTitle) return;
+
+                const submenuKey = submenuTitle.getAttribute('data-submenu-key');
+                if (!submenuKey) return;
+
+                const [parentSlug, menuSlug] = submenuKey.split('|');
+                const menuTitle = submenuTitle.textContent.replace('↳ ', '').trim();
+
+                // Obter título personalizado se existir
+                const customTitleInput = submenuItem.querySelector('.mpa-custom-title-input');
+                const finalTitle = customTitleInput && customTitleInput.value ? customTitleInput.value : menuTitle;
+
+                // Remover o submenu da lista
+                const submenuList = submenuItem.parentElement;
+                submenuItem.remove();
+
+                // Atualizar contador de submenus
+                const parentMenuItem = submenuList.closest('.mpa-menu-item');
+                const toggleText = parentMenuItem.querySelector('.mpa-toggle-text');
+                if (toggleText) {
+                    const currentCount = submenuList.children.length;
+                    if (currentCount === 0) {
+                        // Se não há mais submenus, remover header e lista
+                        const submenuHeader = parentMenuItem.querySelector('.mpa-submenu-header');
+                        if (submenuHeader) submenuHeader.remove();
+                        if (submenuList) submenuList.remove();
+                    } else {
+                        // Atualizar contador
+                        toggleText.textContent = toggleText.textContent.replace(/\(\d+\)/, `(${currentCount})`);
+                    }
+                }
+
+                // Criar novo item de menu principal
+                const newMenuItem = document.createElement('div');
+                newMenuItem.className = 'mpa-menu-item';
+                newMenuItem.setAttribute('draggable', 'true');
+                newMenuItem.setAttribute('data-menu-slug', menuSlug);
+                newMenuItem.innerHTML = `
+                    <label class="mpa-menu-label">
+                        <input type="checkbox" name="menu_permissions[${menuSlug}]" value="1" checked class="mpa-menu-checkbox" />
+                        <span class="mpa-menu-title">${finalTitle}</span>
+                        <span class="mpa-edit-icon dashicons dashicons-edit" title="Clique para editar"></span>
+                        <code class="mpa-menu-slug">${menuSlug}</code>
+                    </label>
+
+                    <div class="mpa-menu-edit-fields">
+                        <div class="mpa-edit-row">
+                            <label class="mpa-edit-label">Nome personalizado:</label>
+                            <div class="mpa-edit-input-group">
+                                <input type="text"
+                                       name="menu_custom_title[${menuSlug}]"
+                                       value="${customTitleInput && customTitleInput.value ? customTitleInput.value : ''}"
+                                       placeholder="${menuTitle}"
+                                       class="mpa-custom-title-input" />
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Adicionar o novo menu à lista principal (no final)
+                const menuList = document.querySelector('.mpa-menu-list');
+                if (menuList) {
+                    menuList.appendChild(newMenuItem);
+
+                    // Adicionar eventos de drag ao novo menu
+                    newMenuItem.addEventListener('dragstart', function(e) {
+                        draggedItem = this;
+                        this.classList.add('dragging');
+                        e.dataTransfer.effectAllowed = 'move';
+                    });
+
+                    newMenuItem.addEventListener('dragend', function(e) {
+                        this.classList.remove('dragging');
+                        document.querySelectorAll('.mpa-menu-item, .submenu-drop-zone').forEach(item => {
+                            item.classList.remove('drag-over', 'submenu-drop-zone');
+                        });
+                        draggedItem = null;
+                    });
+
+                    // Adicionar eventos de edição
+                    const editIcon = newMenuItem.querySelector('.mpa-edit-icon');
+                    if (editIcon) {
+                        editIcon.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            const editFields = newMenuItem.querySelector('.mpa-menu-edit-fields');
+                            if (editFields) {
+                                editFields.classList.toggle('active');
+                            }
+                        });
+                    }
+                }
+
+                // Salvar transformação no backend
+                saveSubmenuToMenuTransformation(menuSlug, parentSlug, finalTitle);
+
+                showNotification(`Submenu "${finalTitle}" transformado em menu principal com sucesso!`, 'success');
+            }
+
+            // Função para salvar transformação de submenu para menu no backend
+            function saveSubmenuToMenuTransformation(menuSlug, parentSlug, menuTitle) {
+                const formData = new FormData();
+                formData.append('action', 'mpa_transform_submenu_to_menu');
+                formData.append('menu_slug', menuSlug);
+                formData.append('parent_slug', parentSlug);
+                formData.append('menu_title', menuTitle);
+                formData.append('nonce', '<?php echo wp_create_nonce("mpa_transform_submenu"); ?>');
+
+                fetch('<?php echo admin_url("admin-ajax.php"); ?>', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Submenu revertido com sucesso!', data.data);
+                    } else {
+                        console.error('Erro ao reverter submenu:', data.data);
+                        showNotification('Erro ao reverter submenu no backend.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro na requisição:', error);
+                    showNotification('Erro ao comunicar com o servidor.', 'error');
+                });
+            }
+
             // Função para mostrar notificações
             function showNotification(message, type = 'info') {
                 const notification = document.createElement('div');
@@ -2007,10 +2520,9 @@ function mpa_menu_roles_page() {
                 notification.style.right = '20px';
                 notification.style.zIndex = '9999';
                 notification.style.maxWidth = '300px';
-                
+
                 document.body.appendChild(notification);
-                
-                // Remover após 3 segundos
+
                 setTimeout(() => {
                     notification.remove();
                 }, 3000);
@@ -2018,31 +2530,30 @@ function mpa_menu_roles_page() {
             
             // Toggle de submenus - expandir/recolher
             document.querySelectorAll('.mpa-submenu-toggle').forEach(button => {
-                button.addEventListener('click', function() {
-                    const targetId = this.getAttribute('data-target');
-                    const target = document.getElementById(targetId);
-                    const icon = this.querySelector('.dashicons');
-                    const text = this.querySelector('.mpa-toggle-text');
-                    
-                    if (!target || !icon || !text) return;
-                    
-                    if (target.classList.contains('collapsed')) {
-                        // Expandir
-                        target.classList.remove('collapsed');
-                        target.classList.add('expanded');
-                        icon.classList.remove('dashicons-plus-alt2');
-                        icon.classList.add('dashicons-minus-alt2');
-                        text.textContent = text.textContent.replace('Mostrar', 'Ocultar');
-                        this.classList.add('expanded');
-                    } else {
-                        // Recolher
-                        target.classList.remove('expanded');
-                        target.classList.add('collapsed');
-                        icon.classList.remove('dashicons-minus-alt2');
-                        icon.classList.add('dashicons-plus-alt2');
-                        text.textContent = text.textContent.replace('Ocultar', 'Mostrar');
-                        this.classList.remove('expanded');
-                    }
+                button.addEventListener('click', toggleSubmenuHandler);
+            });
+
+            // Inicializar eventos de drag para submenus existentes
+            document.querySelectorAll('.mpa-submenu-list').forEach(submenuList => {
+                addSubmenuDragEvents(submenuList);
+            });
+
+            // Inicializar eventos de drag para itens de submenu existentes
+            document.querySelectorAll('.mpa-submenu-item').forEach(submenuItem => {
+                submenuItem.setAttribute('draggable', 'true');
+
+                submenuItem.addEventListener('dragstart', function(e) {
+                    draggedItem = this;
+                    this.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                submenuItem.addEventListener('dragend', function(e) {
+                    this.classList.remove('dragging');
+                    // Limpar indicadores visuais
+                    document.querySelectorAll('.mpa-menu-list').forEach(menuList => {
+                        menuList.classList.remove('menu-drop-zone');
+                    });
                 });
             });
             
@@ -2628,14 +3139,14 @@ function mpa_get_admin_menus($selected_role = null) {
             'submenus' => []
         ];
         
-        // Adicionar submenus se existirem
+        // Adicionar submenus nativos se existirem
         if (isset($submenu[$slug_raw]) && is_array($submenu[$slug_raw])) {
             foreach ($submenu[$slug_raw] as $submenu_item) {
                 if (empty($submenu_item[0])) continue;
-                
+
                 $sm_raw = $submenu_item[2];
                 $sm_nrm = mpa_normalize_slug($sm_raw);
-                
+
                 $menu_data['submenus'][] = [
                     'title'    => wp_strip_all_tags($submenu_item[0]),
                     'slug_raw' => $sm_raw,   // para remove_submenu_page
@@ -2643,7 +3154,7 @@ function mpa_get_admin_menus($selected_role = null) {
                 ];
             }
         }
-        
+
         $admin_menus[] = $menu_data;
     }
     
@@ -3344,6 +3855,12 @@ add_action('admin_menu', 'mpa_apply_menu_customizations', 999);
 // AJAX handler para salvar ordem dos menus
 add_action('wp_ajax_mpa_save_menu_order', 'mpa_save_menu_order_callback');
 
+// AJAX handler para transformar menu em submenu
+add_action('wp_ajax_mpa_transform_menu_to_submenu', 'mpa_transform_menu_to_submenu_callback');
+
+// AJAX handler para reverter submenu em menu
+add_action('wp_ajax_mpa_transform_submenu_to_menu', 'mpa_transform_submenu_to_menu_callback');
+
 function mpa_save_menu_order_callback() {
     // Verificar se usuário está logado
     if (!is_user_logged_in()) {
@@ -3374,18 +3891,387 @@ function mpa_save_menu_order_callback() {
     wp_send_json_success('Ordem salva com sucesso');
 }
 
+function mpa_transform_menu_to_submenu_callback() {
+    // Verificar se usuário está logado
+    if (!is_user_logged_in()) {
+        wp_send_json_error('Acesso negado: usuário não autenticado');
+    }
+
+    // Verificar nonce
+    if (!wp_verify_nonce($_POST['nonce'], 'mpa_transform_menu')) {
+        wp_send_json_error('Nonce inválido');
+    }
+
+    // Verificar permissões
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Sem permissões suficientes');
+    }
+
+    // Validar dados
+    $menu_slug = sanitize_text_field($_POST['menu_slug'] ?? '');
+    $parent_slug = sanitize_text_field($_POST['parent_slug'] ?? '');
+    $menu_title = sanitize_text_field($_POST['menu_title'] ?? '');
+
+    if (empty($menu_slug) || empty($parent_slug) || empty($menu_title)) {
+        wp_send_json_error('Dados obrigatórios não fornecidos');
+    }
+
+    try {
+        // Obter permissões atuais de menu
+        $menu_permissions = get_option('mpa_menu_permissions', array());
+
+        // Obter usuário atual e suas roles
+        $user = wp_get_current_user();
+        $user_roles = (array) $user->roles;
+
+        // Criar submenu key
+        $submenu_key = $parent_slug . '|' . $menu_slug;
+
+        // Para cada role do usuário, adicionar como submenu habilitado
+        foreach ($user_roles as $role) {
+            // Inicializar estruturas se necessário
+            if (!isset($menu_permissions[$role])) {
+                $menu_permissions[$role] = array();
+            }
+            if (!isset($menu_permissions[$role]['submenus'])) {
+                $menu_permissions[$role]['submenus'] = array();
+            }
+
+            // Remover o menu principal das permissões (já que agora é submenu)
+            if (isset($menu_permissions[$role][$menu_slug])) {
+                unset($menu_permissions[$role][$menu_slug]);
+            }
+
+            // Adicionar como submenu habilitado
+            $menu_permissions[$role]['submenus'][$submenu_key] = true;
+        }
+
+        // Salvar permissões atualizadas
+        update_option('mpa_menu_permissions', $menu_permissions);
+
+        // Remover menu da ordem customizada (se existir)
+        $menu_order = get_option('mpa_menu_order', array());
+        if (is_array($menu_order)) {
+            $key = array_search($menu_slug, $menu_order);
+            if ($key !== false) {
+                unset($menu_order[$key]);
+                $menu_order = array_values($menu_order); // Reindexar
+                update_option('mpa_menu_order', $menu_order);
+            }
+        }
+
+        // Adicionar customização de nome do submenu se necessário
+        $menu_customizations = get_option('mpa_menu_customizations', array());
+        if (!isset($menu_customizations['submenu_custom_title'])) {
+            $menu_customizations['submenu_custom_title'] = array();
+        }
+        $menu_customizations['submenu_custom_title'][$submenu_key] = $menu_title;
+        update_option('mpa_menu_customizations', $menu_customizations);
+
+        wp_send_json_success(array(
+            'message' => 'Menu transformado em submenu com sucesso',
+            'submenu_key' => $submenu_key,
+            'parent_slug' => $parent_slug,
+            'menu_slug' => $menu_slug,
+            'menu_title' => $menu_title
+        ));
+
+    } catch (Exception $e) {
+        wp_send_json_error('Erro interno do servidor: ' . $e->getMessage());
+    }
+}
+
+// Handler AJAX para reverter submenu em menu
+function mpa_transform_submenu_to_menu_callback() {
+    // Verificar se usuário está logado
+    if (!is_user_logged_in()) {
+        wp_send_json_error('Acesso negado: usuário não autenticado.');
+    }
+
+    // Verificar nonce
+    if (!wp_verify_nonce($_POST['nonce'], 'mpa_transform_submenu')) {
+        wp_send_json_error('Token de segurança inválido.');
+    }
+
+    // Verificar permissões
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Usuário não tem permissões para esta operação.');
+    }
+
+    try {
+        // Obter dados do POST
+        if (empty($_POST['menu_slug']) || empty($_POST['parent_slug'])) {
+            wp_send_json_error('Dados obrigatórios não fornecidos.');
+        }
+
+        $menu_slug = sanitize_text_field($_POST['menu_slug']);
+        $parent_slug = sanitize_text_field($_POST['parent_slug']);
+        $menu_title = wp_strip_all_tags($_POST['menu_title'] ?? '');
+
+        // Obter permissões atuais
+        $menu_permissions = get_option('mpa_menu_permissions', array());
+
+        // Obter usuário atual
+        $current_user = wp_get_current_user();
+        $user_roles = !empty($current_user->roles) ? $current_user->roles : ['administrator'];
+
+        // Para cada role do usuário, remover a entrada de submenu
+        foreach ($user_roles as $role) {
+            if (isset($menu_permissions[$role]['submenus'])) {
+                $submenu_key = $parent_slug . '|' . $menu_slug;
+
+                // Remover a transformação de submenu
+                unset($menu_permissions[$role]['submenus'][$submenu_key]);
+
+                // Se não há mais submenus para esta role, remover a seção
+                if (empty($menu_permissions[$role]['submenus'])) {
+                    unset($menu_permissions[$role]['submenus']);
+                }
+
+                // Garantir que o menu está habilitado como menu principal
+                if (!isset($menu_permissions[$role])) {
+                    $menu_permissions[$role] = array();
+                }
+
+                // Habilitar o menu como menu principal para a role
+                $menu_permissions[$role][$menu_slug] = true;
+
+                // Log da operação
+                $menu_permissions[$role]['transformations'][] = array(
+                    'action' => 'submenu_to_menu',
+                    'menu_slug' => $menu_slug,
+                    'parent_slug' => $parent_slug,
+                    'timestamp' => current_time('mysql'),
+                    'user' => $current_user->user_login
+                );
+            }
+        }
+
+        // Salvar alterações
+        update_option('mpa_menu_permissions', $menu_permissions);
+
+        wp_send_json_success(array(
+            'message' => 'Submenu revertido para menu principal com sucesso!',
+            'menu_slug' => $menu_slug,
+            'parent_slug' => $parent_slug,
+            'menu_title' => $menu_title
+        ));
+
+    } catch (Exception $e) {
+        wp_send_json_error('Erro interno do servidor: ' . $e->getMessage());
+    }
+}
+
+// Função para aplicar transformações na estrutura nativa do WordPress
+function mpa_apply_menu_transformations() {
+    global $menu, $submenu;
+
+    if (!is_array($menu)) {
+        return;
+    }
+
+    // Obter permissões para encontrar transformações
+    $menu_permissions = get_option('mpa_menu_permissions', array());
+
+    // Criar backup original dos menus antes de qualquer transformação
+    static $original_menu = null;
+    static $transformations_applied = false;
+
+    if ($original_menu === null) {
+        $original_menu = $menu;
+    }
+
+    // Se já aplicamos transformações antes e agora não há mais transformações ativas,
+    // precisamos restaurar da global original do WordPress
+    if ($transformations_applied && empty($menu_permissions)) {
+        $transformations_applied = false;
+    }
+
+    // Obter usuário atual para verificar roles
+    $user = wp_get_current_user();
+    $user_roles = !empty($user->roles) ? $user->roles : ['administrator'];
+
+    // Coletar transformações ativas de todas as roles do usuário atual
+    $active_transformations = array();
+
+    if (!empty($menu_permissions)) {
+        foreach ($user_roles as $role) {
+            if (!isset($menu_permissions[$role]['submenus']) || !is_array($menu_permissions[$role]['submenus'])) {
+                continue;
+            }
+
+            foreach ($menu_permissions[$role]['submenus'] as $submenu_key => $enabled) {
+                if (!$enabled || strpos($submenu_key, '|') === false) {
+                    continue;
+                }
+
+                list($parent_slug, $child_slug) = explode('|', $submenu_key, 2);
+                $active_transformations[] = array(
+                    'parent_slug' => $parent_slug,
+                    'child_slug' => $child_slug
+                );
+            }
+        }
+    }
+
+    // Primeiro, identificar quais menus devem ser restaurados do backup original
+    $menus_to_restore = array();
+    foreach ($original_menu as $position => $menu_item) {
+        if (empty($menu_item[2])) {
+            continue;
+        }
+
+        $slug = $menu_item[2];
+        $normalized_slug = mpa_normalize_slug($slug);
+
+        // Verificar se este menu não está em nenhuma transformação ativa
+        $is_transformed = false;
+        foreach ($active_transformations as $transformation) {
+            if ($transformation['child_slug'] === $slug || $transformation['child_slug'] === $normalized_slug) {
+                $is_transformed = true;
+                break;
+            }
+        }
+
+        // Se não está transformado mas não existe no menu atual, deve ser restaurado
+        if (!$is_transformed) {
+            $menu_exists = false;
+            foreach ($menu as $current_menu_item) {
+                if (!empty($current_menu_item[2]) &&
+                    ($current_menu_item[2] === $slug || mpa_normalize_slug($current_menu_item[2]) === $normalized_slug)) {
+                    $menu_exists = true;
+                    break;
+                }
+            }
+
+            if (!$menu_exists) {
+                $menus_to_restore[$slug] = $menu_item;
+            }
+        }
+    }
+
+    // Restaurar menus que foram removidos mas não devem mais ser transformados
+    foreach ($menus_to_restore as $slug => $menu_item) {
+        // Encontrar uma posição adequada (usar a posição original + 0.1 para evitar conflitos)
+        $original_position = null;
+        foreach ($original_menu as $pos => $orig_item) {
+            if (!empty($orig_item[2]) && $orig_item[2] === $slug) {
+                $original_position = $pos;
+                break;
+            }
+        }
+
+        $new_position = $original_position !== null ? $original_position + 0.1 : 99.1;
+        $menu[$new_position] = $menu_item;
+    }
+
+    // Se não há transformações ativas, terminar aqui
+    if (empty($active_transformations)) {
+        return;
+    }
+
+    // Criar um mapa dos menus atuais (incluindo os restaurados)
+    $menu_items = array();
+    foreach ($menu as $position => $menu_item) {
+        if (!empty($menu_item[2])) {
+            $slug = $menu_item[2];
+            $normalized_slug = mpa_normalize_slug($slug);
+            $menu_items[$slug] = $menu_item;
+            $menu_items[$normalized_slug] = $menu_item;
+        }
+    }
+
+    // Aplicar transformações
+    foreach ($active_transformations as $transformation) {
+        $parent_slug = $transformation['parent_slug'];
+        $child_slug = $transformation['child_slug'];
+
+        // Buscar o item do menu filho
+        $child_menu_item = null;
+        if (isset($menu_items[$child_slug])) {
+            $child_menu_item = $menu_items[$child_slug];
+        }
+
+        if (!$child_menu_item) {
+            continue;
+        }
+
+        // Remover o menu filho da lista principal
+        foreach ($menu as $position => $menu_item) {
+            if (!empty($menu_item[2]) &&
+                (mpa_normalize_slug($menu_item[2]) === $child_slug || $menu_item[2] === $child_slug)) {
+                unset($menu[$position]);
+                break;
+            }
+        }
+
+        // Buscar o menu pai na estrutura atual
+        $parent_found = false;
+        foreach ($menu as $menu_item) {
+            if (!empty($menu_item[2]) &&
+                (mpa_normalize_slug($menu_item[2]) === $parent_slug || $menu_item[2] === $parent_slug)) {
+                $parent_found = true;
+                break;
+            }
+        }
+
+        if ($parent_found) {
+            // Encontrar o parent_slug correto (pode ser normalizado ou não)
+            $actual_parent_slug = null;
+            foreach ($menu as $menu_item) {
+                if (!empty($menu_item[2]) &&
+                    (mpa_normalize_slug($menu_item[2]) === $parent_slug || $menu_item[2] === $parent_slug)) {
+                    $actual_parent_slug = $menu_item[2];
+                    break;
+                }
+            }
+
+            if ($actual_parent_slug) {
+                // Inicializar array de submenus se não existir
+                if (!isset($submenu[$actual_parent_slug])) {
+                    $submenu[$actual_parent_slug] = array();
+                }
+
+                // Obter customizações para título do submenu
+                $menu_customizations = get_option('mpa_menu_customizations', array());
+                $submenu_title = $child_menu_item[0]; // título padrão
+
+                if (isset($menu_customizations['submenu_custom_title'][$parent_slug . '|' . $child_slug])) {
+                    $submenu_title = $menu_customizations['submenu_custom_title'][$parent_slug . '|' . $child_slug];
+                }
+
+                // Adicionar à estrutura de submenus do WordPress
+                $submenu[$actual_parent_slug][] = array(
+                    $submenu_title,           // [0] título do submenu
+                    $child_menu_item[1],      // [1] capability
+                    $child_slug,              // [2] menu_slug
+                    $submenu_title            // [3] page_title (igual ao título)
+                );
+            }
+        }
+    }
+
+    // Marcar que as transformações foram aplicadas se havia transformações ativas
+    if (!empty($active_transformations)) {
+        $transformations_applied = true;
+    }
+}
+
 // Aplicar ordem customizada dos menus
 add_action('admin_menu', 'mpa_apply_menu_order', 999);
 
 function mpa_apply_menu_order() {
     global $menu;
-    
+
     $custom_order = get_option('mpa_menu_order', array());
-    
+
     if (empty($custom_order) || !is_array($menu)) {
         return;
     }
-    
+
+    // Aplicar transformações na estrutura nativa do WordPress
+    mpa_apply_menu_transformations();
+
     // Obter menus personalizados para adicionar à estrutura
     $custom_menus = get_option('mpa_custom_menus', array());
     $custom_menus_to_add = array();

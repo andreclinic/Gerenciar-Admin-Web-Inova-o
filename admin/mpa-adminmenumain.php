@@ -20,6 +20,12 @@ function mpa_adminmenumain_assets($hook)
         null,
         true
     );
+
+    // Localizar variáveis AJAX para o script do sidebar
+    wp_localize_script('mpa-adminmenumain-js', 'mpaDragDropVars', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('mpa_transform_submenu')
+    ));
 }
 
 // Implementar sidebar dinâmico baseado nos menus do WordPress
@@ -151,8 +157,10 @@ function mpa_render_dynamic_sidebar() {
                                                    (strpos($submenu_file, '.php') !== false && $current_screen->id === str_replace('.php', '', $submenu_file));
                                 
                                 ?>
-                                <a href="<?php echo esc_url($submenu_url); ?>" 
-                                   class="mpa-submenu-item <?php echo $is_submenu_active ? 'active' : ''; ?>">
+                                <a href="<?php echo esc_url($submenu_url); ?>"
+                                   class="mpa-submenu-item <?php echo $is_submenu_active ? 'active' : ''; ?>"
+                                   data-menu-slug="<?php echo esc_attr($submenu_file); ?>"
+                                   data-parent-slug="<?php echo esc_attr($menu_file); ?>">
                                     <span><?php echo esc_html($submenu_title); ?></span>
                                 </a>
                                 <?php
