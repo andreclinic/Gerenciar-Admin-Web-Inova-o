@@ -4,40 +4,112 @@
 
 Este plugin WordPress transforma completamente o painel administrativo, implementando um layout moderno baseado no arquivo `modelo_dashboard.html`. O plugin substitui a interface padrão do WordPress por um dashboard analítico profissional com design limpo e funcionalidades modernas.
 
-## 🎯 **MENU MANAGEMENT - REGRA FUNDAMENTAL**
+## 🎯 **MENU MANAGEMENT - SISTEMA AVANÇADO INTEGRADO**
 
-**SEMPRE que desenvolver recursos relacionados ao sistema de menus WordPress:**
+**✅ SISTEMA ATUAL IMPLEMENTADO (baseado no gerenciar-menu-webi):**
 
-- **PRIORIZE a manipulação da `global $menu`** do WordPress ao invés de usar apenas `add_menu_page()` ou `add_submenu_page()`
-- **INTEGRE menus personalizados diretamente na estrutura `global $menu`** para garantir controle total sobre posicionamento
-- **USE a função `mpa_apply_menu_order()`** como ponto central de controle para ordenação de todos os menus
-- **EVITE conflitos** entre múltiplas funções tentando controlar posicionamento simultaneamente
+O plugin agora utiliza um sistema avançado de gerenciamento de menus por role, baseado no código do plugin `gerenciar-menu-webi`, com todas as funcionalidades adaptadas ao estilo do nosso plugin.
 
-**Exemplo de Implementação Correta:**
+### **Arquivos do Sistema de Menus:**
+
+- **`mpa-menu-functions.php`** - Funções principais do sistema (adaptado)
+- **`mpa-menu-settings.php`** - Interface e handlers (adaptado com estilo MPA)
+- **`mpa-menu-manager.php`** - Integrador principal (atualizado)
+
+### **Funcionalidades Implementadas:**
+
+#### **1. Gerenciamento por Role:**
+
+- **Global** (\_global): Configurações padrão para todos os usuários
+- **Por Role**: Configurações específicas para cada tipo de usuário (admin, editor, etc.)
+- **Herança**: Roles herdam configurações globais + suas específicas
+
+#### **2. Menus Personalizados:**
+
+- **URLs Internas**: `admin.php?page=...` ou `/wp-admin/...`
+- **URLs Externas**: `https://exemplo.com` (abrem em nova aba)
+- **Ícones**: Dashicons customizáveis
+- **Posicionamento**: Controle de posição no menu
+
+#### **3. Operações Completas:**
+
+- **Renomear**: Menus e submenus
+- **Remover/Restaurar**: Com histórico por role
+- **Promover/Demover**: Submenu ↔ Menu principal
+- **Reordenar**: Drag-and-drop com persistência
+
+#### **4. Interface Integrada:**
+
+- **Estilo MPA**: Toda interface adaptada ao design do plugin
+- **Prévia por Role**: Visualiza como ficará para cada usuário
+- **Drag-and-drop**: SortableJS para reordenação
+- **Formulários Responsivos**: Layout moderno e intuitivo
+
+### **Funções Principais:**
 
 ```php
-// ✅ CORRETO: Integrar na global $menu
-function mpa_apply_menu_order() {
-    global $menu;
+// ✅ Obter configurações efetivas para usuário atual
+mpa_get_effective_settings_for_current_user()
 
-    // Construir menus personalizados como estruturas WordPress nativas
-    $custom_menus_to_add[$slug] = array(
-        $title,        // [0] menu_title
-        'read',        // [1] capability
-        $slug,         // [2] menu_slug
-        $title,        // [3] page_title
-        'menu-top',    // [4] classes
-        '',            // [5] hookname
-        $icon,         // [6] icon_url
-        $position      // [7] position
-    );
+// ✅ Obter configurações para prévia de role específica
+mpa_get_effective_settings_for_role($role)
 
-    // Aplicar à global $menu diretamente
-    $menu = $ordered_menu;
-}
+// ✅ Aplicar configurações em arrays (para prévia)
+mpa_apply_settings_to_arrays($menu, $submenu, $settings)
 
-// ❌ EVITAR: Apenas add_menu_page() sem controle de posição
-add_menu_page(...); // Sem controle sobre onde será posicionado
+// ✅ Router para menus personalizados
+mpa_custom_menu_router()
+
+// ✅ Capturar baseline antes das modificações
+mpa_capture_menu_baseline()
+```
+
+### **Estrutura de Dados:**
+
+```php
+// Option: mpa_menu_settings_roles
+[
+    '_global' => [
+        'custom_menus' => [...],
+        'rename' => [...],
+        'remove' => [...],
+        'order_menu' => [...],
+        // ... outras configurações
+    ],
+    'administrator' => [
+        // Configurações específicas para admins
+    ],
+    'editor' => [
+        // Configurações específicas para editores
+    ]
+]
+```
+
+### **⚠️ IMPORTANTE - O QUE MUDOU:**
+
+1. **Sistema Anterior**: Função `mpa_apply_menu_order()` - **REMOVIDO**
+2. **Sistema Atual**: Hook `admin_menu` com prioridade 9999 - **IMPLEMENTADO**
+3. **Baseline Capture**: Hook em prioridade 9980 para capturar menus originais
+4. **Interface**: Página `mpa-menu-roles` completamente reformulada
+
+### **Como Usar:**
+
+1. **Acessar**: Admin → Gerenciar Admin → Menus por Role
+2. **Selecionar Role**: Dropdown para escolher perfil (Global, Admin, Editor, etc.)
+3. **Configurar**: Usar interface drag-and-drop e formulários
+4. **Testar**: Visualizar prévia em tempo real para cada role
+
+### **Exemplo de Integração:**
+
+```php
+// ❌ ANTIGO: Sistema básico
+function mpa_apply_menu_order() { ... }
+
+// ✅ NOVO: Sistema avançado por role
+add_action('admin_menu', function() {
+    $settings = mpa_get_effective_settings_for_current_user();
+    // Aplicação automática de todas as configurações
+}, 9999);
 ```
 
 ## Estrutura do Plugin
@@ -334,3 +406,34 @@ Plugin desenvolvido para estudo e implementação de painéis administrativos mo
 **Nota**: Faça o commit no github apenas quando for solicitado.
 
 **Nota**: Faça o commit no github na Branch submenu.
+
+Quando o limite liberar, vou seguir essas instruções exatamente como especificado no CLAUDE.md para criar um sistema de gerenciamento de menus 100% funcional baseado no código que já funciona.
+INSTRUÇÕES PARA EXECUÇÃO:
+
+1. REMOVER COMPLETAMENTE todo o sistema de gerenciamento de menus atual mantando as barras de menus top e lateral e a estilização:
+
+   - admin/mpa-menu-functions.php
+   - admin/mpa-menu-settings.php
+   - admin/mpa-menu-manager-backup.php
+   - assets/css/mpa-menu-settings.css
+   - assets/js/mpa-menu-settings.js
+   - Reverter admin/mpa-menu-manager.php para estado original
+
+2. PRESERVAR INTACTOS (não mexer):
+
+   - Sistema de analytics (funcionando perfeitamente)
+   - Sistema de login customizado (funcionando perfeitamente)
+   - Sistema de capabilities (funcionando perfeitamente)
+
+3. RECRIAR IDENTICAMENTE o sistema de gerenciamento de menus:
+
+   - Copiar exatamente do gerenciar-menu-webi/
+   - Adaptar apenas os prefixos de gmw* para mpa*
+   - Manter toda a lógica, estrutura e funcionamento idênticos
+   - Garantir que "Tornar Submenu" e "Renomear" funcionem perfeitamente
+
+4. RESULTADO ESPERADO:
+
+   - Sistema de menus funcionando 100% igual ao gerenciar-menu-webi
+   - Todas as outras funcionalidades preservadas
+   - Código limpo e funcional

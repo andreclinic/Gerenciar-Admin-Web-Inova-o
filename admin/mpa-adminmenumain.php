@@ -129,41 +129,105 @@ function mpa_render_dynamic_sidebar() {
                         <?php endif; ?>
                     </a>
                     
-                    <?php if ($has_submenu): ?>
+                    <?php
+                    // Verificar se tem submenus (nativos ou personalizados)
+                    $menu_customizations = get_option('mpa_menu_customizations', array());
+                    $has_custom_submenus = false;
+
+                    if (isset($menu_customizations['submenu_custom_data'])) {
+                        foreach ($menu_customizations['submenu_custom_data'] as $submenu_key => $submenu_data) {
+                            list($parent_slug, $child_slug) = explode('|', $submenu_key, 2);
+
+                            // Comparação mais flexível para matching
+                            $match = false;
+                            if ($parent_slug === $menu_file) {
+                                $match = true;
+                            } elseif ($parent_slug === str_replace('.php', '', $menu_file)) {
+                                $match = true;
+                            } elseif ($parent_slug . '.php' === $menu_file) {
+                                $match = true;
+                            }
+
+                            if ($match) {
+                                $has_custom_submenus = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($has_submenu || $has_custom_submenus): ?>
                         <div class="mpa-submenu <?php echo $is_active ? 'active' : ''; ?>">
                             <?php
-                            foreach ($submenu[$menu_file] as $submenu_item) {
-                                if (!current_user_can($submenu_item[1])) continue;
-                                
-                                $submenu_title = wp_strip_all_tags($submenu_item[0]);
-                                $submenu_file = $submenu_item[2];
-                                
-                                // NOVA VERIFICAÇÃO: Pular se submenu está restrito por role
-                                if (mpa_is_submenu_restricted($menu_file, $submenu_file, $user_restrictions)) continue;
-                                
-                                // Construir URL do submenu corretamente
-                                if (strpos($submenu_file, '.php') !== false) {
-                                    // Arquivo direto como edit.php, users.php, etc.
-                                    $submenu_url = admin_url($submenu_file);
-                                } elseif (strpos($submenu_file, 'http') === 0) {
-                                    // URL externa completa
-                                    $submenu_url = $submenu_file;
-                                } else {
-                                    // Página de plugin/tema - sempre usar admin.php?page=
-                                    $submenu_url = admin_url('admin.php?page=' . $submenu_file);
+                            // Renderizar submenus nativos
+                            if ($has_submenu) {
+                                foreach ($submenu[$menu_file] as $submenu_item) {
+                                    if (!current_user_can($submenu_item[1])) continue;
+
+                                    $submenu_title = wp_strip_all_tags($submenu_item[0]);
+                                    $submenu_file = $submenu_item[2];
+
+                                    // NOVA VERIFICAÇÃO: Pular se submenu está restrito por role
+                                    if (mpa_is_submenu_restricted($menu_file, $submenu_file, $user_restrictions)) continue;
+
+                                    // Construir URL do submenu corretamente
+                                    if (strpos($submenu_file, '.php') !== false) {
+                                        // Arquivo direto como edit.php, users.php, etc.
+                                        $submenu_url = admin_url($submenu_file);
+                                    } elseif (strpos($submenu_file, 'http') === 0) {
+                                        // URL externa completa
+                                        $submenu_url = $submenu_file;
+                                    } else {
+                                        // Página de plugin/tema - sempre usar admin.php?page=
+                                        $submenu_url = admin_url('admin.php?page=' . $submenu_file);
+                                    }
+
+                                    $is_submenu_active = ($current_page === $submenu_file) ||
+                                                       (strpos($submenu_file, '.php') !== false && $current_screen->id === str_replace('.php', '', $submenu_file));
+
+                                    ?>
+                                    <a href="<?php echo esc_url($submenu_url); ?>"
+                                       class="mpa-submenu-item <?php echo $is_submenu_active ? 'active' : ''; ?>"
+                                       data-menu-slug="<?php echo esc_attr($submenu_file); ?>"
+                                       data-parent-slug="<?php echo esc_attr($menu_file); ?>">
+                                        <span><?php echo esc_html($submenu_title); ?></span>
+                                    </a>
+                                    <?php
                                 }
-                                
-                                $is_submenu_active = ($current_page === $submenu_file) || 
-                                                   (strpos($submenu_file, '.php') !== false && $current_screen->id === str_replace('.php', '', $submenu_file));
-                                
-                                ?>
-                                <a href="<?php echo esc_url($submenu_url); ?>"
-                                   class="mpa-submenu-item <?php echo $is_submenu_active ? 'active' : ''; ?>"
-                                   data-menu-slug="<?php echo esc_attr($submenu_file); ?>"
-                                   data-parent-slug="<?php echo esc_attr($menu_file); ?>">
-                                    <span><?php echo esc_html($submenu_title); ?></span>
-                                </a>
-                                <?php
+                            }
+
+                            // Renderizar submenus personalizados
+                            if (isset($menu_customizations['submenu_custom_data'])) {
+                                foreach ($menu_customizations['submenu_custom_data'] as $submenu_key => $submenu_data) {
+                                    list($parent_slug, $child_slug) = explode('|', $submenu_key, 2);
+
+                                    // Usar a mesma lógica de matching flexível
+                                    $match = false;
+                                    if ($parent_slug === $menu_file) {
+                                        $match = true;
+                                    } elseif ($parent_slug === str_replace('.php', '', $menu_file)) {
+                                        $match = true;
+                                    } elseif ($parent_slug . '.php' === $menu_file) {
+                                        $match = true;
+                                    }
+
+                                    if ($match) {
+                                        $submenu_title = $submenu_data['title'];
+                                        $submenu_url = $submenu_data['url'];
+
+                                        $is_submenu_active = ($current_page === $child_slug);
+
+                                        ?>
+                                        <a href="<?php echo esc_url($submenu_url); ?>"
+                                           class="mpa-submenu-item mpa-custom-submenu <?php echo $is_submenu_active ? 'active' : ''; ?>"
+                                           data-menu-slug="<?php echo esc_attr($child_slug); ?>"
+                                           data-parent-slug="<?php echo esc_attr($parent_slug); ?>"
+                                           target="_blank">
+                                            <span><?php echo esc_html($submenu_title); ?></span>
+                                            <span class="mpa-custom-indicator">🔗</span>
+                                        </a>
+                                        <?php
+                                    }
+                                }
                             }
                             ?>
                         </div>
@@ -324,5 +388,7 @@ function mpa_filtrar_menu_principal_por_role() {
         }
     }
 }
-// Adiciona a ação para filtrar os menus com alta prioridade
-add_action('admin_menu', 'mpa_filtrar_menu_principal_por_role', 999);
+// ❌ DESATIVADO: Conflita com novo sistema avançado de menus por role
+// A função mpa_filtrar_menu_principal_por_role estava sendo executada com prioridade 999
+// e conflitava com o novo sistema de gerenciamento de menus que usa prioridade 9999
+// add_action('admin_menu', 'mpa_filtrar_menu_principal_por_role', 999);

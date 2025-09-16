@@ -51,3 +51,75 @@ function mpa_redirect_to_analytics()
         }
     }
 }
+
+################################################
+################################################
+################################################
+################################################
+################################################
+################################################
+################################################
+################################################
+################################################
+################################################
+################################################
+################################################
+################################################
+################################################
+################################################
+
+
+
+################################################
+
+
+
+// add_action('admin_menu', function () {
+//     mover_menu_item('index.php', 3); // Exemplo: move "Páginas" para posição 3
+// }, 1); // prioridade alta
+
+// function mover_menu_item($menu_slug, $nova_posicao)
+// {
+//     global $menu;
+
+//     // Encontra o menu pelo slug
+//     foreach ($menu as $index => $item) {
+//         if (isset($item[2]) && $item[2] === $menu_slug) {
+//             // Salva os dados originais
+//             $titulo = $item[0];
+//             $capability = $item[1];
+//             $icone = isset($item[6]) ? $item[6] : '';
+//             $callback = ''; // sem callback (para menus nativos do WP)
+
+//             // Remove o menu original
+//             remove_menu_page($menu_slug);
+
+//             // Adiciona novamente com a nova posição
+//             add_menu_page(
+//                 $titulo,
+//                 $titulo,
+//                 $capability,
+//                 $menu_slug,
+//                 $callback,
+//                 $icone,
+//                 $nova_posicao
+//             );
+
+//             break;
+//         }
+//     }
+// }
+
+
+// add_action('admin_menu', function () {
+//     global $menu, $submenu;
+
+//     echo '<pre>';
+//     print_r($menu);     // Menu principal
+//     print_r('SUBMENUS<br>');     // Menu principal
+//     print_r('SUBMENUS<br>');     // Menu principal
+//     print_r('SUBMENUS<br>');     // Menu principal
+//     print_r('SUBMENUS<br>');     // Menu principal
+//     print_r($submenu);  // Submenus
+//     echo '</pre>';
+// });

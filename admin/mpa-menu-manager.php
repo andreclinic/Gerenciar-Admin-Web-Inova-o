@@ -1,6 +1,10 @@
 <?php
 // Gerenciador de Menus por Role
 
+// Incluir funções do sistema de menus
+require_once plugin_dir_path(__FILE__) . 'mpa-menu-functions.php';
+require_once plugin_dir_path(__FILE__) . 'mpa-menu-settings.php';
+
 // Adicionar menu principal do plugin apenas para administradores
 add_action('admin_menu', 'mpa_add_main_menu');
 
@@ -28,7 +32,7 @@ function mpa_add_main_menu() {
         'Menus por Role',               // Menu title
         'manage_options',               // Capability
         'mpa-menu-roles',              // Menu slug
-        'mpa_menu_roles_page'          // Function
+        'mpa_render_settings_page'     // Function
     );
     
     // Submenu para configurações gerais
@@ -67,7 +71,7 @@ function mpa_add_main_menu() {
         'Analytics - Configurações',   // Page title
         'Analytics Config',             // Menu title
         'manage_options',               // Capability
-        'mpa-config-analytics',         // Menu slug (mudado para evitar conflito de destaque)
+        'mpa-analytics-settings',       // Menu slug
         'mpa_render_analytics_settings_page' // Function wrapper
     );
 }
@@ -80,11 +84,6 @@ function mpa_dashboard_redirect_to_analytics() {
 
 // Página principal do plugin
 function mpa_main_page() {
-    // Verificar se usuário tem permissão manage_options
-    if (!current_user_can('manage_options')) {
-        wp_die('Acesso negado: você não tem permissão para acessar esta página.', 'Erro de Permissão', array('response' => 403));
-    }
-
     ?>
     <div class="wrap">
         <h1>Gerenciar Admin - Web Inovação</h1>
@@ -143,12 +142,9 @@ function mpa_main_page() {
 }
 
 // Página de gerenciamento de menus por role
-function mpa_menu_roles_page() {
-    // Verificar se usuário tem permissão manage_options
-    if (!current_user_can('manage_options')) {
-        wp_die('Acesso negado: você não tem permissão para acessar esta página.', 'Erro de Permissão', array('response' => 403));
-    }
-
+// Função mpa_menu_roles_page() substituída pela nova do sistema integrado
+function mpa_menu_roles_page_OLD() {
+    
     // Salvar configurações se formulário foi submetido
     if (isset($_POST['submit'])) {
         check_admin_referer('mpa_menu_roles_nonce');
@@ -236,10 +232,12 @@ function mpa_menu_roles_page() {
                 $custom_title = sanitize_text_field($custom_title);
                 if (!empty(trim($custom_title))) {
                     $menu_customizations['submenu_custom_title'][$submenu_key] = $custom_title;
+                    error_log("[MPA SUBMENU DEBUG] Salvando submenu: $submenu_key = $custom_title");
                 } else {
                     // Se estiver vazio, remover a customização para voltar ao original
                     if (isset($menu_customizations['submenu_custom_title'][$submenu_key])) {
                         unset($menu_customizations['submenu_custom_title'][$submenu_key]);
+                        error_log("[MPA SUBMENU DEBUG] Removendo customização: $submenu_key");
                     }
                     // Se não há mais customizações de submenu, limpar o array
                     if (empty($menu_customizations['submenu_custom_title'])) {
@@ -606,9 +604,7 @@ function mpa_menu_roles_page() {
                                 </div>
                                 <div class="mpa-submenu-list collapsed" id="submenu-<?php echo esc_attr($menu_item['slug']); ?>">
                                     <?php foreach ($menu_item['submenus'] as $submenu_item): ?>
-                                        <div class="mpa-submenu-item"
-                                             data-menu-slug="<?php echo esc_attr($submenu_item['slug']); ?>"
-                                             data-parent-slug="<?php echo esc_attr($menu_item['slug']); ?>">
+                                        <div class="mpa-submenu-item">
                                             <?php
                                             $submenu_key = $menu_item['slug'] . '|' . $submenu_item['slug'];
                                             $is_sub_checked = isset($current_permissions[$selected_role]['submenus'][$submenu_key])
@@ -910,60 +906,6 @@ function mpa_menu_roles_page() {
         
         .mpa-menu-item.drag-over {
             border-top: 3px solid #0073aa;
-        }
-
-        /* Estilos para zona de drop dos submenus */
-        .mpa-submenu-list.submenu-drop-zone {
-            background: linear-gradient(90deg, #e8f4fd 0%, #cfe8fc 100%);
-            border: 2px dashed #0073aa;
-            border-radius: 4px;
-            animation: submenuDropPulse 1.5s infinite;
-        }
-
-        @keyframes submenuDropPulse {
-            0%, 100% {
-                border-color: #0073aa;
-                background: linear-gradient(90deg, #e8f4fd 0%, #cfe8fc 100%);
-            }
-            50% {
-                border-color: #005a87;
-                background: linear-gradient(90deg, #d0e7fc 0%, #a8d0fa 100%);
-            }
-        }
-
-        .mpa-submenu-list.submenu-drop-zone::after {
-            content: "↳ Solte aqui para tornar submenu";
-            display: block;
-            text-align: center;
-            padding: 12px;
-            color: #0073aa;
-            font-weight: 600;
-            font-size: 13px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 3px;
-            margin: 8px;
-            border: 1px solid rgba(0, 115, 170, 0.3);
-        }
-
-        /* Estilos para zona de drop de submenu em itens de menu */
-        .mpa-menu-item.submenu-drop-zone {
-            background: linear-gradient(90deg, #fff3cd 0%, #ffeeba 100%);
-            border: 2px dashed #856404;
-            border-radius: 4px;
-            animation: submenuDropPulse 1.5s infinite;
-        }
-
-        .mpa-menu-item.submenu-drop-zone::after {
-            content: "↳ Solte aqui para criar submenu";
-            display: block;
-            text-align: center;
-            padding: 8px;
-            color: #856404;
-            font-weight: 600;
-            font-size: 12px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 3px;
-            margin: 4px 8px;
         }
         
         .mpa-menu-slug {
@@ -1964,7 +1906,7 @@ function mpa_menu_roles_page() {
             
             // Implementação do Drag & Drop para reordenação de menus
             let draggedItem = null;
-
+            
             // Eventos de drag para os menus
             document.querySelectorAll('.mpa-menu-item').forEach(item => {
                 item.addEventListener('dragstart', function(e) {
@@ -1973,75 +1915,40 @@ function mpa_menu_roles_page() {
                     e.dataTransfer.effectAllowed = 'move';
                     e.dataTransfer.setData('text/html', this.outerHTML);
                 });
-
+                
                 item.addEventListener('dragend', function(e) {
                     this.classList.remove('dragging');
                     document.querySelectorAll('.mpa-menu-item').forEach(item => {
                         item.classList.remove('drag-over');
                     });
-                    // Limpar indicadores de drop em submenus
-                    document.querySelectorAll('.mpa-submenu-list').forEach(submenuList => {
-                        submenuList.classList.remove('submenu-drop-zone');
-                    });
                 });
-
+                
                 item.addEventListener('dragover', function(e) {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
-
+                    
                     if (this !== draggedItem) {
-                        const rect = this.getBoundingClientRect();
-                        const mouseY = e.clientY;
-                        const centerY = rect.top + rect.height / 2;
-                        const isSubmenuZone = Math.abs(mouseY - centerY) < rect.height * 0.3;
-
-                        if (isSubmenuZone) {
-                            this.classList.add('submenu-drop-zone');
-                            this.classList.remove('drag-over');
-                        } else {
-                            this.classList.add('drag-over');
-                            this.classList.remove('submenu-drop-zone');
-                        }
+                        this.classList.add('drag-over');
                     }
                 });
-
+                
                 item.addEventListener('dragenter', function(e) {
                     e.preventDefault();
                 });
-
+                
                 item.addEventListener('dragleave', function(e) {
-                    this.classList.remove('drag-over', 'submenu-drop-zone');
+                    this.classList.remove('drag-over');
                 });
-
+                
                 item.addEventListener('drop', function(e) {
                     e.preventDefault();
-                    this.classList.remove('drag-over', 'submenu-drop-zone');
-
+                    this.classList.remove('drag-over');
+                    
                     if (this !== draggedItem) {
                         const rect = this.getBoundingClientRect();
                         const mouseY = e.clientY;
-                        const centerY = rect.top + rect.height / 2;
-                        const isSubmenuZone = Math.abs(mouseY - centerY) < rect.height * 0.3;
-
-                        if (isSubmenuZone) {
-                            // Transform dragged item into submenu of this item
-                            const draggedMenuSlug = draggedItem.getAttribute('data-menu-slug');
-                            const parentMenuSlug = this.getAttribute('data-menu-slug');
-                            const draggedMenuTitle = draggedItem.querySelector('.mpa-menu-title').textContent.trim();
-
-                            // Check if trying to make a menu submenu of itself
-                            if (draggedMenuSlug === parentMenuSlug) {
-                                showNotification('Um menu não pode ser submenu dele mesmo!', 'error');
-                                return;
-                            }
-
-                            // Transform menu to submenu
-                            transformMenuToSubmenu(draggedItem, this);
-                            return;
-                        }
-
                         const itemMiddle = rect.top + rect.height / 2;
-
+                        
                         if (mouseY < itemMiddle) {
                             // Inserir antes
                             this.parentNode.insertBefore(draggedItem, this);
@@ -2049,66 +1956,9 @@ function mpa_menu_roles_page() {
                             // Inserir depois
                             this.parentNode.insertBefore(draggedItem, this.nextSibling);
                         }
-
+                        
                         // Salvar nova ordem
                         saveMenuOrder();
-                    }
-                });
-            });
-
-            // Eventos de drag para submenus expandidos - permitir drop para transformar em submenu
-            document.querySelectorAll('.mpa-submenu-list').forEach(submenuList => {
-                submenuList.addEventListener('dragover', function(e) {
-                    // Só permitir se o submenu estiver expandido
-                    if (!this.classList.contains('expanded')) return;
-
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.dataTransfer.dropEffect = 'move';
-
-                    // Adicionar indicador visual de zona de drop
-                    this.classList.add('submenu-drop-zone');
-                });
-
-                submenuList.addEventListener('dragenter', function(e) {
-                    if (!this.classList.contains('expanded')) return;
-
-                    e.preventDefault();
-                    e.stopPropagation();
-                });
-
-                submenuList.addEventListener('dragleave', function(e) {
-                    // Verificar se realmente saiu da zona (evitar falso positivo com elementos filhos)
-                    const rect = this.getBoundingClientRect();
-                    const x = e.clientX;
-                    const y = e.clientY;
-
-                    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-                        this.classList.remove('submenu-drop-zone');
-                    }
-                });
-
-                submenuList.addEventListener('drop', function(e) {
-                    if (!this.classList.contains('expanded')) return;
-
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    this.classList.remove('submenu-drop-zone');
-
-                    if (draggedItem) {
-                        const parentMenuItem = this.closest('.mpa-menu-item');
-                        const draggedMenuSlug = draggedItem.getAttribute('data-menu-slug');
-                        const parentMenuSlug = parentMenuItem.getAttribute('data-menu-slug');
-
-                        // Verificar se não está tentando tornar um menu submenu dele mesmo
-                        if (draggedMenuSlug === parentMenuSlug) {
-                            showNotification('Um menu não pode ser submenu dele mesmo!', 'error');
-                            return;
-                        }
-
-                        // Transformar o menu arrastado em submenu
-                        transformMenuToSubmenu(draggedItem, parentMenuItem);
                     }
                 });
             });
@@ -2145,423 +1995,6 @@ function mpa_menu_roles_page() {
                 });
             }
             
-            // Função para transformar menu em submenu
-            function transformMenuToSubmenu(draggedMenuItem, parentMenuItem) {
-                const draggedMenuSlug = draggedMenuItem.getAttribute('data-menu-slug');
-                const parentMenuSlug = parentMenuItem.getAttribute('data-menu-slug');
-                const draggedMenuTitle = draggedMenuItem.querySelector('.mpa-menu-title').textContent.trim();
-
-                // Remover o menu arrastado da lista principal
-                draggedMenuItem.remove();
-
-                // Criar novo item de submenu
-                const submenuItem = document.createElement('div');
-                submenuItem.className = 'mpa-submenu-item';
-                submenuItem.innerHTML = `
-                    <label class="mpa-submenu-label">
-                        <input type="checkbox"
-                               name="submenu_permissions[${parentMenuSlug}|${draggedMenuSlug}]"
-                               value="1"
-                               checked
-                               class="mpa-submenu-checkbox" />
-                        <span class="mpa-submenu-title" data-submenu-key="${parentMenuSlug}|${draggedMenuSlug}">
-                            ↳ ${draggedMenuTitle}
-                        </span>
-                        <span class="mpa-edit-icon dashicons dashicons-edit" title="Clique para editar"></span>
-                        <code class="mpa-submenu-slug">${draggedMenuSlug}</code>
-                    </label>
-
-                    <div class="mpa-submenu-edit-fields" data-submenu-key="${parentMenuSlug}|${draggedMenuSlug}">
-                        <div class="mpa-edit-row">
-                            <label class="mpa-edit-label">Nome personalizado:</label>
-                            <div class="mpa-edit-input-group">
-                                <input type="text"
-                                       name="submenu_custom_title[${parentMenuSlug}|${draggedMenuSlug}]"
-                                       value=""
-                                       placeholder="${draggedMenuTitle}"
-                                       class="mpa-custom-title-input" />
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                // Encontrar ou criar a lista de submenus do menu pai
-                let submenuList = parentMenuItem.querySelector('.mpa-submenu-list');
-                if (!submenuList) {
-                    // Criar header e lista de submenu se não existir
-                    const submenuHeader = document.createElement('div');
-                    submenuHeader.className = 'mpa-submenu-header';
-                    submenuHeader.innerHTML = `
-                        <button type="button" class="mpa-submenu-toggle expanded" data-target="submenu-${parentMenuSlug}">
-                            <span class="dashicons dashicons-minus-alt2"></span>
-                            <span class="mpa-toggle-text">Ocultar submenus (1)</span>
-                        </button>
-                    `;
-
-                    submenuList = document.createElement('div');
-                    submenuList.className = 'mpa-submenu-list expanded';
-                    submenuList.id = `submenu-${parentMenuSlug}`;
-
-                    parentMenuItem.appendChild(submenuHeader);
-                    parentMenuItem.appendChild(submenuList);
-
-                    // Adicionar eventos ao novo botão toggle
-                    const newToggleButton = submenuHeader.querySelector('.mpa-submenu-toggle');
-                    newToggleButton.addEventListener('click', toggleSubmenuHandler);
-
-                    // Adicionar eventos de drag ao novo submenu
-                    addSubmenuDragEvents(submenuList);
-                } else {
-                    // Atualizar contador de submenus
-                    const toggleText = parentMenuItem.querySelector('.mpa-toggle-text');
-                    if (toggleText) {
-                        const currentCount = submenuList.children.length;
-                        const newCount = currentCount + 1;
-                        toggleText.textContent = toggleText.textContent.replace(/\(\d+\)/, `(${newCount})`);
-                    }
-                }
-
-                // Adicionar o novo item de submenu
-                submenuList.appendChild(submenuItem);
-
-                // Adicionar eventos de edição ao novo submenu
-                const editIcon = submenuItem.querySelector('.mpa-edit-icon');
-                if (editIcon) {
-                    editIcon.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        const editFields = submenuItem.querySelector('.mpa-submenu-edit-fields');
-                        if (editFields) {
-                            editFields.classList.toggle('active');
-                        }
-                    });
-                }
-
-                // Adicionar eventos de drag ao novo submenu para permitir que seja movido de volta
-                submenuItem.setAttribute('draggable', 'true');
-
-                submenuItem.addEventListener('dragstart', function(e) {
-                    draggedItem = this;
-                    this.classList.add('dragging');
-                    e.dataTransfer.effectAllowed = 'move';
-                });
-
-                submenuItem.addEventListener('dragend', function(e) {
-                    this.classList.remove('dragging');
-                    // Limpar indicadores visuais
-                    document.querySelectorAll('.mpa-menu-list').forEach(menuList => {
-                        menuList.classList.remove('menu-drop-zone');
-                    });
-                });
-
-                // Salvar alterações no backend
-                saveMenuToSubmenuTransformation(draggedMenuSlug, parentMenuSlug, draggedMenuTitle);
-
-                showNotification(`Menu "${draggedMenuTitle}" transformado em submenu com sucesso! Recarregando...`, 'success');
-            }
-
-            // Função para adicionar eventos de drag aos submenus
-            function addSubmenuDragEvents(submenuList) {
-                submenuList.addEventListener('dragover', function(e) {
-                    if (!this.classList.contains('expanded')) return;
-
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.dataTransfer.dropEffect = 'move';
-
-                    this.classList.add('submenu-drop-zone');
-                });
-
-                submenuList.addEventListener('dragenter', function(e) {
-                    if (!this.classList.contains('expanded')) return;
-
-                    e.preventDefault();
-                    e.stopPropagation();
-                });
-
-                submenuList.addEventListener('dragleave', function(e) {
-                    const rect = this.getBoundingClientRect();
-                    const x = e.clientX;
-                    const y = e.clientY;
-
-                    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-                        this.classList.remove('submenu-drop-zone');
-                    }
-                });
-
-                submenuList.addEventListener('drop', function(e) {
-                    if (!this.classList.contains('expanded')) return;
-
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    this.classList.remove('submenu-drop-zone');
-
-                    if (draggedItem) {
-                        const parentMenuItem = this.closest('.mpa-menu-item');
-                        const draggedMenuSlug = draggedItem.getAttribute('data-menu-slug');
-                        const parentMenuSlug = parentMenuItem.getAttribute('data-menu-slug');
-
-                        if (draggedMenuSlug === parentMenuSlug) {
-                            showNotification('Um menu não pode ser submenu dele mesmo!', 'error');
-                            return;
-                        }
-
-                        transformMenuToSubmenu(draggedItem, parentMenuItem);
-                    }
-                });
-            }
-
-            // Eventos de drag para submenus - permitir que sejam arrastados de volta para menus
-            document.querySelectorAll('.mpa-submenu-item').forEach(submenuItem => {
-                submenuItem.setAttribute('draggable', 'true');
-
-                submenuItem.addEventListener('dragstart', function(e) {
-                    draggedItem = this;
-                    this.classList.add('dragging');
-                    e.dataTransfer.effectAllowed = 'move';
-                });
-
-                submenuItem.addEventListener('dragend', function(e) {
-                    this.classList.remove('dragging');
-                    // Limpar indicadores visuais
-                    document.querySelectorAll('.mpa-menu-list').forEach(menuList => {
-                        menuList.classList.remove('menu-drop-zone');
-                    });
-                });
-            });
-
-            // Permitir que a área principal de menus receba drops de submenus
-            document.querySelectorAll('.mpa-menu-list').forEach(menuList => {
-                menuList.addEventListener('dragover', function(e) {
-                    // Verificar se é um submenu sendo arrastado
-                    if (draggedItem && draggedItem.classList.contains('mpa-submenu-item')) {
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = 'move';
-                        this.classList.add('menu-drop-zone');
-                    }
-                });
-
-                menuList.addEventListener('dragenter', function(e) {
-                    if (draggedItem && draggedItem.classList.contains('mpa-submenu-item')) {
-                        e.preventDefault();
-                    }
-                });
-
-                menuList.addEventListener('dragleave', function(e) {
-                    // Verificar se realmente saiu da zona
-                    const rect = this.getBoundingClientRect();
-                    const x = e.clientX;
-                    const y = e.clientY;
-
-                    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-                        this.classList.remove('menu-drop-zone');
-                    }
-                });
-
-                menuList.addEventListener('drop', function(e) {
-                    if (draggedItem && draggedItem.classList.contains('mpa-submenu-item')) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        this.classList.remove('menu-drop-zone');
-
-                        transformSubmenuToMenu(draggedItem);
-                    }
-                });
-            });
-
-            // Função para lidar com toggle de submenus
-            function toggleSubmenuHandler() {
-                const targetId = this.getAttribute('data-target');
-                const target = document.getElementById(targetId);
-                const icon = this.querySelector('.dashicons');
-                const text = this.querySelector('.mpa-toggle-text');
-
-                if (!target || !icon || !text) return;
-
-                if (target.classList.contains('collapsed')) {
-                    target.classList.remove('collapsed');
-                    target.classList.add('expanded');
-                    icon.classList.remove('dashicons-plus-alt2');
-                    icon.classList.add('dashicons-minus-alt2');
-                    text.textContent = text.textContent.replace('Mostrar', 'Ocultar');
-                    this.classList.add('expanded');
-                } else {
-                    target.classList.remove('expanded');
-                    target.classList.add('collapsed');
-                    icon.classList.remove('dashicons-minus-alt2');
-                    icon.classList.add('dashicons-plus-alt2');
-                    text.textContent = text.textContent.replace('Ocultar', 'Mostrar');
-                    this.classList.remove('expanded');
-                }
-            }
-
-            // Função para salvar transformação no backend
-            function saveMenuToSubmenuTransformation(menuSlug, parentSlug, menuTitle) {
-                const formData = new FormData();
-                formData.append('action', 'mpa_transform_menu_to_submenu');
-                formData.append('menu_slug', menuSlug);
-                formData.append('parent_slug', parentSlug);
-                formData.append('menu_title', menuTitle);
-                formData.append('nonce', '<?php echo wp_create_nonce("mpa_transform_menu"); ?>');
-
-                fetch('<?php echo admin_url("admin-ajax.php"); ?>', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        console.log('Transformação salva com sucesso!', data.data);
-
-                        // Recarregar página após sucesso para garantir sincronização
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1500);
-                    } else {
-                        console.error('Erro ao salvar transformação:', data.data);
-                        showNotification('Erro ao salvar transformação no backend.', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro na requisição:', error);
-                    showNotification('Erro ao comunicar com o servidor.', 'error');
-                });
-            }
-
-            // Função para transformar submenu de volta em menu principal
-            function transformSubmenuToMenu(submenuItem) {
-                // Obter informações do submenu
-                const submenuTitle = submenuItem.querySelector('.mpa-submenu-title');
-                if (!submenuTitle) return;
-
-                const submenuKey = submenuTitle.getAttribute('data-submenu-key');
-                if (!submenuKey) return;
-
-                const [parentSlug, menuSlug] = submenuKey.split('|');
-                const menuTitle = submenuTitle.textContent.replace('↳ ', '').trim();
-
-                // Obter título personalizado se existir
-                const customTitleInput = submenuItem.querySelector('.mpa-custom-title-input');
-                const finalTitle = customTitleInput && customTitleInput.value ? customTitleInput.value : menuTitle;
-
-                // Remover o submenu da lista
-                const submenuList = submenuItem.parentElement;
-                submenuItem.remove();
-
-                // Atualizar contador de submenus
-                const parentMenuItem = submenuList.closest('.mpa-menu-item');
-                const toggleText = parentMenuItem.querySelector('.mpa-toggle-text');
-                if (toggleText) {
-                    const currentCount = submenuList.children.length;
-                    if (currentCount === 0) {
-                        // Se não há mais submenus, remover header e lista
-                        const submenuHeader = parentMenuItem.querySelector('.mpa-submenu-header');
-                        if (submenuHeader) submenuHeader.remove();
-                        if (submenuList) submenuList.remove();
-                    } else {
-                        // Atualizar contador
-                        toggleText.textContent = toggleText.textContent.replace(/\(\d+\)/, `(${currentCount})`);
-                    }
-                }
-
-                // Criar novo item de menu principal
-                const newMenuItem = document.createElement('div');
-                newMenuItem.className = 'mpa-menu-item';
-                newMenuItem.setAttribute('draggable', 'true');
-                newMenuItem.setAttribute('data-menu-slug', menuSlug);
-                newMenuItem.innerHTML = `
-                    <label class="mpa-menu-label">
-                        <input type="checkbox" name="menu_permissions[${menuSlug}]" value="1" checked class="mpa-menu-checkbox" />
-                        <span class="mpa-menu-title">${finalTitle}</span>
-                        <span class="mpa-edit-icon dashicons dashicons-edit" title="Clique para editar"></span>
-                        <code class="mpa-menu-slug">${menuSlug}</code>
-                    </label>
-
-                    <div class="mpa-menu-edit-fields">
-                        <div class="mpa-edit-row">
-                            <label class="mpa-edit-label">Nome personalizado:</label>
-                            <div class="mpa-edit-input-group">
-                                <input type="text"
-                                       name="menu_custom_title[${menuSlug}]"
-                                       value="${customTitleInput && customTitleInput.value ? customTitleInput.value : ''}"
-                                       placeholder="${menuTitle}"
-                                       class="mpa-custom-title-input" />
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                // Adicionar o novo menu à lista principal (no final)
-                const menuList = document.querySelector('.mpa-menu-list');
-                if (menuList) {
-                    menuList.appendChild(newMenuItem);
-
-                    // Adicionar eventos de drag ao novo menu
-                    newMenuItem.addEventListener('dragstart', function(e) {
-                        draggedItem = this;
-                        this.classList.add('dragging');
-                        e.dataTransfer.effectAllowed = 'move';
-                    });
-
-                    newMenuItem.addEventListener('dragend', function(e) {
-                        this.classList.remove('dragging');
-                        document.querySelectorAll('.mpa-menu-item, .submenu-drop-zone').forEach(item => {
-                            item.classList.remove('drag-over', 'submenu-drop-zone');
-                        });
-                        draggedItem = null;
-                    });
-
-                    // Adicionar eventos de edição
-                    const editIcon = newMenuItem.querySelector('.mpa-edit-icon');
-                    if (editIcon) {
-                        editIcon.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-
-                            const editFields = newMenuItem.querySelector('.mpa-menu-edit-fields');
-                            if (editFields) {
-                                editFields.classList.toggle('active');
-                            }
-                        });
-                    }
-                }
-
-                // Salvar transformação no backend
-                saveSubmenuToMenuTransformation(menuSlug, parentSlug, finalTitle);
-
-                showNotification(`Submenu "${finalTitle}" transformado em menu principal com sucesso!`, 'success');
-            }
-
-            // Função para salvar transformação de submenu para menu no backend
-            function saveSubmenuToMenuTransformation(menuSlug, parentSlug, menuTitle) {
-                const formData = new FormData();
-                formData.append('action', 'mpa_transform_submenu_to_menu');
-                formData.append('menu_slug', menuSlug);
-                formData.append('parent_slug', parentSlug);
-                formData.append('menu_title', menuTitle);
-                formData.append('nonce', '<?php echo wp_create_nonce("mpa_transform_submenu"); ?>');
-
-                fetch('<?php echo admin_url("admin-ajax.php"); ?>', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        console.log('Submenu revertido com sucesso!', data.data);
-                    } else {
-                        console.error('Erro ao reverter submenu:', data.data);
-                        showNotification('Erro ao reverter submenu no backend.', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro na requisição:', error);
-                    showNotification('Erro ao comunicar com o servidor.', 'error');
-                });
-            }
-
             // Função para mostrar notificações
             function showNotification(message, type = 'info') {
                 const notification = document.createElement('div');
@@ -2572,9 +2005,10 @@ function mpa_menu_roles_page() {
                 notification.style.right = '20px';
                 notification.style.zIndex = '9999';
                 notification.style.maxWidth = '300px';
-
+                
                 document.body.appendChild(notification);
-
+                
+                // Remover após 3 segundos
                 setTimeout(() => {
                     notification.remove();
                 }, 3000);
@@ -2582,30 +2016,31 @@ function mpa_menu_roles_page() {
             
             // Toggle de submenus - expandir/recolher
             document.querySelectorAll('.mpa-submenu-toggle').forEach(button => {
-                button.addEventListener('click', toggleSubmenuHandler);
-            });
-
-            // Inicializar eventos de drag para submenus existentes
-            document.querySelectorAll('.mpa-submenu-list').forEach(submenuList => {
-                addSubmenuDragEvents(submenuList);
-            });
-
-            // Inicializar eventos de drag para itens de submenu existentes
-            document.querySelectorAll('.mpa-submenu-item').forEach(submenuItem => {
-                submenuItem.setAttribute('draggable', 'true');
-
-                submenuItem.addEventListener('dragstart', function(e) {
-                    draggedItem = this;
-                    this.classList.add('dragging');
-                    e.dataTransfer.effectAllowed = 'move';
-                });
-
-                submenuItem.addEventListener('dragend', function(e) {
-                    this.classList.remove('dragging');
-                    // Limpar indicadores visuais
-                    document.querySelectorAll('.mpa-menu-list').forEach(menuList => {
-                        menuList.classList.remove('menu-drop-zone');
-                    });
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const target = document.getElementById(targetId);
+                    const icon = this.querySelector('.dashicons');
+                    const text = this.querySelector('.mpa-toggle-text');
+                    
+                    if (!target || !icon || !text) return;
+                    
+                    if (target.classList.contains('collapsed')) {
+                        // Expandir
+                        target.classList.remove('collapsed');
+                        target.classList.add('expanded');
+                        icon.classList.remove('dashicons-plus-alt2');
+                        icon.classList.add('dashicons-minus-alt2');
+                        text.textContent = text.textContent.replace('Mostrar', 'Ocultar');
+                        this.classList.add('expanded');
+                    } else {
+                        // Recolher
+                        target.classList.remove('expanded');
+                        target.classList.add('collapsed');
+                        icon.classList.remove('dashicons-minus-alt2');
+                        icon.classList.add('dashicons-plus-alt2');
+                        text.textContent = text.textContent.replace('Ocultar', 'Mostrar');
+                        this.classList.remove('expanded');
+                    }
                 });
             });
             
@@ -3191,14 +2626,14 @@ function mpa_get_admin_menus($selected_role = null) {
             'submenus' => []
         ];
         
-        // Adicionar submenus nativos se existirem
+        // Adicionar submenus se existirem
         if (isset($submenu[$slug_raw]) && is_array($submenu[$slug_raw])) {
             foreach ($submenu[$slug_raw] as $submenu_item) {
                 if (empty($submenu_item[0])) continue;
-
+                
                 $sm_raw = $submenu_item[2];
                 $sm_nrm = mpa_normalize_slug($sm_raw);
-
+                
                 $menu_data['submenus'][] = [
                     'title'    => wp_strip_all_tags($submenu_item[0]),
                     'slug_raw' => $sm_raw,   // para remove_submenu_page
@@ -3206,35 +2641,11 @@ function mpa_get_admin_menus($selected_role = null) {
                 ];
             }
         }
-
+        
         $admin_menus[] = $menu_data;
     }
-
-    // Adicionar submenus personalizados se existirem
-    $menu_customizations = get_option('mpa_menu_customizations', array());
-    if (isset($menu_customizations['submenu_custom_data']) && !empty($menu_customizations['submenu_custom_data'])) {
-        foreach ($menu_customizations['submenu_custom_data'] as $submenu_key => $submenu_data) {
-            // Extrair parent_slug e child_slug da chave
-            list($parent_slug, $child_slug) = explode('|', $submenu_key, 2);
-
-            // Procurar o menu pai na lista de admin_menus
-            foreach ($admin_menus as &$menu_item) {
-                if ($menu_item['slug'] === $parent_slug) {
-                    // Adicionar o submenu personalizado
-                    $menu_item['submenus'][] = [
-                        'title'    => $submenu_data['title'],
-                        'slug_raw' => $child_slug,
-                        'slug'     => $child_slug,
-                        'custom'   => true,
-                        'custom_url' => $submenu_data['url'],
-                        'custom_icon' => $submenu_data['icon']
-                    ];
-                    break;
-                }
-            }
-        }
-    }
-
+    
+    
     // Adicionar menus personalizados APENAS para a role selecionada
     $custom_menus = get_option('mpa_custom_menus', array());
     if (!empty($custom_menus) && $selected_role) {
@@ -3297,109 +2708,31 @@ function mpa_get_admin_menus($selected_role = null) {
 
 // Página de configurações gerais
 function mpa_settings_page() {
-    // Verificar se usuário tem permissão manage_options
-    if (!current_user_can('manage_options')) {
-        wp_die('Acesso negado: você não tem permissão para acessar esta página.', 'Erro de Permissão', array('response' => 403));
-    }
-    // Processar formulário se foi enviado
-    if (isset($_POST['submit']) && wp_verify_nonce($_POST['mpa_settings_nonce'], 'mpa_save_settings')) {
-        $logo_url = sanitize_url($_POST['mpa_logo_url']);
-        update_option('mpa_logo_url', $logo_url);
-        
-        echo '<div class="notice notice-success is-dismissible"><p>Configurações salvas com sucesso!</p></div>';
-    }
-    
-    // Obter configuração atual
-    $logo_url = get_option('mpa_logo_url', 'https://www.webinovacao.com.br/wp-content/uploads/2024/07/logo-web-inovacao-horizontal-escura.png');
     ?>
     <div class="wrap">
         <h1>Configurações Gerais</h1>
-        <p>Configure o comportamento do plugin Gerenciar Admin.</p>
+        <p>Configurações gerais do plugin Gerenciar Admin estarão disponíveis em breve.</p>
         
-        <form method="post" action="">
-            <?php wp_nonce_field('mpa_save_settings', 'mpa_settings_nonce'); ?>
+        <div class="mpa-settings-info">
+            <h3>Recursos Atuais</h3>
+            <ul>
+                <li>✅ Header customizado com notificações</li>
+                <li>✅ Sistema de notificações com persistência</li>
+                <li>✅ Redirecionamento automático para dashboard</li>
+                <li>✅ Gerenciamento de menus por role</li>
+            </ul>
             
-            <div class="mpa-settings-section">
-                <h2>Personalização</h2>
-                <table class="form-table">
-                    <tr>
-                        <th scope="row">Logomarca do Header</th>
-                        <td>
-                            <input type="url" 
-                                   name="mpa_logo_url" 
-                                   value="<?php echo esc_attr($logo_url); ?>" 
-                                   class="regular-text"
-                                   placeholder="https://exemplo.com/logo.png" />
-                            <p class="description">
-                                URL da logomarca a ser exibida no header. Recomenda-se formato PNG com fundo transparente.
-                                <br><strong>Padrão:</strong> https://www.webinovacao.com.br/wp-content/uploads/2024/07/logo-web-inovacao-horizontal-escura.png
-                            </p>
-                            <?php if($logo_url): ?>
-                            <div style="margin-top: 10px;">
-                                <strong>Preview:</strong><br>
-                                <img src="<?php echo esc_url($logo_url); ?>" 
-                                     alt="Preview da logomarca" 
-                                     style="max-height: 40px; max-width: 200px; border: 1px solid #ddd; padding: 5px; background: #f9f9f9;">
-                            </div>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            
-            <div class="mpa-settings-section">
-                <h2>Recursos Implementados</h2>
-                <div class="mpa-settings-info">
-                    <div class="mpa-features-grid">
-                        <div class="mpa-feature-group">
-                            <h3>✅ Interface Personalizada</h3>
-                            <ul>
-                                <li>Header customizado com notificações</li>
-                                <li>Sidebar moderna com navegação</li>
-                                <li>Dashboard Analytics integrado</li>
-                                <li>Modo escuro/claro automático</li>
-                            </ul>
-                        </div>
-                        
-                        <div class="mpa-feature-group">
-                            <h3>✅ Sistema de Menus</h3>
-                            <ul>
-                                <li>Gerenciamento por roles de usuário</li>
-                                <li>Menus personalizados por role</li>
-                                <li>Ordenação por drag-and-drop</li>
-                                <li>Controle granular de permissões</li>
-                            </ul>
-                        </div>
-                        
-                        <div class="mpa-feature-group">
-                            <h3>✅ Analytics Dashboard</h3>
-                            <ul>
-                                <li>Integração com Google Analytics GA4</li>
-                                <li>Métricas em tempo real</li>
-                                <li>Gráficos interativos</li>
-                                <li>Relatórios exportáveis</li>
-                            </ul>
-                        </div>
-                        
-                        <div class="mpa-feature-group">
-                            <h3>⚙️ Configurações Avançadas</h3>
-                            <ul>
-                                <li>Redirecionamento automático</li>
-                                <li>Sistema de notificações</li>
-                                <li>Compatibilidade com plugins</li>
-                                <li>Modo de compatibilidade admin</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <?php submit_button('Salvar Configurações'); ?>
-        </form>
+            <h3>Próximos Recursos</h3>
+            <ul>
+                <li>⏳ Sistema de busca global</li>
+                <li>⏳ Calendário integrado</li>
+                <li>⏳ Customização de cores e temas</li>
+            </ul>
+        </div>
     </div>
     
     <style>
-        .mpa-settings-section {
+        .mpa-settings-info {
             background: #fff;
             border: 1px solid #ccd0d4;
             border-radius: 4px;
@@ -3407,65 +2740,12 @@ function mpa_settings_page() {
             margin-top: 20px;
         }
         
-        .mpa-settings-section h2 {
-            margin-top: 0;
-            color: #23282d;
-            border-bottom: 2px solid #0073aa;
-            padding-bottom: 8px;
+        .mpa-settings-info ul {
+            margin-left: 20px;
         }
         
-        .mpa-settings-info {
-            background: #f9f9f9;
-            border-left: 4px solid #0073aa;
-            padding: 15px;
-            margin-top: 15px;
-        }
-        
-        .mpa-features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 15px;
-        }
-        
-        .mpa-feature-group {
-            background: #fff;
-            padding: 15px;
-            border-radius: 4px;
-            border: 1px solid #e1e1e1;
-        }
-        
-        .mpa-feature-group h3 {
-            margin-top: 0;
-            color: #0073aa;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .mpa-feature-group ul {
-            margin: 10px 0 0 18px;
-        }
-        
-        .mpa-feature-group li {
-            margin-bottom: 4px;
-            font-size: 13px;
-            color: #666;
-        }
-        
-        .form-table th {
-            width: 200px;
-        }
-        
-        .form-table .description {
-            margin-top: 5px;
-            font-style: italic;
-        }
-        
-        @media (max-width: 768px) {
-            .mpa-features-grid {
-                grid-template-columns: 1fr;
-            }
+        .mpa-settings-info li {
+            margin-bottom: 5px;
         }
     </style>
     <?php
@@ -3492,49 +2772,40 @@ function mpa_user_can_see_menu($menu_slug, array $user_roles, array $menu_permis
     $decision = true; // padrão habilitado
     $found_config = false;
 
-    // EXCEÇÃO ESPECIAL: WooCommerce - SEMPRE permitir acesso a URLs wc-admin
-    // Retorna IMEDIATAMENTE sem validação adicional para roles autorizados
-    if (strpos($menu_slug, 'wc-admin') !== false ||
-        (isset($_GET['page']) && $_GET['page'] === 'wc-admin')) {
-
-        $wc_allowed_roles = ['shop_manager', 'gerentes', 'administrator'];
-
-        foreach ($user_roles as $role) {
-            if (in_array($role, $wc_allowed_roles)) {
-                // IMPORTANTE: Retorna TRUE imediatamente, ignorando QUALQUER configuração de menu
-                // Para WooCommerce, o sistema nunca deve bloquear acesso às URLs funcionais
-                return true;
-            }
-        }
-
-        // Se não tem role autorizado, aplica validação normal
-        // (mas isso não deveria acontecer com WooCommerce configurado corretamente)
-    }
-
+    // Debug detalhado SEMPRE ATIVO para debugging
+    error_log("[MPA NOVO DEBUG] === mpa_user_can_see_menu ===");
+    error_log("[MPA NOVO DEBUG] Verificando menu: $menu_slug");
+    error_log("[MPA NOVO DEBUG] User roles: " . implode(', ', $user_roles));
+    error_log("[MPA NOVO DEBUG] Permissões disponíveis: " . print_r($menu_permissions, true));
 
     foreach ($user_roles as $role) {
         $rolePerms = $menu_permissions[$role] ?? null;
         if (!$rolePerms) {
+            error_log("[MPA NOVO DEBUG] Role $role: Sem permissões configuradas");
             continue;
         }
 
         if (array_key_exists($menu_slug, $rolePerms)) {
             $found_config = true;
             $perm_value = $rolePerms[$menu_slug];
+            error_log("[MPA NOVO DEBUG] Role $role: Encontrou config para $menu_slug = " . var_export($perm_value, true));
             
             // Se QUALQUER role marcar TRUE, libera imediatamente
             if ($perm_value === true) {
+                error_log("[MPA NOVO DEBUG] RESULTADO: PERMITIDO (role $role marcou true)");
                 return true;
             }
             // Se esta role marca FALSE, continua verificando outras roles
             $decision = false;
         } else {
+            error_log("[MPA NOVO DEBUG] Role $role: Menu $menu_slug não encontrado nas permissões");
         }
     }
 
     // Comportamento padrão: Se não encontrou configuração, mantém padrão (permitir)
     // Se encontrou configuração mas todas marcaram false, retorna false
     $result = $found_config ? $decision : true;
+    error_log("[MPA NOVO DEBUG] RESULTADO FINAL: " . ($result ? 'PERMITIDO' : 'BLOQUEADO') . " (found_config: " . ($found_config ? 'SIM' : 'NÃO') . ", decision: " . ($decision ? 'PERMITIR' : 'BLOQUEAR') . ")");
 
     return $result;
 }
@@ -3586,21 +2857,11 @@ add_action('admin_menu', function() {
         $slug = mpa_normalize_slug($menu_item['slug']);
         
         if (!mpa_user_can_see_menu($slug, $roles, $opts)) {
-            // EXCEÇÃO ESPECIAL: Para WooCommerce, apenas esconder visualmente, não remover funcionalidade
-            if (strpos($menu_item['slug'], 'wc-admin') !== false) {
-                // Para WooCommerce: apenas esconder o menu visualmente via CSS, mantém funcionalidade
-                add_action('admin_head', function() use ($menu_item) {
-                    echo '<style>a[href="admin.php?page=' . esc_attr($menu_item['slug']) . '"] { display: none !important; }</style>';
-                });
-                $debug_info[] = "ESCONDIDO (apenas visual) menu WooCommerce: {$menu_item['slug']} (normalizado: $slug)";
-            } else {
-                // Para outros menus: remover completamente
-                remove_menu_page($menu_item['slug']); // usar slug original para remoção
-                $debug_info[] = "REMOVIDO menu: {$menu_item['slug']} (normalizado: $slug)";
-
-                if ($slug === 'edit.php') {
-                    $debug_info[] = "*** POSTS REMOVIDO ***";
-                }
+            remove_menu_page($menu_item['slug']); // usar slug original para remoção
+            $debug_info[] = "REMOVIDO menu: {$menu_item['slug']} (normalizado: $slug)";
+            
+            if ($slug === 'edit.php') {
+                $debug_info[] = "*** POSTS REMOVIDO ***";
             }
         }
 
@@ -3610,18 +2871,8 @@ add_action('admin_menu', function() {
                 $sub_slug = mpa_normalize_slug($sub['slug']);
                 
                 if (!mpa_user_can_see_submenu($slug, $sub_slug, $roles, $opts)) {
-                    // EXCEÇÃO ESPECIAL: Para submenus do WooCommerce, apenas esconder visualmente
-                    if (strpos($sub['slug'], 'wc-admin') !== false || strpos($menu_item['slug'], 'wc-admin') !== false) {
-                        // Para WooCommerce: apenas esconder o submenu visualmente via CSS, mantém funcionalidade
-                        add_action('admin_head', function() use ($menu_item, $sub) {
-                            echo '<style>a[href="admin.php?page=' . esc_attr($sub['slug']) . '"] { display: none !important; }</style>';
-                        });
-                        $debug_info[] = "ESCONDIDO (apenas visual) submenu WooCommerce: {$menu_item['slug']} -> {$sub['slug']}";
-                    } else {
-                        // Para outros submenus: remover completamente
-                        remove_submenu_page($menu_item['slug'], $sub['slug']); // usar slugs originais
-                        $debug_info[] = "REMOVIDO submenu: {$menu_item['slug']} -> {$sub['slug']}";
-                    }
+                    remove_submenu_page($menu_item['slug'], $sub['slug']); // usar slugs originais
+                    $debug_info[] = "REMOVIDO submenu: {$menu_item['slug']} -> {$sub['slug']}";
                 }
             }
         }
@@ -3931,26 +3182,15 @@ add_action('admin_menu', 'mpa_apply_menu_customizations', 999);
 // AJAX handler para salvar ordem dos menus
 add_action('wp_ajax_mpa_save_menu_order', 'mpa_save_menu_order_callback');
 
-// AJAX handler para transformar menu em submenu
-add_action('wp_ajax_mpa_transform_menu_to_submenu', 'mpa_transform_menu_to_submenu_callback');
-
-// AJAX handler para reverter submenu em menu
-add_action('wp_ajax_mpa_transform_submenu_to_menu', 'mpa_transform_submenu_to_menu_callback');
-
 function mpa_save_menu_order_callback() {
-    // Verificar se usuário está logado
-    if (!is_user_logged_in()) {
-        wp_die('Acesso negado: usuário não autenticado', 'Erro de Segurança', array('response' => 401));
-    }
-
     // Verificar nonce
     if (!wp_verify_nonce($_POST['nonce'], 'mpa_menu_order')) {
-        wp_die('Nonce inválido', 'Erro de Segurança', array('response' => 403));
+        wp_die('Nonce inválido');
     }
-
+    
     // Verificar permissões
     if (!current_user_can('manage_options')) {
-        wp_die('Sem permissões suficientes', 'Erro de Segurança', array('response' => 403));
+        wp_die('Sem permissões suficientes');
     }
     
     // Obter nova ordem
@@ -3967,445 +3207,18 @@ function mpa_save_menu_order_callback() {
     wp_send_json_success('Ordem salva com sucesso');
 }
 
-function mpa_transform_menu_to_submenu_callback() {
-    // Verificar se usuário está logado
-    if (!is_user_logged_in()) {
-        wp_send_json_error('Acesso negado: usuário não autenticado');
-    }
-
-    // Verificar nonce
-    if (!wp_verify_nonce($_POST['nonce'], 'mpa_transform_menu')) {
-        wp_send_json_error('Nonce inválido');
-    }
-
-    // Verificar permissões
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error('Sem permissões suficientes');
-    }
-
-    // Validar dados
-    $menu_slug = sanitize_text_field($_POST['menu_slug'] ?? '');
-    $parent_slug = sanitize_text_field($_POST['parent_slug'] ?? '');
-    $menu_title = sanitize_text_field($_POST['menu_title'] ?? '');
-
-    if (empty($menu_slug) || empty($parent_slug) || empty($menu_title)) {
-        wp_send_json_error('Dados obrigatórios não fornecidos');
-    }
-
-    try {
-        // Debug: Log dos dados recebidos
-        error_log("MPA Transform Menu Debug - menu_slug: $menu_slug, parent_slug: $parent_slug, menu_title: $menu_title");
-
-        // Verificar se é menu personalizado
-        $is_custom_menu = strpos($menu_slug, 'mpa_custom_') === 0;
-        error_log("MPA Transform Menu Debug - is_custom_menu: " . ($is_custom_menu ? 'true' : 'false'));
-
-        // Obter permissões atuais de menu
-        $menu_permissions = get_option('mpa_menu_permissions', array());
-
-        // Obter usuário atual e suas roles
-        $user = wp_get_current_user();
-        $user_roles = (array) $user->roles;
-
-        // Criar submenu key
-        $submenu_key = $parent_slug . '|' . $menu_slug;
-
-        // Para cada role do usuário, adicionar como submenu habilitado
-        foreach ($user_roles as $role) {
-            // Inicializar estruturas se necessário
-            if (!isset($menu_permissions[$role])) {
-                $menu_permissions[$role] = array();
-            }
-            if (!isset($menu_permissions[$role]['submenus'])) {
-                $menu_permissions[$role]['submenus'] = array();
-            }
-
-            // Remover o menu principal das permissões (já que agora é submenu)
-            if (isset($menu_permissions[$role][$menu_slug])) {
-                unset($menu_permissions[$role][$menu_slug]);
-            }
-
-            // Adicionar como submenu habilitado
-            $menu_permissions[$role]['submenus'][$submenu_key] = true;
-        }
-
-        // Se é menu personalizado, precisamos criar um submenu personalizado ao invés de excluir
-        if ($is_custom_menu) {
-            $custom_menu_id = str_replace('mpa_custom_', '', $menu_slug);
-            $custom_menus = get_option('mpa_custom_menus', array());
-
-            // Buscar os dados do menu personalizado antes de removê-lo
-            $custom_menu_data = null;
-            $original_role = null;
-
-            foreach ($custom_menus as $role => $role_menus) {
-                if (isset($role_menus[$custom_menu_id])) {
-                    $custom_menu_data = $role_menus[$custom_menu_id];
-                    $original_role = $role;
-                    break;
-                }
-            }
-
-            if ($custom_menu_data) {
-                error_log("MPA Transform Menu Debug - Menu personalizado encontrado: " . json_encode($custom_menu_data));
-
-                // Criar entrada de submenu personalizado nas customizações
-                $menu_customizations = get_option('mpa_menu_customizations', array());
-
-                if (!isset($menu_customizations['submenu_custom_data'])) {
-                    $menu_customizations['submenu_custom_data'] = array();
-                }
-
-                // Salvar dados do submenu personalizado
-                $menu_customizations['submenu_custom_data'][$submenu_key] = array(
-                    'title' => $custom_menu_data['title'],
-                    'icon' => $custom_menu_data['icon'],
-                    'url' => $custom_menu_data['url'],
-                    'original_role' => $original_role,
-                    'custom_id' => $custom_menu_id
-                );
-
-                update_option('mpa_menu_customizations', $menu_customizations);
-                error_log("MPA Transform Menu Debug - Submenu personalizado criado com dados: " . json_encode($menu_customizations['submenu_custom_data'][$submenu_key]));
-
-                // Agora remover da estrutura de menus principais
-                foreach ($custom_menus as $role => $role_menus) {
-                    if (isset($role_menus[$custom_menu_id])) {
-                        unset($custom_menus[$role][$custom_menu_id]);
-                        error_log("MPA Transform Menu Debug - Removido menu personalizado $custom_menu_id da role $role");
-                    }
-                }
-
-                update_option('mpa_custom_menus', $custom_menus);
-            }
-        }
-
-        // Salvar permissões atualizadas
-        update_option('mpa_menu_permissions', $menu_permissions);
-
-        // Remover menu da ordem customizada (se existir)
-        $menu_order = get_option('mpa_menu_order', array());
-        if (is_array($menu_order)) {
-            $key = array_search($menu_slug, $menu_order);
-            if ($key !== false) {
-                unset($menu_order[$key]);
-                $menu_order = array_values($menu_order); // Reindexar
-                update_option('mpa_menu_order', $menu_order);
-            }
-        }
-
-        // Adicionar customização de nome do submenu se necessário
-        $menu_customizations = get_option('mpa_menu_customizations', array());
-        if (!isset($menu_customizations['submenu_custom_title'])) {
-            $menu_customizations['submenu_custom_title'] = array();
-        }
-        $menu_customizations['submenu_custom_title'][$submenu_key] = $menu_title;
-        update_option('mpa_menu_customizations', $menu_customizations);
-
-        wp_send_json_success(array(
-            'message' => 'Menu transformado em submenu com sucesso',
-            'submenu_key' => $submenu_key,
-            'parent_slug' => $parent_slug,
-            'menu_slug' => $menu_slug,
-            'menu_title' => $menu_title
-        ));
-
-    } catch (Exception $e) {
-        wp_send_json_error('Erro interno do servidor: ' . $e->getMessage());
-    }
-}
-
-// Handler AJAX para reverter submenu em menu
-function mpa_transform_submenu_to_menu_callback() {
-    // Verificar se usuário está logado
-    if (!is_user_logged_in()) {
-        wp_send_json_error('Acesso negado: usuário não autenticado.');
-    }
-
-    // Verificar nonce
-    if (!wp_verify_nonce($_POST['nonce'], 'mpa_transform_submenu')) {
-        wp_send_json_error('Token de segurança inválido.');
-    }
-
-    // Verificar permissões
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error('Usuário não tem permissões para esta operação.');
-    }
-
-    try {
-        // Obter dados do POST
-        if (empty($_POST['menu_slug']) || empty($_POST['parent_slug'])) {
-            wp_send_json_error('Dados obrigatórios não fornecidos.');
-        }
-
-        $menu_slug = sanitize_text_field($_POST['menu_slug']);
-        $parent_slug = sanitize_text_field($_POST['parent_slug']);
-        $menu_title = wp_strip_all_tags($_POST['menu_title'] ?? '');
-
-        // Obter permissões atuais
-        $menu_permissions = get_option('mpa_menu_permissions', array());
-
-        // Obter usuário atual
-        $current_user = wp_get_current_user();
-        $user_roles = !empty($current_user->roles) ? $current_user->roles : ['administrator'];
-
-        // Para cada role do usuário, remover a entrada de submenu
-        foreach ($user_roles as $role) {
-            if (isset($menu_permissions[$role]['submenus'])) {
-                $submenu_key = $parent_slug . '|' . $menu_slug;
-
-                // Remover a transformação de submenu
-                unset($menu_permissions[$role]['submenus'][$submenu_key]);
-
-                // Se não há mais submenus para esta role, remover a seção
-                if (empty($menu_permissions[$role]['submenus'])) {
-                    unset($menu_permissions[$role]['submenus']);
-                }
-
-                // Garantir que o menu está habilitado como menu principal
-                if (!isset($menu_permissions[$role])) {
-                    $menu_permissions[$role] = array();
-                }
-
-                // Habilitar o menu como menu principal para a role
-                $menu_permissions[$role][$menu_slug] = true;
-
-                // Log da operação
-                $menu_permissions[$role]['transformations'][] = array(
-                    'action' => 'submenu_to_menu',
-                    'menu_slug' => $menu_slug,
-                    'parent_slug' => $parent_slug,
-                    'timestamp' => current_time('mysql'),
-                    'user' => $current_user->user_login
-                );
-            }
-        }
-
-        // Salvar alterações
-        update_option('mpa_menu_permissions', $menu_permissions);
-
-        wp_send_json_success(array(
-            'message' => 'Submenu revertido para menu principal com sucesso!',
-            'menu_slug' => $menu_slug,
-            'parent_slug' => $parent_slug,
-            'menu_title' => $menu_title
-        ));
-
-    } catch (Exception $e) {
-        wp_send_json_error('Erro interno do servidor: ' . $e->getMessage());
-    }
-}
-
-// Função para aplicar transformações na estrutura nativa do WordPress
-function mpa_apply_menu_transformations() {
-    global $menu, $submenu;
-
-    if (!is_array($menu)) {
-        return;
-    }
-
-    // Obter permissões para encontrar transformações
-    $menu_permissions = get_option('mpa_menu_permissions', array());
-
-    // Criar backup original dos menus antes de qualquer transformação
-    static $original_menu = null;
-    static $transformations_applied = false;
-
-    if ($original_menu === null) {
-        $original_menu = $menu;
-    }
-
-    // Se já aplicamos transformações antes e agora não há mais transformações ativas,
-    // precisamos restaurar da global original do WordPress
-    if ($transformations_applied && empty($menu_permissions)) {
-        $transformations_applied = false;
-    }
-
-    // Obter usuário atual para verificar roles
-    $user = wp_get_current_user();
-    $user_roles = !empty($user->roles) ? $user->roles : ['administrator'];
-
-    // Coletar transformações ativas de todas as roles do usuário atual
-    $active_transformations = array();
-
-    if (!empty($menu_permissions)) {
-        foreach ($user_roles as $role) {
-            if (!isset($menu_permissions[$role]['submenus']) || !is_array($menu_permissions[$role]['submenus'])) {
-                continue;
-            }
-
-            foreach ($menu_permissions[$role]['submenus'] as $submenu_key => $enabled) {
-                if (!$enabled || strpos($submenu_key, '|') === false) {
-                    continue;
-                }
-
-                list($parent_slug, $child_slug) = explode('|', $submenu_key, 2);
-                $active_transformations[] = array(
-                    'parent_slug' => $parent_slug,
-                    'child_slug' => $child_slug
-                );
-            }
-        }
-    }
-
-    // Primeiro, identificar quais menus devem ser restaurados do backup original
-    $menus_to_restore = array();
-    foreach ($original_menu as $position => $menu_item) {
-        if (empty($menu_item[2])) {
-            continue;
-        }
-
-        $slug = $menu_item[2];
-        $normalized_slug = mpa_normalize_slug($slug);
-
-        // Verificar se este menu não está em nenhuma transformação ativa
-        $is_transformed = false;
-        foreach ($active_transformations as $transformation) {
-            if ($transformation['child_slug'] === $slug || $transformation['child_slug'] === $normalized_slug) {
-                $is_transformed = true;
-                break;
-            }
-        }
-
-        // Se não está transformado mas não existe no menu atual, deve ser restaurado
-        if (!$is_transformed) {
-            $menu_exists = false;
-            foreach ($menu as $current_menu_item) {
-                if (!empty($current_menu_item[2]) &&
-                    ($current_menu_item[2] === $slug || mpa_normalize_slug($current_menu_item[2]) === $normalized_slug)) {
-                    $menu_exists = true;
-                    break;
-                }
-            }
-
-            if (!$menu_exists) {
-                $menus_to_restore[$slug] = $menu_item;
-            }
-        }
-    }
-
-    // Restaurar menus que foram removidos mas não devem mais ser transformados
-    foreach ($menus_to_restore as $slug => $menu_item) {
-        // Encontrar uma posição adequada (usar a posição original + 0.1 para evitar conflitos)
-        $original_position = null;
-        foreach ($original_menu as $pos => $orig_item) {
-            if (!empty($orig_item[2]) && $orig_item[2] === $slug) {
-                $original_position = $pos;
-                break;
-            }
-        }
-
-        $new_position = $original_position !== null ? $original_position + 0.1 : 99.1;
-        $menu[$new_position] = $menu_item;
-    }
-
-    // Se não há transformações ativas, terminar aqui
-    if (empty($active_transformations)) {
-        return;
-    }
-
-    // Criar um mapa dos menus atuais (incluindo os restaurados)
-    $menu_items = array();
-    foreach ($menu as $position => $menu_item) {
-        if (!empty($menu_item[2])) {
-            $slug = $menu_item[2];
-            $normalized_slug = mpa_normalize_slug($slug);
-            $menu_items[$slug] = $menu_item;
-            $menu_items[$normalized_slug] = $menu_item;
-        }
-    }
-
-    // Aplicar transformações
-    foreach ($active_transformations as $transformation) {
-        $parent_slug = $transformation['parent_slug'];
-        $child_slug = $transformation['child_slug'];
-
-        // Buscar o item do menu filho
-        $child_menu_item = null;
-        if (isset($menu_items[$child_slug])) {
-            $child_menu_item = $menu_items[$child_slug];
-        }
-
-        if (!$child_menu_item) {
-            continue;
-        }
-
-        // Remover o menu filho da lista principal
-        foreach ($menu as $position => $menu_item) {
-            if (!empty($menu_item[2]) &&
-                (mpa_normalize_slug($menu_item[2]) === $child_slug || $menu_item[2] === $child_slug)) {
-                unset($menu[$position]);
-                break;
-            }
-        }
-
-        // Buscar o menu pai na estrutura atual
-        $parent_found = false;
-        foreach ($menu as $menu_item) {
-            if (!empty($menu_item[2]) &&
-                (mpa_normalize_slug($menu_item[2]) === $parent_slug || $menu_item[2] === $parent_slug)) {
-                $parent_found = true;
-                break;
-            }
-        }
-
-        if ($parent_found) {
-            // Encontrar o parent_slug correto (pode ser normalizado ou não)
-            $actual_parent_slug = null;
-            foreach ($menu as $menu_item) {
-                if (!empty($menu_item[2]) &&
-                    (mpa_normalize_slug($menu_item[2]) === $parent_slug || $menu_item[2] === $parent_slug)) {
-                    $actual_parent_slug = $menu_item[2];
-                    break;
-                }
-            }
-
-            if ($actual_parent_slug) {
-                // Inicializar array de submenus se não existir
-                if (!isset($submenu[$actual_parent_slug])) {
-                    $submenu[$actual_parent_slug] = array();
-                }
-
-                // Obter customizações para título do submenu
-                $menu_customizations = get_option('mpa_menu_customizations', array());
-                $submenu_title = $child_menu_item[0]; // título padrão
-
-                if (isset($menu_customizations['submenu_custom_title'][$parent_slug . '|' . $child_slug])) {
-                    $submenu_title = $menu_customizations['submenu_custom_title'][$parent_slug . '|' . $child_slug];
-                }
-
-                // Adicionar à estrutura de submenus do WordPress
-                $submenu[$actual_parent_slug][] = array(
-                    $submenu_title,           // [0] título do submenu
-                    $child_menu_item[1],      // [1] capability
-                    $child_slug,              // [2] menu_slug
-                    $submenu_title            // [3] page_title (igual ao título)
-                );
-            }
-        }
-    }
-
-    // Marcar que as transformações foram aplicadas se havia transformações ativas
-    if (!empty($active_transformations)) {
-        $transformations_applied = true;
-    }
-}
-
 // Aplicar ordem customizada dos menus
 add_action('admin_menu', 'mpa_apply_menu_order', 999);
 
 function mpa_apply_menu_order() {
     global $menu;
-
+    
     $custom_order = get_option('mpa_menu_order', array());
-
+    
     if (empty($custom_order) || !is_array($menu)) {
         return;
     }
-
-    // Aplicar transformações na estrutura nativa do WordPress
-    mpa_apply_menu_transformations();
-
+    
     // Obter menus personalizados para adicionar à estrutura
     $custom_menus = get_option('mpa_custom_menus', array());
     $custom_menus_to_add = array();
@@ -4543,8 +3356,10 @@ function mpa_apply_menu_customizations() {
     
     // Debug: mostrar todos os menus encontrados
     if (isset($_GET['debug_menus'])) {
+        error_log('=== MENUS ENCONTRADOS ===');
         foreach ($menu as $key => $menu_item) {
             if (!empty($menu_item[0]) && !empty($menu_item[2])) {
+                error_log("Menu $key: Título='{$menu_item[0]}', Slug='{$menu_item[2]}'");
             }
         }
     }
@@ -4598,6 +3413,7 @@ function mpa_apply_menu_customizations() {
                 $menu[$key][0] = $custom_data['title'];
                 
                 if (isset($_GET['debug_menus'])) {
+                    error_log("CUSTOMIZAÇÃO APLICADA: '{$menu_title}' -> '{$custom_data['title']}'");
                 }
             }
             
@@ -4630,6 +3446,7 @@ function mpa_apply_menu_customizations() {
                 
                 // Debug: mostrar chave do submenu
                 if (isset($_GET['debug_menus'])) {
+                    error_log("[MPA SUBMENU DEBUG] Verificando submenu: $submenu_key (parent: $parent_slug, slug: $submenu_slug)");
                 }
                 
                 // Buscar customização do submenu
@@ -4641,10 +3458,12 @@ function mpa_apply_menu_customizations() {
                         $submenu[$parent_slug][$sub_key][0] = $custom_title;
                         
                         if (isset($_GET['debug_menus'])) {
+                            error_log("CUSTOMIZAÇÃO SUBMENU APLICADA: '{$submenu_title}' -> '{$custom_title}'");
                         }
                     }
                 } else {
                     if (isset($_GET['debug_menus'])) {
+                        error_log("[MPA SUBMENU DEBUG] Customização não encontrada para: $submenu_key");
                     }
                 }
             }
@@ -4660,16 +3479,11 @@ function mpa_apply_menu_customizations() {
 add_action('wp_ajax_mpa_auto_save_customization', 'mpa_auto_save_customization_handler');
 
 function mpa_auto_save_customization_handler() {
-    // Verificar se usuário está logado
-    if (!is_user_logged_in()) {
-        wp_send_json_error('Acesso negado: usuário não autenticado');
-    }
-
     // Verificar nonce de segurança
     if (!wp_verify_nonce($_POST['nonce'], 'mpa_auto_save')) {
         wp_send_json_error('Erro de segurança');
     }
-
+    
     // Verificar permissões
     if (!current_user_can('manage_options')) {
         wp_send_json_error('Sem permissões');
@@ -4822,6 +3636,7 @@ function mpa_add_custom_menu_handler() {
         }
 
     } catch (Exception $e) {
+        error_log('Erro ao adicionar menu personalizado: ' . $e->getMessage());
         wp_send_json_error('Erro interno do servidor.');
     }
 }
@@ -4897,6 +3712,7 @@ function mpa_delete_custom_menu_handler() {
         update_option('mpa_menu_order', $menu_order);
         
         // Log da exclusão
+        error_log("Menu personalizado completamente removido - Role: {$role}, ID: {$menu_id}, Título: {$deleted_menu['title']}");
         
         wp_send_json_success(array(
             'message' => 'Menu personalizado removido completamente de todas as telas!',
@@ -4904,6 +3720,7 @@ function mpa_delete_custom_menu_handler() {
         ));
 
     } catch (Exception $e) {
+        error_log('Erro ao excluir menu personalizado: ' . $e->getMessage());
         wp_send_json_error('Erro interno do servidor.');
     }
 }
@@ -4962,6 +3779,7 @@ function mpa_edit_custom_menu_handler() {
         update_option('mpa_menu_customizations', $menu_customizations);
         
         // Log da edição
+        error_log("Menu personalizado editado - Role: {$role}, ID: {$menu_id}, Novo Título: {$new_title}");
         
         wp_send_json_success(array(
             'message' => 'Menu personalizado atualizado com sucesso!',
@@ -4969,6 +3787,7 @@ function mpa_edit_custom_menu_handler() {
         ));
         
     } catch (Exception $e) {
+        error_log('Erro ao editar menu personalizado: ' . $e->getMessage());
         wp_send_json_error('Erro interno do servidor.');
     }
 }
@@ -5134,7 +3953,6 @@ add_action('admin_enqueue_scripts', function($hook) {
         ));
     }
 });
-
 
 // Log de debug para menus personalizados (apenas em desenvolvimento)
 add_action('wp_loaded', function() {
