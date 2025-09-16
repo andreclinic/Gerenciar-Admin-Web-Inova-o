@@ -31,20 +31,34 @@ function mpa_wpcontent_assets($hook)
 add_action('admin_head', function () {
     echo '<style>
         /* Esconder elementos que não fazem parte do novo layout */
-        #screen-options-link-wrap, 
+        #screen-options-link-wrap,
         #contextual-help-link-wrap,
-        .wrap h1.wp-heading-inline,
-        .page-title-action,
-        .tablenav,
-        .wp-header-end { 
-            display: none !important; 
+        .wp-header-end {
+            display: none !important;
         }
-        
+
+        /* Esconder apenas nos dashboards customizados, mas manter paginação em outras páginas */
+        .toplevel_page_mpa-dashboard .wrap h1.wp-heading-inline,
+        .toplevel_page_mpa-dashboard .page-title-action,
+        .toplevel_page_mpa-dashboard .tablenav {
+            display: none !important;
+        }
+
         /* Esconder notices padrão no dashboard customizado */
         .toplevel_page_mpa-dashboard .notice,
         .toplevel_page_mpa-dashboard .update-nag,
-        .toplevel_page_mpa-dashboard .error { 
-            display: none !important; 
+        .toplevel_page_mpa-dashboard .error {
+            display: none !important;
+        }
+
+        /* Garantir que paginação seja visível em páginas de listagem */
+        .edit-php .tablenav,
+        .upload-php .tablenav,
+        .edit-tags-php .tablenav,
+        .users-php .tablenav,
+        .post-type-product .tablenav,
+        .woocommerce_page_wc-orders .tablenav {
+            display: block !important;
         }
     </style>';
 });

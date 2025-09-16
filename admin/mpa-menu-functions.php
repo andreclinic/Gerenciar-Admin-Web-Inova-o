@@ -209,6 +209,16 @@ if (!function_exists('mpa_apply_settings_to_arrays')) {
                 $icon = $promoted['icon'] ?? 'dashicons-admin-generic';
                 $pos = $promoted['pos'] ?? 80;
 
+                // Verificar se há um ícone atualizado na configuração 'icons'
+                if (!empty($settings['icons'][$slug])) {
+                    $icon = $settings['icons'][$slug];
+                }
+
+                // Verificar se há um nome atualizado na configuração 'rename'
+                if (!empty($settings['rename'][$slug])) {
+                    $name = $settings['rename'][$slug];
+                }
+
                 if ($parent && $slug) {
                     if (!empty($submenu[$parent])) {
                         foreach ($submenu[$parent] as $i => $sub) {
@@ -438,6 +448,16 @@ add_action('admin_menu', function () {
             $name = $promoted['name'] ?? '';
             $icon = $promoted['icon'] ?? 'dashicons-admin-generic';
             $pos = $promoted['pos'] ?? 80;
+
+            // Verificar se há um ícone atualizado na configuração 'icons'
+            if (!empty($settings['icons'][$slug])) {
+                $icon = $settings['icons'][$slug];
+            }
+
+            // Verificar se há um nome atualizado na configuração 'rename'
+            if (!empty($settings['rename'][$slug])) {
+                $name = $settings['rename'][$slug];
+            }
 
             if ($parent && $slug) {
                 if (!empty($submenu[$parent])) {
