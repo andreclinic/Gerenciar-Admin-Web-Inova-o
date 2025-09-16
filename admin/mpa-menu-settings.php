@@ -326,6 +326,147 @@ add_action('admin_init', function () {
             exit;
         }
     }
+    // Reset de configurações por role
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mpa_reset_config_submit'])) {
+        if (!current_user_can('manage_options') || !check_admin_referer('mpa_reset_config'))
+            wp_die('Permissão negada ou nonce inválido');
+
+        $role_key = sanitize_text_field($_POST['mpa_role'] ?? '_global');
+
+        // Remover todas as configurações para este role
+        $all_settings = get_option('mpa_menu_settings_roles', []);
+        if (isset($all_settings[$role_key])) {
+            unset($all_settings[$role_key]);
+            update_option('mpa_menu_settings_roles', $all_settings);
+        }
+
+        wp_redirect(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&resetado=1'));
+        exit;
+    }
+
+    // Exportar configurações
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mpa_export_config_submit'])) {
+        if (!current_user_can('manage_options') || !check_admin_referer('mpa_export_config'))
+            wp_die('Permissão negada ou nonce inválido');
+
+        $export_type = sanitize_text_field($_POST['mpa_export_type'] ?? 'all');
+        $role_key = sanitize_text_field($_POST['mpa_role'] ?? '_global');
+
+        // Obter configurações para exportar
+        $all_settings = get_option('mpa_menu_settings_roles', []);
+        $export_data = [];
+
+        if ($export_type === 'current' && isset($all_settings[$role_key])) {
+            // Exportar apenas role atual
+            $export_data = [$role_key => $all_settings[$role_key]];
+            $filename = "mpa-menu-config-{$role_key}-" . date('Y-m-d-H-i-s') . '.json';
+        } else {
+            // Exportar todas as configurações
+            $export_data = $all_settings;
+            $filename = "mpa-menu-config-all-" . date('Y-m-d-H-i-s') . '.json';
+        }
+
+        // Adicionar metadados
+        $export_package = [
+            'version' => '1.0',
+            'plugin' => 'Gerenciar Admin Web Inovação',
+            'export_date' => date('Y-m-d H:i:s'),
+            'export_type' => $export_type,
+            'wordpress_version' => get_bloginfo('version'),
+            'site_url' => get_site_url(),
+            'data' => $export_data
+        ];
+
+        // Forçar download do arquivo JSON
+        header('Content-Type: application/json');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen(wp_json_encode($export_package, JSON_PRETTY_PRINT)));
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        echo wp_json_encode($export_package, JSON_PRETTY_PRINT);
+        exit;
+    }
+
+    // Importar configurações
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mpa_import_config_submit'])) {
+        if (!current_user_can('manage_options') || !check_admin_referer('mpa_import_config'))
+            wp_die('Permissão negada ou nonce inválido');
+
+        $import_mode = sanitize_text_field($_POST['mpa_import_mode'] ?? 'replace');
+
+        if (!isset($_FILES['mpa_import_file']) || $_FILES['mpa_import_file']['error'] !== UPLOAD_ERR_OK) {
+            wp_redirect(admin_url('admin.php?page=mpa-menu-roles&import_error=1'));
+            exit;
+        }
+
+        $upload_file = $_FILES['mpa_import_file'];
+
+        // Validar tipo de arquivo
+        if ($upload_file['type'] !== 'application/json' &&
+            !str_ends_with($upload_file['name'], '.json')) {
+            wp_redirect(admin_url('admin.php?page=mpa-menu-roles&import_error=2'));
+            exit;
+        }
+
+        // Ler conteúdo do arquivo
+        $file_content = file_get_contents($upload_file['tmp_name']);
+        $import_data = json_decode($file_content, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || !isset($import_data['data'])) {
+            wp_redirect(admin_url('admin.php?page=mpa-menu-roles&import_error=3'));
+            exit;
+        }
+
+        // Validar estrutura do arquivo
+        if (!isset($import_data['plugin']) || $import_data['plugin'] !== 'Gerenciar Admin Web Inovação') {
+            wp_redirect(admin_url('admin.php?page=mpa-menu-roles&import_error=4'));
+            exit;
+        }
+
+        $current_settings = get_option('mpa_menu_settings_roles', []);
+        $new_data = $import_data['data'];
+
+        if ($import_mode === 'merge') {
+            // Mesclar com configurações existentes
+            foreach ($new_data as $role => $settings) {
+                if (isset($current_settings[$role])) {
+                    $current_settings[$role] = array_merge($current_settings[$role], $settings);
+                } else {
+                    $current_settings[$role] = $settings;
+                }
+            }
+            $final_data = $current_settings;
+        } else {
+            // Substituir completamente
+            $final_data = $new_data;
+        }
+
+        update_option('mpa_menu_settings_roles', $final_data);
+        wp_redirect(admin_url('admin.php?page=mpa-menu-roles&importado=1'));
+        exit;
+    }
+});
+
+// Handler AJAX para reset de configurações
+add_action('wp_ajax_mpa_reset_config', function() {
+    if (!current_user_can('manage_options') || !check_admin_referer('mpa_reset_config', 'nonce'))
+        wp_die('Permissão negada ou nonce inválido');
+
+    $role = sanitize_text_field($_POST['role'] ?? '_global');
+
+    // Remover todas as configurações para este role
+    $all_settings = get_option('mpa_menu_settings_roles', []);
+    if (isset($all_settings[$role])) {
+        unset($all_settings[$role]);
+        update_option('mpa_menu_settings_roles', $all_settings);
+    }
+
+    wp_send_json_success([
+        'message' => $role === '_global'
+            ? 'Configurações globais resetadas com sucesso!'
+            : "Configurações para o perfil '{$role}' resetadas com sucesso!"
+    ]);
 });
 
 /**
@@ -350,10 +491,26 @@ if (!function_exists('mpa_render_settings_page')) {
             'ordenado' => 'Ordem salva com sucesso!',
             'customadd' => 'Menu personalizado adicionado!',
             'customedit' => 'Menu personalizado editado!',
-            'customdel' => 'Menu personalizado excluído!'
+            'customdel' => 'Menu personalizado excluído!',
+            'resetado' => 'Configurações resetadas com sucesso!',
+            'importado' => 'Configurações importadas com sucesso!'
         ] as $param => $msg) {
             if (isset($_GET[$param]) && $_GET[$param] == '1') {
                 echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($msg) . '</p></div>';
+            }
+        }
+
+        // Mensagens de erro da importação
+        $import_errors = [
+            1 => 'Erro ao fazer upload do arquivo.',
+            2 => 'Arquivo deve ser do tipo JSON (.json).',
+            3 => 'Arquivo JSON inválido ou corrompido.',
+            4 => 'Arquivo não pertence ao plugin Gerenciar Admin Web Inovação.'
+        ];
+
+        foreach ($import_errors as $error_code => $error_msg) {
+            if (isset($_GET['import_error']) && $_GET['import_error'] == $error_code) {
+                echo '<div class="notice notice-error is-dismissible"><p><strong>Erro na Importação:</strong> ' . esc_html($error_msg) . '</p></div>';
             }
         }
 
@@ -766,6 +923,92 @@ if (!function_exists('mpa_render_settings_page')) {
                 <!-- mpa_submenu_order[parent] será criado via JS -->
             </form>
 
+            <!-- Seção de Export/Import -->
+            <hr style="margin: 30px 0;">
+            <h2>🔄 Backup e Migração de Configurações</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                <!-- Exportar Configurações -->
+                <div style="padding: 15px; background: #f0f8ff; border: 1px solid #b3d9ff; border-radius: 6px; border-left: 4px solid #0073aa;">
+                    <h3 style="color: #0073aa; margin: 0 0 15px;"><strong>📤 Exportar Configurações</strong></h3>
+                    <p style="margin: 5px 0 15px; font-size: 14px;">
+                        Faça backup das suas configurações de menu em formato JSON para usar como backup ou migrar para outra instalação.
+                    </p>
+
+                    <form method="post" style="margin-bottom: 10px;">
+                        <?php wp_nonce_field('mpa_export_config'); ?>
+                        <input type="hidden" name="mpa_role" value="<?php echo esc_attr($role_current); ?>">
+
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Tipo de Exportação:</label>
+                            <label style="display: block; margin-bottom: 5px;">
+                                <input type="radio" name="mpa_export_type" value="current" checked>
+                                Apenas perfil atual (<?php echo esc_html($role_current === '_global' ? 'Global' : $roles[$role_current]['name']); ?>)
+                            </label>
+                            <label style="display: block; margin-bottom: 10px;">
+                                <input type="radio" name="mpa_export_type" value="all">
+                                Todas as configurações (todos os perfis)
+                            </label>
+                        </div>
+
+                        <button type="submit" name="mpa_export_config_submit" class="button button-primary">
+                            💾 Exportar Configurações
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Importar Configurações -->
+                <div style="padding: 15px; background: #f8fff0; border: 1px solid #c8e6c9; border-radius: 6px; border-left: 4px solid #4caf50;">
+                    <h3 style="color: #4caf50; margin: 0 0 15px;"><strong>📥 Importar Configurações</strong></h3>
+                    <p style="margin: 5px 0 15px; font-size: 14px;">
+                        Restaure configurações de um arquivo de backup ou migre configurações de outra instalação.
+                    </p>
+
+                    <form method="post" enctype="multipart/form-data">
+                        <?php wp_nonce_field('mpa_import_config'); ?>
+
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Arquivo de Configuração (.json):</label>
+                            <input type="file" name="mpa_import_file" accept=".json" required
+                                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Modo de Importação:</label>
+                            <label style="display: block; margin-bottom: 5px;">
+                                <input type="radio" name="mpa_import_mode" value="replace" checked>
+                                <strong>Substituir</strong> - Replace todas as configurações existentes
+                            </label>
+                            <label style="display: block;">
+                                <input type="radio" name="mpa_import_mode" value="merge">
+                                <strong>Mesclar</strong> - Combinar com configurações existentes
+                            </label>
+                        </div>
+
+                        <button type="submit" name="mpa_import_config_submit" class="button button-secondary"
+                                onclick="return confirm('⚠️ ATENÇÃO! Esta ação irá modificar suas configurações de menu. Tem certeza que deseja continuar?')">
+                            📂 Importar Configurações
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Botão de Reset -->
+            <hr style="margin: 30px 0;">
+            <div style="margin: 20px 0; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; border-left: 4px solid #dc3545;">
+                <h3 style="color: #dc3545; margin: 0 0 10px;"><strong>⚠️ Zona de Perigo</strong></h3>
+                <p style="margin: 5px 0 15px; font-size: 14px; color: #856404;">
+                    Esta ação irá <strong>DELETAR PERMANENTEMENTE</strong> todas as configurações de menu para o perfil selecionado
+                    <strong>"<?php echo esc_html($role_current === '_global' ? 'Global' : $roles[$role_current]['name'] . " ({$role_current})"); ?>"</strong>.
+                    <br><br>
+                    <strong>Isso inclui:</strong> Menus personalizados, renomeações, ordem personalizada, menus removidos e todas as demais configurações.
+                </p>
+                <button type="button" id="mpa-reset-config" class="button button-large"
+                        data-role="<?php echo esc_attr($role_current); ?>"
+                        style="background: #dc3545; color: white; border-color: #dc3545; font-weight: bold;">
+                    🗑️ Resetar Todas as Configurações
+                </button>
+            </div>
+
             <!-- SortableJS -->
             <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
             <script>
@@ -812,6 +1055,48 @@ if (!function_exists('mpa_render_settings_page')) {
                         });
                     });
                 });
+
+                // Funcionalidade de reset com confirmação
+                const resetButton = document.getElementById('mpa-reset-config');
+                if (resetButton) {
+                    resetButton.addEventListener('click', function() {
+                        const role = this.getAttribute('data-role');
+                        const roleName = role === '_global' ? 'Global' : role;
+
+                        if (confirm(`⚠️ ATENÇÃO!\n\nEsta ação irá DELETAR PERMANENTEMENTE todas as configurações de menu para o perfil "${roleName}".\n\nIsso inclui:\n• Menus personalizados criados\n• Renomeações de menus\n• Menus removidos\n• Ordem personalizada dos menus\n• Todas as demais configurações\n\n❌ ESTA AÇÃO NÃO PODE SER DESFEITA!\n\nTem certeza que deseja continuar?`)) {
+                            if (confirm(`🔥 ÚLTIMA CONFIRMAÇÃO!\n\nVocê está prestes a resetar TODAS as configurações para "${roleName}".\n\nClique OK para DELETAR PERMANENTEMENTE ou Cancelar para abortar.`)) {
+                                // Redirecionar para o handler PHP com confirmação dupla
+                                const form = document.createElement('form');
+                                form.method = 'POST';
+                                form.style.display = 'none';
+
+                                // Nonce field
+                                const nonceField = document.createElement('input');
+                                nonceField.type = 'hidden';
+                                nonceField.name = '_wpnonce';
+                                nonceField.value = '<?php echo wp_create_nonce('mpa_reset_config'); ?>';
+                                form.appendChild(nonceField);
+
+                                // Role field
+                                const roleField = document.createElement('input');
+                                roleField.type = 'hidden';
+                                roleField.name = 'mpa_role';
+                                roleField.value = role;
+                                form.appendChild(roleField);
+
+                                // Submit field
+                                const submitField = document.createElement('input');
+                                submitField.type = 'hidden';
+                                submitField.name = 'mpa_reset_config_submit';
+                                submitField.value = '1';
+                                form.appendChild(submitField);
+
+                                document.body.appendChild(form);
+                                form.submit();
+                            }
+                        }
+                    });
+                }
             </script>
         </div>
         <?php
