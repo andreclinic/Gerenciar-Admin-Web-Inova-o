@@ -249,7 +249,18 @@ if (!function_exists('mpa_apply_settings_to_arrays')) {
             }
         }
 
-        // 7) Reordenar MENUS
+        // 7) Aplicar ÍCONES personalizados
+        if (!empty($settings['icons']) && is_array($settings['icons'])) {
+            foreach ($menu as &$item) {
+                $slug = $item[2] ?? '';
+                if ($slug && isset($settings['icons'][$slug])) {
+                    $item[6] = $settings['icons'][$slug];
+                }
+            }
+            unset($item); // Limpar referência
+        }
+
+        // 8) Reordenar MENUS
         if (!empty($settings['order_menu']) && is_array($settings['order_menu'])) {
             $ordered = [];
             foreach ($settings['order_menu'] as $slugWanted) {
@@ -268,7 +279,7 @@ if (!function_exists('mpa_apply_settings_to_arrays')) {
             $menu = $ordered;
         }
 
-        // 8) Reordenar SUBMENUS por PAI
+        // 9) Reordenar SUBMENUS por PAI
         if (!empty($settings['order_submenu']) && is_array($settings['order_submenu'])) {
             foreach ($settings['order_submenu'] as $parent => $slugs) {
                 if (!empty($submenu[$parent]) && is_array($submenu[$parent])) {
@@ -390,6 +401,15 @@ add_action('admin_menu', function () {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // 2.5) Aplicar ÍCONES personalizados
+    if (!empty($settings['icons']) && is_array($settings['icons'])) {
+        foreach ($menu as $key => $item) {
+            if (!empty($item[2]) && isset($settings['icons'][$item[2]])) {
+                $menu[$key][6] = $settings['icons'][$item[2]];
             }
         }
     }

@@ -1,0 +1,1152 @@
+/* Estilos para a página de configurações de menus */
+.wrap.mpa-menu-settings {
+    max-width: none;
+    margin: 0;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    box-sizing: border-box;
+    background: #f0f0f1;
+    min-height: 100vh;
+}
+
+/* Override WordPress admin styles */
+#wpbody-content .wrap.mpa-menu-settings {
+    margin: 0 20px 0 0;
+    padding: 20px;
+}
+
+/* Garante que a página tenha altura suficiente para dropdowns */
+body.wp-admin {
+    min-height: 100vh;
+    overflow-x: auto;
+}
+
+/* Container para evitar corte de elementos */
+.mpa-menu-settings {
+    overflow: visible;
+    min-height: 100vh;
+}
+
+/* Header da página */
+.mpa-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mpa-menu-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+    line-height: 1.2;
+}
+
+/* Seletor de role */
+.mpa-role-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    padding: 15px 20px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 25px;
+}
+
+.mpa-role-selector select {
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: white;
+    font-size: 14px;
+    min-width: 200px;
+}
+
+.mpa-role-selector .button-primary {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+/* Tabela de menus */
+.mpa-menu-table {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+    overflow-y: visible;
+    margin-bottom: 30px;
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+.mpa-menu-table table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+    table-layout: fixed;
+}
+
+.mpa-menu-table th {
+    background: #f1f5f9;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #334155;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 13px;
+}
+
+.mpa-menu-table td {
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    position: relative;
+}
+
+.mpa-menu-table td:first-child {
+    width: 4%;
+    text-align: center;
+    padding: 10px 4px;
+}
+
+.mpa-menu-table td:nth-child(2) {
+    width: 42%;
+    padding: 10px 8px;
+}
+
+.mpa-menu-table td:nth-child(3) {
+    width: 18%;
+    font-family: monospace;
+    font-size: 11px;
+    color: #666;
+    padding: 10px 6px;
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    position: relative;
+    cursor: help;
+}
+
+/* Tooltip para slugs truncados */
+.mpa-menu-table td:nth-child(3)[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    font-family: monospace;
+}
+
+.mpa-menu-table td:nth-child(4) {
+    width: 16%;
+    text-align: left;
+    padding: 10px 6px;
+}
+
+/* Formulário de ícone na coluna 4 */
+.mpa-icon-form {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mpa-icon-form input[type="text"] {
+    width: 80px;
+    padding: 3px 6px;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+    font-size: 10px;
+    height: 24px;
+    box-sizing: border-box;
+}
+
+.mpa-icon-form .mpa-save-icon-btn {
+    width: 24px;
+    height: 24px;
+    padding: 2px;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+    background: white;
+    color: #059669;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.mpa-icon-form .mpa-save-icon-btn:hover {
+    background: #f0fdf4;
+    border-color: #059669;
+}
+
+.mpa-menu-table td:last-child {
+    width: 20%;
+    padding: 10px 8px;
+}
+
+.mpa-menu-table tr:hover {
+    background: #f8fafc;
+    position: relative;
+    z-index: 2;
+}
+
+.mpa-menu-table tr {
+    position: relative;
+}
+
+/* Ícones dos menus */
+.mpa-menu-icon {
+    width: 160px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.mpa-menu-icon .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+/* Campos de input inline */
+.mpa-inline-input {
+    padding: 4px 6px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 11px;
+    background: white;
+    transition: border-color 0.2s;
+    width: 80px;
+    box-sizing: border-box;
+    height: 28px;
+}
+
+.mpa-inline-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    z-index: 10;
+    position: relative;
+}
+
+.mpa-inline-select {
+    padding: 4px 6px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 11px;
+    background: white;
+    cursor: pointer;
+    width: 90px;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+    height: 28px;
+}
+
+.mpa-inline-select:focus {
+    z-index: 10;
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Botões com ícones */
+.mpa-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background: white;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    font-size: 13px;
+    width: 28px;
+    height: 28px;
+    margin: 0 1px;
+    flex-shrink: 0;
+}
+
+.mpa-icon-btn:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #475569;
+}
+
+.mpa-icon-btn.rename {
+    color: #0ea5e9;
+    border-color: #bae6fd;
+}
+
+.mpa-icon-btn.rename:hover {
+    background: #f0f9ff;
+    border-color: #0ea5e9;
+}
+
+.mpa-icon-btn.remove {
+    color: #ef4444;
+    border-color: #fecaca;
+}
+
+.mpa-icon-btn.remove:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+}
+
+.mpa-icon-btn.submenu {
+    color: #8b5cf6;
+    border-color: #ddd6fe;
+}
+
+.mpa-icon-btn.submenu:hover {
+    background: #faf5ff;
+    border-color: #8b5cf6;
+}
+
+.mpa-icon-btn.restore {
+    color: #10b981;
+    border-color: #a7f3d0;
+}
+
+.mpa-icon-btn.restore:hover {
+    background: #f0fdf4;
+    border-color: #10b981;
+}
+
+/* Grupo de ações - mais compacto */
+.mpa-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    min-height: 32px;
+}
+
+/* Formulários inline dentro das ações */
+.mpa-actions-group form {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin: 0;
+}
+
+/* Seções */
+.mpa-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.mpa-section-header {
+    padding: 20px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.mpa-section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    line-height: 1.3;
+}
+
+.mpa-section-title .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.mpa-section-content {
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+}
+
+/* Grid para export/import */
+.mpa-export-import-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.mpa-export-card, .mpa-import-card {
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fefefe;
+}
+
+.mpa-export-card h4, .mpa-import-card h4 {
+    margin: 0 0 15px 0;
+    color: #334155;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.mpa-export-options, .mpa-import-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.mpa-radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mpa-radio-option:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.mpa-radio-option input[type="radio"] {
+    margin: 0;
+}
+
+.mpa-radio-option label {
+    margin: 0;
+    cursor: pointer;
+    font-weight: 500;
+    color: #475569;
+}
+
+/* Zona de perigo */
+.mpa-danger-zone {
+    border: 2px solid #fecaca;
+    background: #fef2f2;
+    border-radius: 8px;
+    margin-top: 40px;
+}
+
+.mpa-danger-zone .mpa-section-header {
+    background: #fee2e2;
+    border-bottom-color: #fecaca;
+}
+
+.mpa-danger-zone .mpa-section-title {
+    color: #dc2626;
+}
+
+.mpa-danger-zone .button-danger {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.mpa-danger-zone .button-danger:hover {
+    background: #b91c1c;
+}
+
+/* Botões primários */
+.mpa-primary-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mpa-primary-btn:hover {
+    background: #2563eb;
+}
+
+.mpa-secondary-btn {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mpa-secondary-btn:hover {
+    background: #4b5563;
+}
+
+/* Notificações */
+.mpa-notice {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mpa-notice.success {
+    background: #dcfce7;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+}
+
+.mpa-notice.error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+}
+
+.mpa-notice.info {
+    background: #dbeafe;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+}
+
+/* Formulários */
+.mpa-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.mpa-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+    flex: 1;
+}
+
+.mpa-form-group label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mpa-form-input {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+.mpa-form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Grid responsivo para formulário de adicionar menu */
+.mpa-form-grid {
+    display: grid;
+    grid-template-columns: 2fr 3fr 2fr 1fr;
+    gap: 20px;
+    align-items: end;
+}
+
+@media (max-width: 960px) {
+    .mpa-form-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .mpa-form-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+}
+
+/* Responsividade */
+@media (max-width: 1200px) {
+    .mpa-menu-settings {
+        margin-left: 160px;
+        max-width: calc(100vw - 180px);
+    }
+}
+
+@media (max-width: 960px) {
+    .mpa-menu-settings {
+        margin-left: 36px;
+        max-width: calc(100vw - 56px);
+        padding: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .mpa-menu-settings {
+        padding: 10px;
+        margin-left: 0;
+        max-width: 100vw;
+    }
+
+    .mpa-export-import-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mpa-menu-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .mpa-role-selector {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .mpa-menu-table {
+        overflow-x: auto;
+    }
+
+    .mpa-actions-group {
+        flex-wrap: wrap;
+        min-width: auto;
+        gap: 4px;
+    }
+
+    .mpa-icon-btn {
+        width: 36px;
+        height: 36px;
+        margin: 0 1px;
+    }
+
+    .mpa-inline-input {
+        min-width: 100px;
+        max-width: 120px;
+    }
+
+    .mpa-inline-select {
+        min-width: 120px;
+        max-width: 140px;
+    }
+
+    .mpa-section-title {
+        font-size: 16px;
+        white-space: normal;
+        word-break: break-word;
+    }
+}
+
+/* Estados de loading */
+.mpa-loading {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.mpa-loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f4f6;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Melhorias específicas para elementos da tabela */
+.mpa-menu-table form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    position: relative;
+    z-index: 1;
+}
+
+.mpa-menu-table select {
+    position: relative;
+    z-index: 10;
+}
+
+.mpa-menu-table select:focus {
+    z-index: 100;
+}
+
+/* Garante que os dropdowns não sejam cortados */
+.mpa-menu-table tbody tr:last-child select {
+    position: relative;
+}
+
+.mpa-menu-table tbody tr:nth-last-child(-n+3) select {
+    position: relative;
+}
+
+/* Espaçamento específico para formulários na tabela */
+.mpa-menu-table .mpa-actions-group form {
+    display: inline-flex;
+    margin: 0;
+}
+
+/* Melhora a área clicável dos botões */
+.mpa-icon-btn {
+    min-width: 40px;
+    min-height: 40px;
+}
+
+/* Container de ações responsivo */
+.mpa-actions-group {
+    position: relative;
+    overflow: visible;
+}
+
+/* Ajuste para campos de nome na tabela */
+.mpa-menu-table td:nth-child(2) .mpa-menu-icon {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.mpa-menu-table td:nth-child(2) input {
+    flex: 1;
+    min-width: 120px;
+}
+
+/* Drag handle */
+.mpa-drag-handle {
+    color: #9ca3af;
+    cursor: move;
+    font-size: 18px;
+    padding: 4px;
+}
+
+.mpa-drag-handle:hover {
+    color: #6b7280;
+}
+
+/* Separadores visuais */
+.mpa-separator {
+    background: repeating-linear-gradient(
+        45deg,
+        #f3f4f6,
+        #f3f4f6 10px,
+        #e5e7eb 10px,
+        #e5e7eb 20px
+    );
+    height: 2px;
+    margin: 10px 0;
+    border-radius: 1px;
+}
+
+/* Upload de arquivo customizado */
+.mpa-file-upload {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    background: #f8fafc;
+    transition: all 0.2s;
+}
+
+.mpa-file-upload:hover {
+    border-color: #94a3b8;
+    background: #f1f5f9;
+}
+
+.mpa-file-upload input[type="file"] {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.mpa-file-upload-text {
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Tooltips */
+.mpa-tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.mpa-tooltip::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s;
+    z-index: 1000;
+}
+
+.mpa-tooltip:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-4px);
+}
+
+/* ========================================
+   ESTILOS PARA TODAS AS OUTRAS TABELAS
+   ======================================== */
+
+/* Aplicar estilo consistente a todas as tabelas da página (exceto a principal) */
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) {
+    border: none;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: white;
+    margin-top: 20px;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Cabeçalhos das tabelas */
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) thead th {
+    background: #f8fafc;
+    color: #374151;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px;
+    border-bottom: 2px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    text-align: left;
+}
+
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) thead th:last-child {
+    border-right: none;
+}
+
+/* Linhas das tabelas */
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) tbody tr {
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s ease;
+}
+
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) tbody tr:last-child {
+    border-bottom: none;
+}
+
+/* Células das tabelas */
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) tbody td {
+    padding: 16px;
+    vertical-align: middle;
+    border-right: 1px solid #f3f4f6;
+    color: #374151;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) tbody td:last-child {
+    border-right: none;
+}
+
+/* Títulos de seções */
+.mpa-menu-settings h2 {
+    color: #1f2937;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 40px 0 20px 0;
+    padding: 0;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mpa-menu-settings h3 {
+    color: #374151;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 30px 0 15px 0;
+    padding: 12px 16px;
+    background: #f3f4f6;
+    border-radius: 6px;
+    border-left: 4px solid #3b82f6;
+}
+
+.mpa-menu-settings h3 small {
+    font-weight: 400;
+    color: #6b7280;
+    font-size: 13px;
+    margin-left: 8px;
+}
+
+/* Formulários dentro das tabelas */
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) form {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) .regular-text {
+    padding: 6px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.4;
+    min-width: 120px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) .regular-text:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px #3b82f6;
+    outline: none;
+}
+
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) .button {
+    padding: 6px 12px;
+    font-size: 12px;
+    height: auto;
+    line-height: 1.4;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) .button:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+    color: #1f2937;
+}
+
+.mpa-menu-settings table.widefat .button-primary {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+}
+
+.mpa-menu-settings table.widefat .button-primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+/* Ações com múltiplos formulários */
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) td[style*="display:flex"] {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Mensagens vazias */
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) td[colspan] {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    padding: 24px;
+    background: #f9fafb;
+}
+
+/* Estilos específicos para slugs nas outras tabelas */
+.mpa-menu-settings table.widefat:not(.mpa-menu-table) td:first-child {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    color: #059669;
+    background: #f0fdf4;
+    border-radius: 4px;
+    max-width: 200px;
+    word-break: break-all;
+}
+
+/* Responsividade para as outras tabelas */
+@media (max-width: 782px) {
+    .mpa-menu-settings table.widefat:not(.mpa-menu-table):not(.mpa-menu-table) {
+        font-size: 13px;
+    }
+
+    .mpa-menu-settings table.widefat:not(.mpa-menu-table) th,
+    .mpa-menu-settings table.widefat:not(.mpa-menu-table) td {
+        padding: 12px 8px;
+    }
+
+    .mpa-menu-settings table.widefat:not(.mpa-menu-table) form {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    .mpa-menu-settings table.widefat:not(.mpa-menu-table) .regular-text {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .mpa-menu-settings h2 {
+        font-size: 18px;
+    }
+
+    .mpa-menu-settings h3 {
+        font-size: 15px;
+        padding: 10px 12px;
+    }
+}
+
+/* ========================================
+   SEÇÕES ESPECIAIS (Backup, Zona de Perigo)
+   ======================================== */
+
+/* Formulários de seções especiais */
+.mpa-menu-settings .mpa-export-card,
+.mpa-menu-settings .mpa-import-card,
+.mpa-menu-settings .mpa-danger-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin: 20px 0;
+    border-left: 4px solid #3b82f6;
+}
+
+.mpa-menu-settings .mpa-danger-card {
+    border-left-color: #ef4444;
+    background: #fef2f2;
+}
+
+.mpa-menu-settings .mpa-export-card h3,
+.mpa-menu-settings .mpa-import-card h3,
+.mpa-menu-settings .mpa-danger-card h3 {
+    margin: 0 0 15px 0;
+    padding: 0;
+    background: none;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.mpa-menu-settings .mpa-danger-card h3 {
+    color: #dc2626;
+}
+
+/* Botões especiais */
+.mpa-menu-settings .mpa-danger-btn {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.mpa-menu-settings .mpa-danger-btn:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* File upload styling */
+.mpa-menu-settings .mpa-file-upload {
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    background: #f9fafb;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.mpa-menu-settings .mpa-file-upload:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.mpa-menu-settings .mpa-file-upload.dragover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+/* Form hidden */
+#mpa_order_form {
+    display: none !important;
+}

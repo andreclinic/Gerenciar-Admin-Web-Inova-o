@@ -29,8 +29,38 @@ function mpa_update_role_settings(string $role, array $settings): void
  */
 add_action('admin_init', function () {
 
-    $role_key = isset($_POST['mpa_role']) ? sanitize_key($_POST['mpa_role']) : '_global';
+    // Determinar role corretamente baseado no contexto
+    $role_key = '_global';
+    if (isset($_POST['mpa_role']) && $_POST['mpa_role']) {
+        $role_key = sanitize_key($_POST['mpa_role']);
+    } elseif (isset($_GET['role']) && $_GET['role']) {
+        $role_key = sanitize_key($_GET['role']);
+    }
     $role_key = $role_key ?: '_global';
+
+    // Atualizar ÍCONE do menu
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mpa_update_icon_submit'])) {
+        if (!current_user_can('manage_options') || !check_admin_referer('mpa_update_icon'))
+            wp_die('Permissão negada ou nonce inválido');
+
+        $menu_slug = sanitize_text_field($_POST['mpa_menu_slug'] ?? '');
+        $novo_icone = sanitize_text_field($_POST['mpa_menu_icon'] ?? '');
+
+        if ($menu_slug && $novo_icone) {
+            $cfg = mpa_get_role_settings($role_key);
+            $cfg['icons'] = $cfg['icons'] ?? [];
+            $cfg['icons'][$menu_slug] = $novo_icone;
+            mpa_update_role_settings($role_key, $cfg);
+
+            // Adicionar mensagem de sucesso
+            add_action('admin_notices', function() {
+                echo '<div class="notice notice-success is-dismissible"><p>Ícone atualizado com sucesso!</p></div>';
+            });
+
+            wp_redirect(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&icone_atualizado=1'));
+            exit;
+        }
+    }
 
     // Renomear SUBMENU
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mpa_rename_submenu_submit'])) {
@@ -480,6 +510,7 @@ if (!function_exists('mpa_render_settings_page')) {
 
         // Mensagens
         foreach ([
+            'icone_atualizado' => 'Ícone do menu atualizado com sucesso!',
             'removido' => 'Menu removido com sucesso!',
             'subremovido' => 'Submenu removido com sucesso!',
             'restaurado' => 'Menu restaurado com sucesso!',
@@ -534,126 +565,199 @@ if (!function_exists('mpa_render_settings_page')) {
         }
 
         ?>
-        <div class="wrap">
-            <h1>Gerenciar Menu Webi</h1>
+        <div class="wrap mpa-menu-settings">
+            <div class="mpa-menu-header">
+                <h1 class="mpa-menu-title">
+                    <span class="dashicons dashicons-menu-alt2" style="font-size: 28px; margin-right: 8px;"></span>
+                    Gerenciar Menu Webi
+                </h1>
+            </div>
 
             <!-- Seletor de role -->
-            <form method="get" style="margin: 10px 0 20px; display:flex; gap:8px; align-items:center;">
-                <input type="hidden" name="page" value="mpa-menu-roles">
-                <label for="mpa_role_sel"><strong>Perfil (role):</strong></label>
-                <select id="mpa_role_sel" name="role">
-                    <option value="_global" <?php selected($role_current, '_global'); ?>>Global (padrão)</option>
-                    <?php foreach ($roles as $slug => $data): ?>
-                        <option value="<?php echo esc_attr($slug); ?>" <?php selected($role_current, $slug); ?>>
-                            <?php echo esc_html($data['name']); ?> (<?php echo esc_html($slug); ?>)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <button class="button">Trocar</button>
-                <span style="opacity:.7;">— editando regras para:
-                    <strong><?php echo esc_html($role_current === '_global' ? 'Global' : $roles[$role_current]['name'] . " ({$role_current})"); ?></strong></span>
-            </form>
+            <div class="mpa-role-selector">
+                <form method="get" style="display:flex; gap:10px; align-items:center; width: 100%;">
+                    <input type="hidden" name="page" value="mpa-menu-roles">
+                    <span class="dashicons dashicons-groups" style="font-size: 20px;"></span>
+                    <label for="mpa_role_sel"><strong>Perfil (role):</strong></label>
+                    <select id="mpa_role_sel" name="role">
+                        <option value="_global" <?php selected($role_current, '_global'); ?>>🌐 Global (padrão)</option>
+                        <?php foreach ($roles as $slug => $data): ?>
+                            <option value="<?php echo esc_attr($slug); ?>" <?php selected($role_current, $slug); ?>>
+                                👤 <?php echo esc_html($data['name']); ?> (<?php echo esc_html($slug); ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button class="button-primary mpa-primary-btn">
+                        <span class="dashicons dashicons-update"></span>
+                        Trocar
+                    </button>
+                </form>
+                <div class="mpa-notice info" style="margin: 10px 0 0 0; padding: 8px 12px;">
+                    <span class="dashicons dashicons-info"></span>
+                    Editando configurações para: <strong><?php echo esc_html($role_current === '_global' ? 'Global' : $roles[$role_current]['name'] . " ({$role_current})"); ?></strong>
+                </div>
+            </div>
 
             <!-- Menus Principais (PRÉVIA) -->
-            <h2>Menus Principais (prévia de <?php echo esc_html($role_current); ?>)</h2>
-            <table class="widefat fixed striped">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Slug</th>
-                        <th>Ícone</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="mpa-menus">
-                    <?php foreach ($preview_menu as $item):
-                        $nome_atual = $item[0];
-                        $slug = $item[2];
-                        $icone = $item[6] ?? '';
-                        ?>
-                        <tr data-slug="<?php echo esc_attr($slug); ?>">
-                            <td><?php echo esc_html($nome_atual); ?></td>
-                            <td><?php echo esc_html($slug); ?></td>
-                            <td><span class="dashicons <?php echo esc_attr($icone); ?>"></span></td>
-                            <td style="display:flex; gap:8px; flex-wrap:wrap;">
-                                <!-- Renomear MENU principal (por role) -->
-                                <form method="post" style="display:inline-flex; gap:6px;">
-                                    <?php wp_nonce_field('mpa_rename_menu'); ?>
-                                    <input type="hidden" name="mpa_role" value="<?php echo esc_attr($role_current); ?>">
-                                    <input type="hidden" name="mpa_menu_slug" value="<?php echo esc_attr($slug); ?>">
-                                    <input type="text" name="mpa_new_name" placeholder="Novo nome" class="regular-text">
-                                    <button type="submit" name="mpa_rename_menu_submit" class="button">Renomear</button>
-                                </form>
+            <div class="mpa-section">
+                <div class="mpa-section-header">
+                    <h2 class="mpa-section-title">
+                        <span class="dashicons dashicons-menu"></span>
+                        Menus Principais (prévia de <?php echo esc_html($role_current); ?>)
+                    </h2>
+                </div>
+                <div class="mpa-section-content">
+                    <div class="mpa-menu-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 20px;"></th>
+                                    <th>Nome</th>
+                                    <th>Slug</th>
+                                    <th>Ícone</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mpa-menus">
+                                <?php foreach ($preview_menu as $item):
+                                    $nome_atual = $item[0];
+                                    $slug = $item[2];
+                                    $icone = $item[6] ?? '';
+                                    ?>
+                                    <tr data-slug="<?php echo esc_attr($slug); ?>">
+                                        <td><span class="mpa-drag-handle dashicons dashicons-menu" title="Arrastar para reordenar"></span></td>
+                                        <td>
+                                            <div class="mpa-menu-icon">
+                                                <span class="dashicons <?php echo esc_attr($icone); ?>"></span>
+                                                <?php echo esc_html($nome_atual); ?>
+                                            </div>
+                                        </td>
+                                        <td><code><?php echo esc_html($slug); ?></code></td>
+                                        <td>
+                                            <form method="post" class="mpa-icon-form">
+                                                <?php wp_nonce_field('mpa_update_icon'); ?>
+                                                <input type="hidden" name="mpa_role" value="<?php echo esc_attr($role_current); ?>">
+                                                <input type="hidden" name="mpa_menu_slug" value="<?php echo esc_attr($slug); ?>">
+                                                <input type="text" name="mpa_menu_icon" value="<?php echo esc_attr($icone); ?>" placeholder="dashicons-...">
+                                                <button type="submit" name="mpa_update_icon_submit" class="mpa-save-icon-btn" title="Salvar ícone">
+                                                    <span class="dashicons dashicons-yes-alt"></span>
+                                                </button>
+                                            </form>
+                                        </td>
+                                        <td>
+                                            <div class="mpa-actions-group">
+                                                <!-- Renomear MENU principal (por role) -->
+                                                <form method="post" style="display:inline-flex; gap:6px; align-items:center;">
+                                                    <?php wp_nonce_field('mpa_rename_menu'); ?>
+                                                    <input type="hidden" name="mpa_role" value="<?php echo esc_attr($role_current); ?>">
+                                                    <input type="hidden" name="mpa_menu_slug" value="<?php echo esc_attr($slug); ?>">
+                                                    <input type="text" name="mpa_new_name" placeholder="Novo nome" class="mpa-inline-input" style="width: 140px;">
+                                                    <button type="submit" name="mpa_rename_menu_submit" class="mpa-icon-btn rename" title="Renomear menu">
+                                                        <span class="dashicons dashicons-edit"></span>
+                                                    </button>
+                                                </form>
 
-                                <!-- Remover MENU -->
-                                <form method="post" onsubmit="return confirm('Tem certeza que deseja remover este menu?');">
-                                    <?php wp_nonce_field('mpa_remove_menu'); ?>
-                                    <input type="hidden" name="mpa_role" value="<?php echo esc_attr($role_current); ?>">
-                                    <input type="hidden" name="mpa_menu_slug_remove" value="<?php echo esc_attr($slug); ?>">
-                                    <button type="submit" name="mpa_remove_menu_submit"
-                                        class="button button-danger">Remover</button>
-                                </form>
+                                                <!-- Remover MENU -->
+                                                <form method="post" onsubmit="return confirm('Tem certeza que deseja remover este menu?');" style="display: inline;">
+                                                    <?php wp_nonce_field('mpa_remove_menu'); ?>
+                                                    <input type="hidden" name="mpa_role" value="<?php echo esc_attr($role_current); ?>">
+                                                    <input type="hidden" name="mpa_menu_slug_remove" value="<?php echo esc_attr($slug); ?>">
+                                                    <button type="submit" name="mpa_remove_menu_submit" class="mpa-icon-btn remove" title="Remover menu">
+                                                        <span class="dashicons dashicons-trash"></span>
+                                                    </button>
+                                                </form>
 
-                                <!-- Tornar Submenu -->
-                                <form method="post" style="display:inline-flex; gap:6px;">
-                                    <?php wp_nonce_field('mpa_demote_menu'); ?>
-                                    <input type="hidden" name="mpa_role" value="<?php echo esc_attr($role_current); ?>">
-                                    <input type="hidden" name="mpa_demote_menu_slug" value="<?php echo esc_attr($slug); ?>">
-                                    <select name="mpa_new_parent" required>
-                                        <option value="">-- Escolher Menu Pai --</option>
-                                        <?php foreach ($preview_menu as $pai): ?>
-                                            <option value="<?php echo esc_attr($pai[2]); ?>"><?php echo esc_html($pai[0]); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <button type="submit" name="mpa_demote_menu_submit" class="button">Tornar Submenu</button>
-                                </form>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                                                <!-- Tornar Submenu -->
+                                                <form method="post" style="display:inline-flex; gap:6px; align-items:center;">
+                                                    <?php wp_nonce_field('mpa_demote_menu'); ?>
+                                                    <input type="hidden" name="mpa_role" value="<?php echo esc_attr($role_current); ?>">
+                                                    <input type="hidden" name="mpa_demote_menu_slug" value="<?php echo esc_attr($slug); ?>">
+                                                    <select name="mpa_new_parent" required class="mpa-inline-select" style="width: 140px;">
+                                                        <option value="">-- Escolher Menu Pai --</option>
+                                                        <?php foreach ($preview_menu as $pai): ?>
+                                                            <option value="<?php echo esc_attr($pai[2]); ?>"><?php echo esc_html($pai[0]); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                    <button type="submit" name="mpa_demote_menu_submit" class="mpa-icon-btn submenu" title="Tornar submenu">
+                                                        <span class="dashicons dashicons-arrow-down-alt"></span>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
             <!-- [CUSTOM] Adicionar Menu Personalizado -->
-            <h2 style="margin-top:40px;">Adicionar Menu Personalizado</h2>
-            <form method="post" style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
-                <?php wp_nonce_field('mpa_custom_menu'); ?>
-                <input type="hidden" name="mpa_role" value="<?php echo esc_attr($role_current); ?>">
-                <p>
-                    <label><strong>Nome</strong><br>
-                        <input type="text" name="mpa_custom_title" class="regular-text" required
-                            placeholder="Ex.: Suporte Webi">
-                    </label>
-                </p>
-                <p style="min-width:380px;">
-                    <label><strong>URL</strong><br>
-                        <input type="text" name="mpa_custom_url" class="regular-text" required
-                            placeholder="/wp-admin/admin.php?page=...">
-                        <br><small>Interna: <code>/wp-admin/...</code> ou <code>admin.php?page=...</code> — Externa:
-                            <code>https://seusite.com</code> (abrirá em nova aba)</small>
-                    </label>
-                </p>
-                <p>
-                    <label><strong>Ícone (Dashicons)</strong><br>
-                        <input type="text" name="mpa_custom_icon" class="regular-text" placeholder="Ex.: dashicons-admin-links">
-                    </label>
-                </p>
-                <p>
-                    <button type="submit" name="mpa_add_custom_menu_submit" class="button button-primary">Adicionar</button>
-                </p>
-            </form>
+            <div class="mpa-section">
+                <div class="mpa-section-header">
+                    <h2 class="mpa-section-title">
+                        <span class="dashicons dashicons-plus"></span>
+                        Adicionar Menu Personalizado
+                    </h2>
+                </div>
+                <div class="mpa-section-content">
+                    <form method="post" class="mpa-form">
+                        <?php wp_nonce_field('mpa_custom_menu'); ?>
+                        <input type="hidden" name="mpa_role" value="<?php echo esc_attr($role_current); ?>">
+
+                        <div class="mpa-form-grid">
+                            <div class="mpa-form-group">
+                                <label for="mpa_custom_title"><strong>Nome do Menu</strong></label>
+                                <input type="text" id="mpa_custom_title" name="mpa_custom_title" class="mpa-form-input" required
+                                    placeholder="Ex.: Suporte Webi">
+                            </div>
+
+                            <div class="mpa-form-group">
+                                <label for="mpa_custom_url"><strong>URL</strong></label>
+                                <input type="text" id="mpa_custom_url" name="mpa_custom_url" class="mpa-form-input" required
+                                    placeholder="admin.php?page=... ou https://exemplo.com">
+                                <small style="color: #6b7280; font-size: 11px; margin-top: 4px; display: block;">
+                                    Interna: <code>admin.php?page=...</code> | Externa: <code>https://...</code>
+                                </small>
+                            </div>
+
+                            <div class="mpa-form-group">
+                                <label for="mpa_custom_icon"><strong>Ícone</strong></label>
+                                <input type="text" id="mpa_custom_icon" name="mpa_custom_icon" class="mpa-form-input"
+                                    placeholder="dashicons-admin-links">
+                            </div>
+
+                            <div class="mpa-form-group">
+                                <button type="submit" name="mpa_add_custom_menu_submit" class="mpa-primary-btn" style="width: 100%; white-space: nowrap;">
+                                    <span class="dashicons dashicons-plus"></span>
+                                    Adicionar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
             <!-- [CUSTOM] Lista de Menus Personalizados (editar/excluir) -->
-            <h2 style="margin-top:20px;">Menus Personalizados (<?php echo esc_html($role_current); ?>)</h2>
-            <table class="widefat fixed striped">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>URL</th>
-                        <th>Ícone</th>
-                        <th>Slug</th>
-                        <th style="width:240px;">Ações</th>
-                    </tr>
-                </thead>
+            <div class="mpa-section">
+                <div class="mpa-section-header">
+                    <h2 class="mpa-section-title">
+                        <span class="dashicons dashicons-admin-links"></span>
+                        Menus Personalizados (<?php echo esc_html($role_current); ?>)
+                    </h2>
+                </div>
+                <div class="mpa-section-content">
+                    <div class="mpa-menu-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>URL</th>
+                                    <th>Slug</th>
+                                    <th>Ícone</th>
+                                    <th style="width:160px;">Ações</th>
+                                </tr>
+                            </thead>
                 <tbody>
                     <?php if (!empty($cfg_role['custom_menus'])):
                         foreach ($cfg_role['custom_menus'] as $cm):
@@ -665,24 +769,30 @@ if (!function_exists('mpa_render_settings_page')) {
                             ?>
                             <tr>
                                 <td>
-                                    <form method="post" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                                    <form method="post" style="display:flex; gap:8px; align-items:center;">
                                         <?php wp_nonce_field('mpa_custom_menu'); ?>
                                         <input type="hidden" name="mpa_role" value="<?php echo esc_attr($role_current); ?>">
                                         <input type="hidden" name="mpa_custom_id" value="<?php echo esc_attr($id); ?>">
-                                        <input type="text" name="mpa_custom_title" value="<?php echo esc_attr($name); ?>"
-                                            class="regular-text">
+                                        <div class="mpa-menu-icon">
+                                            <span class="dashicons <?php echo esc_attr($icon); ?>"></span>
+                                            <input type="text" name="mpa_custom_title" value="<?php echo esc_attr($name); ?>"
+                                                class="mpa-inline-input" style="margin-left: 8px; width: 180px;">
+                                        </div>
                                 </td>
                                 <td>
-                                    <input type="text" name="mpa_custom_url" value="<?php echo esc_attr($url); ?>" class="regular-text"
-                                        style="min-width:340px;">
+                                    <input type="text" name="mpa_custom_url" value="<?php echo esc_attr($url); ?>" class="mpa-inline-input"
+                                        style="width: 300px;">
                                 </td>
+                                <td><code style="font-size: 11px;"><?php echo esc_html($slug); ?></code></td>
                                 <td>
                                     <input type="text" name="mpa_custom_icon" value="<?php echo esc_attr($icon); ?>"
-                                        class="regular-text" placeholder="dashicons-...">
+                                        class="mpa-inline-input" placeholder="dashicons-..." style="width: 100px;">
                                 </td>
-                                <td><code><?php echo esc_html($slug); ?></code></td>
-                                <td style="display:flex; gap:8px;">
-                                    <button type="submit" name="mpa_edit_custom_menu_submit" class="button">Salvar</button>
+                                <td>
+                                    <div class="mpa-actions-group">
+                                        <button type="submit" name="mpa_edit_custom_menu_submit" class="mpa-icon-btn rename" title="Salvar alterações">
+                                            <span class="dashicons dashicons-yes"></span>
+                                        </button>
                                     </form>
 
                                     <form method="post" onsubmit="return confirm('Excluir este menu personalizado?');"
@@ -690,18 +800,23 @@ if (!function_exists('mpa_render_settings_page')) {
                                         <?php wp_nonce_field('mpa_custom_menu'); ?>
                                         <input type="hidden" name="mpa_role" value="<?php echo esc_attr($role_current); ?>">
                                         <input type="hidden" name="mpa_custom_id" value="<?php echo esc_attr($id); ?>">
-                                        <button type="submit" name="mpa_delete_custom_menu_submit"
-                                            class="button button-danger">Excluir</button>
+                                        <button type="submit" name="mpa_delete_custom_menu_submit" class="mpa-icon-btn remove" title="Excluir menu">
+                                            <span class="dashicons dashicons-trash"></span>
+                                        </button>
                                     </form>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; else: ?>
                         <tr>
-                            <td colspan="5">Nenhum menu personalizado para este perfil.</td>
+                            <td colspan="5" style="text-align: center; color: #6b7280; font-style: italic;">Nenhum menu personalizado para este perfil.</td>
                         </tr>
                     <?php endif; ?>
-                </tbody>
-            </table>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
 
 
@@ -924,89 +1039,137 @@ if (!function_exists('mpa_render_settings_page')) {
             </form>
 
             <!-- Seção de Export/Import -->
-            <hr style="margin: 30px 0;">
-            <h2>🔄 Backup e Migração de Configurações</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
-                <!-- Exportar Configurações -->
-                <div style="padding: 15px; background: #f0f8ff; border: 1px solid #b3d9ff; border-radius: 6px; border-left: 4px solid #0073aa;">
-                    <h3 style="color: #0073aa; margin: 0 0 15px;"><strong>📤 Exportar Configurações</strong></h3>
-                    <p style="margin: 5px 0 15px; font-size: 14px;">
-                        Faça backup das suas configurações de menu em formato JSON para usar como backup ou migrar para outra instalação.
-                    </p>
-
-                    <form method="post" style="margin-bottom: 10px;">
-                        <?php wp_nonce_field('mpa_export_config'); ?>
-                        <input type="hidden" name="mpa_role" value="<?php echo esc_attr($role_current); ?>">
-
-                        <div style="margin-bottom: 10px;">
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Tipo de Exportação:</label>
-                            <label style="display: block; margin-bottom: 5px;">
-                                <input type="radio" name="mpa_export_type" value="current" checked>
-                                Apenas perfil atual (<?php echo esc_html($role_current === '_global' ? 'Global' : $roles[$role_current]['name']); ?>)
-                            </label>
-                            <label style="display: block; margin-bottom: 10px;">
-                                <input type="radio" name="mpa_export_type" value="all">
-                                Todas as configurações (todos os perfis)
-                            </label>
-                        </div>
-
-                        <button type="submit" name="mpa_export_config_submit" class="button button-primary">
-                            💾 Exportar Configurações
-                        </button>
-                    </form>
+            <div class="mpa-section">
+                <div class="mpa-section-header">
+                    <h2 class="mpa-section-title">
+                        <span class="dashicons dashicons-backup"></span>
+                        Backup e Migração de Configurações
+                    </h2>
                 </div>
+                <div class="mpa-section-content">
+                    <div class="mpa-export-import-grid">
+                        <!-- Exportar Configurações -->
+                        <div class="mpa-export-card">
+                            <h4>
+                                <span class="dashicons dashicons-download" style="color: #0073aa;"></span>
+                                Exportar Configurações
+                            </h4>
+                            <p style="margin-bottom: 20px; color: #64748b;">
+                                Faça backup das suas configurações de menu em formato JSON para usar como backup ou migrar para outra instalação.
+                            </p>
 
-                <!-- Importar Configurações -->
-                <div style="padding: 15px; background: #f8fff0; border: 1px solid #c8e6c9; border-radius: 6px; border-left: 4px solid #4caf50;">
-                    <h3 style="color: #4caf50; margin: 0 0 15px;"><strong>📥 Importar Configurações</strong></h3>
-                    <p style="margin: 5px 0 15px; font-size: 14px;">
-                        Restaure configurações de um arquivo de backup ou migre configurações de outra instalação.
-                    </p>
+                            <form method="post">
+                                <?php wp_nonce_field('mpa_export_config'); ?>
+                                <input type="hidden" name="mpa_role" value="<?php echo esc_attr($role_current); ?>">
 
-                    <form method="post" enctype="multipart/form-data">
-                        <?php wp_nonce_field('mpa_import_config'); ?>
+                                <div class="mpa-export-options">
+                                    <div class="mpa-radio-option">
+                                        <input type="radio" id="export_current" name="mpa_export_type" value="current" checked>
+                                        <label for="export_current">
+                                            Apenas perfil atual (<?php echo esc_html($role_current === '_global' ? 'Global' : $roles[$role_current]['name']); ?>)
+                                        </label>
+                                    </div>
+                                    <div class="mpa-radio-option">
+                                        <input type="radio" id="export_all" name="mpa_export_type" value="all">
+                                        <label for="export_all">
+                                            Todas as configurações (todos os perfis)
+                                        </label>
+                                    </div>
+                                </div>
 
-                        <div style="margin-bottom: 10px;">
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Arquivo de Configuração (.json):</label>
-                            <input type="file" name="mpa_import_file" accept=".json" required
-                                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                <button type="submit" name="mpa_export_config_submit" class="mpa-primary-btn" style="width: 100%;">
+                                    <span class="dashicons dashicons-download"></span>
+                                    Exportar Configurações
+                                </button>
+                            </form>
                         </div>
 
-                        <div style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Modo de Importação:</label>
-                            <label style="display: block; margin-bottom: 5px;">
-                                <input type="radio" name="mpa_import_mode" value="replace" checked>
-                                <strong>Substituir</strong> - Replace todas as configurações existentes
-                            </label>
-                            <label style="display: block;">
-                                <input type="radio" name="mpa_import_mode" value="merge">
-                                <strong>Mesclar</strong> - Combinar com configurações existentes
-                            </label>
-                        </div>
+                        <!-- Importar Configurações -->
+                        <div class="mpa-import-card">
+                            <h4>
+                                <span class="dashicons dashicons-upload" style="color: #10b981;"></span>
+                                Importar Configurações
+                            </h4>
+                            <p style="margin-bottom: 20px; color: #64748b;">
+                                Restaure configurações de um arquivo de backup ou migre configurações de outra instalação.
+                            </p>
 
-                        <button type="submit" name="mpa_import_config_submit" class="button button-secondary"
-                                onclick="return confirm('⚠️ ATENÇÃO! Esta ação irá modificar suas configurações de menu. Tem certeza que deseja continuar?')">
-                            📂 Importar Configurações
-                        </button>
-                    </form>
+                            <form method="post" enctype="multipart/form-data">
+                                <?php wp_nonce_field('mpa_import_config'); ?>
+
+                                <div class="mpa-form-group" style="margin-bottom: 15px;">
+                                    <label for="mpa_import_file"><strong>Arquivo de Configuração (.json)</strong></label>
+                                    <div class="mpa-file-upload">
+                                        <input type="file" id="mpa_import_file" name="mpa_import_file" accept=".json" required>
+                                        <div class="mpa-file-upload-text">
+                                            <span class="dashicons dashicons-upload"></span>
+                                            Clique para selecionar arquivo
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mpa-import-options">
+                                    <div class="mpa-radio-option">
+                                        <input type="radio" id="import_replace" name="mpa_import_mode" value="replace" checked>
+                                        <label for="import_replace">
+                                            <strong>Substituir</strong> - Substitui todas as configurações existentes
+                                        </label>
+                                    </div>
+                                    <div class="mpa-radio-option">
+                                        <input type="radio" id="import_merge" name="mpa_import_mode" value="merge">
+                                        <label for="import_merge">
+                                            <strong>Mesclar</strong> - Combina com configurações existentes
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <button type="submit" name="mpa_import_config_submit" class="mpa-secondary-btn" style="width: 100%;"
+                                        onclick="return confirm('⚠️ ATENÇÃO! Esta ação irá modificar suas configurações de menu. Tem certeza que deseja continuar?')">
+                                    <span class="dashicons dashicons-upload"></span>
+                                    Importar Configurações
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Botão de Reset -->
-            <hr style="margin: 30px 0;">
-            <div style="margin: 20px 0; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; border-left: 4px solid #dc3545;">
-                <h3 style="color: #dc3545; margin: 0 0 10px;"><strong>⚠️ Zona de Perigo</strong></h3>
-                <p style="margin: 5px 0 15px; font-size: 14px; color: #856404;">
-                    Esta ação irá <strong>DELETAR PERMANENTEMENTE</strong> todas as configurações de menu para o perfil selecionado
-                    <strong>"<?php echo esc_html($role_current === '_global' ? 'Global' : $roles[$role_current]['name'] . " ({$role_current})"); ?>"</strong>.
-                    <br><br>
-                    <strong>Isso inclui:</strong> Menus personalizados, renomeações, ordem personalizada, menus removidos e todas as demais configurações.
-                </p>
-                <button type="button" id="mpa-reset-config" class="button button-large"
-                        data-role="<?php echo esc_attr($role_current); ?>"
-                        style="background: #dc3545; color: white; border-color: #dc3545; font-weight: bold;">
-                    🗑️ Resetar Todas as Configurações
-                </button>
+            <!-- Zona de Perigo -->
+            <div class="mpa-section mpa-danger-zone">
+                <div class="mpa-section-header">
+                    <h2 class="mpa-section-title">
+                        <span class="dashicons dashicons-warning"></span>
+                        Zona de Perigo
+                    </h2>
+                </div>
+                <div class="mpa-section-content">
+                    <div class="mpa-notice error" style="margin-bottom: 20px;">
+                        <span class="dashicons dashicons-warning"></span>
+                        <div>
+                            Esta ação irá <strong>DELETAR PERMANENTEMENTE</strong> todas as configurações de menu para o perfil selecionado
+                            <strong>"<?php echo esc_html($role_current === '_global' ? 'Global' : $roles[$role_current]['name'] . " ({$role_current})"); ?>"</strong>.
+                        </div>
+                    </div>
+
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
+                        <h4 style="color: #dc2626; margin: 0 0 10px;">O que será removido:</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #7f1d1d;">
+                            <li>Todos os menus personalizados criados</li>
+                            <li>Renomeações de menus e submenus</li>
+                            <li>Ordem personalizada dos menus</li>
+                            <li>Menus e submenus removidos/ocultados</li>
+                            <li>Transformações de menus (promover/demover)</li>
+                            <li>Todas as demais configurações personalizadas</li>
+                        </ul>
+                    </div>
+
+                    <button type="button" id="mpa-reset-config" class="button-danger mpa-primary-btn"
+                            data-role="<?php echo esc_attr($role_current); ?>"
+                            style="background: #dc2626; border-color: #dc2626;">
+                        <span class="dashicons dashicons-trash"></span>
+                        Resetar Todas as Configurações
+                    </button>
+                </div>
             </div>
 
             <!-- SortableJS -->
