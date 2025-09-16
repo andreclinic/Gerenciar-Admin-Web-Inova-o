@@ -16,21 +16,28 @@ function mpa_admin_assets($hook)
     );
 
     // Carregar CSS e JS específicos para páginas de gerenciamento de menus
-    if (strpos($hook, 'mpa-menu-roles') !== false || strpos($hook, 'mpa-main') !== false || isset($_GET['page']) && $_GET['page'] === 'mpa-menu-roles') {
+    if (isset($_GET['page']) && $_GET['page'] === 'mpa-menu-roles') {
         wp_enqueue_style(
             'mpa-menu-settings-css',
             ADMIN_BAR_MENU_URL . 'assets/css/mpa-menu-settings.css',
             ['mpa-admin-css'],
-            '1.0.1' // Adicionar versão para forçar atualização do cache
+            '1.0.1'
         );
 
         wp_enqueue_script(
             'mpa-menu-settings-js',
             ADMIN_BAR_MENU_URL . 'assets/js/mpa-menu-settings.js',
             ['jquery'],
-            '1.0.1',
+            '5.0.1',
             true
         );
+
+        // Localizar script para scroll restoration
+        wp_localize_script('mpa-menu-settings-js', 'mpaMenuSettings', [
+            'ajaxurl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('mpa_menu_settings'),
+            'currentPage' => admin_url('admin.php?page=mpa-menu-roles')
+        ]);
     }
 
     wp_enqueue_script(
@@ -41,3 +48,10 @@ function mpa_admin_assets($hook)
         true
     );
 }
+
+// CSS para targets com scroll-margin (evitar header fixo)
+add_action('admin_head', function(){
+    if (isset($_GET['page']) && $_GET['page'] === 'mpa-menu-roles') {
+        echo '<style>:target{scroll-margin-top:72px}</style>';
+    }
+});
