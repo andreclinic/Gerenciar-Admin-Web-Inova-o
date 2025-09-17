@@ -8,17 +8,41 @@
     box-sizing: border-box;
 }
 
-body.login {
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
+/* Anular completamente UIPress */
+body.uip-login,
+body.uip-login::before,
+body.uip-login::after {
+    background: none !important;
+    content: none !important;
+    width: auto !important;
+    height: auto !important;
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    display: none !important;
 }
 
-/* Container principal - login-container do modelo */
+body.login,
+body.login.uip-login {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    min-height: 100vh !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 1rem !important;
+    margin: 0 !important;
+}
+
+/* Desativar pseudoelementos que interferem */
+body.login::before,
+body.login::after {
+    display: none !important;
+    content: none !important;
+}
+
+/* Container principal - corrigir centralização */
 #login {
     background: white;
     border-radius: 1rem;
@@ -31,6 +55,10 @@ body.login {
     opacity: 0;
     transform: translateY(20px);
     transition: all 0.6s ease;
+    margin: 0 !important; /* Sobrescrever margin: auto do WordPress */
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
 }
 
 /* Animação de entrada */
@@ -539,11 +567,32 @@ input[type="submit"]:disabled,
     }
 }
 
-/* Responsivo */
-@media (max-width: 480px) {
+/* Responsivo - Mobile */
+@media (max-width: 768px) {
+    body.login {
+        display: grid;
+        place-items: start center; /* Centraliza horizontalmente, mas permite scroll vertical */
+        padding: 2rem 1rem;
+        min-height: 100vh;
+    }
+
     #login {
         padding: 1.5rem;
-        margin: 0.5rem;
+        margin: 0 !important;
+        width: calc(100% - 2rem);
+        max-width: 380px;
+    }
+}
+
+@media (max-width: 480px) {
+    body.login {
+        padding: 1.5rem 0.5rem;
+    }
+
+    #login {
+        padding: 1.5rem;
+        margin: 0 !important;
+        width: calc(100% - 1rem);
     }
 
     .logo {
@@ -568,24 +617,53 @@ input[type="submit"]:disabled,
     display: none !important;
 }
 
+/* Tratamento especial para notices/mensagens do WordPress */
+.login .message,
+.login #login_error {
+    background: rgba(244, 67, 54, 0.1) !important;
+    border: 1px solid rgba(244, 67, 54, 0.3) !important;
+    border-radius: 0.75rem !important;
+    padding: 1rem !important;
+    margin: 0 0 1.5rem 0 !important;
+    color: #d32f2f !important;
+    font-size: 0.875rem !important;
+    text-align: center !important;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.login .message {
+    background: rgba(76, 175, 80, 0.1) !important;
+    border-color: rgba(76, 175, 80, 0.3) !important;
+    color: #388e3c !important;
+}
+
+/* Ajustar layout quando há notices */
+body.login:has(.message),
+body.login:has(#login_error) {
+    display: grid;
+    place-items: start center;
+    padding-top: 2rem;
+}
+
+/* Fallback para navegadores sem :has() */
+body.login .login-with-message {
+    display: grid;
+    place-items: start center;
+    padding-top: 2rem;
+}
+
 /* Mostrar notices apenas em formulários de recuperação */
 body.login.login-action-lostpassword .notice,
 body.login.login-action-lostpassword .message,
 body.login.login-action-resetpass .notice,
 body.login.login-action-resetpass .message {
     display: block !important;
-    background: #f0f8ff;
-    border-left: 4px solid #2563eb;
-    margin-bottom: 1.5rem;
-    padding: 0.875rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    color: #374151;
 }
 
-/* Esconder notices apenas na tela de login principal */
-body.login:not(.login-action-lostpassword):not(.login-action-resetpass) .notice,
-body.login:not(.login-action-lostpassword):not(.login-action-resetpass) .message {
+/* Esconder notices apenas na tela de login principal se não forem importantes */
+body.login:not(.login-action-lostpassword):not(.login-action-resetpass) .notice:not(.error):not(.updated),
+body.login:not(.login-action-lostpassword):not(.login-action-resetpass) .update-nag {
     display: none !important;
 }
 

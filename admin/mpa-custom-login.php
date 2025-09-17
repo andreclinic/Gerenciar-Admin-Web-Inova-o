@@ -14,12 +14,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Personalizar a página de login
-add_action('login_enqueue_scripts', 'mpa_custom_login_styles');
-add_filter('login_headerurl', 'mpa_custom_login_logo_url');
-add_filter('login_headertext', 'mpa_custom_login_logo_title');
-add_action('login_head', 'mpa_custom_login_head');
-add_action('login_footer', 'mpa_custom_login_footer');
+// Personalizar a página de login - prioridade alta para sobrepor outros plugins
+add_action('login_enqueue_scripts', 'mpa_custom_login_styles', 99);
+add_filter('login_headerurl', 'mpa_custom_login_logo_url', 99);
+add_filter('login_headertext', 'mpa_custom_login_logo_title', 99);
+add_action('login_head', 'mpa_custom_login_head', 99);
+add_action('login_footer', 'mpa_custom_login_footer', 99);
 
 /**
  * Carrega estilos personalizados para a página de login
@@ -31,14 +31,102 @@ function mpa_custom_login_styles() {
         [],
         '1.0.0'
     );
+
+    // CSS inline para sobrepor outros plugins (Wordfence, UIPress, etc.)
+    wp_add_inline_style('mpa-custom-login', '
+        /* Centralização correta - Grid Layout */
+        body.login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+            min-height: 100vh !important;
+            display: grid !important;
+            place-items: center !important;
+            padding: 1rem !important;
+            margin: 0 !important;
+            overflow-x: hidden !important;
+        }
+
+        #login {
+            background: white !important;
+            border-radius: 1rem !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+            width: 100% !important;
+            max-width: 400px !important;
+            padding: 2rem !important;
+            position: relative !important;
+            border: none !important;
+            margin: 0 !important;
+            left: auto !important;
+            right: auto !important;
+            top: auto !important;
+            transform: none !important;
+        }
+
+        /* Responsivo Mobile */
+        @media (max-width: 768px) {
+            body.login {
+                place-items: start center !important;
+                padding: 2rem 1rem !important;
+            }
+            #login {
+                width: calc(100% - 2rem) !important;
+                max-width: 380px !important;
+            }
+        }
+
+        /* Tratamento de notices */
+        .login .message,
+        .login #login_error {
+            margin: 0 0 1.5rem 0 !important;
+            border-radius: 0.75rem !important;
+            text-align: center !important;
+        }
+
+        /* Ajustar quando há mensagens */
+        body.login:has(.message),
+        body.login:has(#login_error) {
+            place-items: start center !important;
+            padding-top: 2rem !important;
+        }
+
+        /* Desativar completamente UIPress na tela de login */
+        body.uip-login,
+        body.uip-login::before,
+        body.uip-login::after {
+            background: none !important;
+            content: none !important;
+            width: auto !important;
+            height: auto !important;
+            position: static !important;
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            bottom: auto !important;
+        }
+
+        /* Remover classe UIPress e forçar nossa */
+        body.login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        }
+
+        body.login::before,
+        body.login::after {
+            display: none !important;
+            content: none !important;
+        }
+
+        /* Esconder elementos de outros plugins */
+        .wfls-captcha-container,
+        .uip-login-form,
+        .wordfence-login-form,
+        .uip-login-panel,
+        .uip-login-content {
+            display: none !important;
+        }
+    ');
     
-    wp_enqueue_script(
-        'mpa-custom-login-js',
-        ADMIN_BAR_MENU_URL . 'assets/js/mpa-custom-login.js',
-        ['jquery'],
-        '1.0.0',
-        true
-    );
+    // JavaScript inline será usado ao invés de arquivo separado
+    wp_enqueue_script('jquery');
 }
 
 /**
@@ -109,18 +197,69 @@ function mpa_custom_login_head() {
 function mpa_custom_login_footer() {
     $logo_url = get_option('mpa_logo_url', 'https://www.webinovacao.com.br/wp-content/uploads/2024/07/logo-web-inovacao-horizontal-escura.png');
     ?>
+    <?php
+    // Preparar variáveis PHP para o JavaScript
+    $js_logo_url = esc_url($logo_url);
+    $js_login_url = wp_login_url();
+    $js_lost_password_url = wp_lostpassword_url();
+    $js_admin_url = admin_url('admin.php?page=mpa-dashboard');
+    ?>
     <script>
         jQuery(document).ready(function($) {
+            // Variáveis definidas no PHP
+            const logoUrl = '<?php echo $js_logo_url; ?>';
+            const loginUrl = '<?php echo $js_login_url; ?>';
+            const lostPasswordUrl = '<?php echo $js_lost_password_url; ?>';
+            const adminUrl = '<?php echo $js_admin_url; ?>';
+
+            // Remover completamente UIPress e outros plugins conflitantes
+            $('body').removeClass('uip-login uip-dark-mode uip-light-mode');
+            $('body').addClass('mpa-login-override');
+
+            // Remover elementos e scripts de outros plugins
+            $('.wfls-captcha-container, .uip-login-form, .wordfence-login-form, .uip-login-panel, .uip-login-content').remove();
+
+            // Forçar remoção de estilos inline do UIPress
+            $('style').each(function() {
+                const styleContent = $(this).html();
+                if (styleContent.includes('uip-login') || styleContent.includes('uip-background')) {
+                    $(this).remove();
+                }
+            });
+
+            // Detectar e ajustar layout para notices/mensagens
+            if ($('.message, #login_error').length > 0) {
+                $('body').addClass('login-with-message');
+            }
+
+            // Monitoramento contínuo para desativar UIPress
+            function disableUIPress() {
+                $('body').removeClass('uip-login uip-dark-mode uip-light-mode');
+                $('.uip-login-panel, .uip-login-content, .uip-login-form').remove();
+
+                // Remover estilos inline do UIPress
+                $('style').each(function() {
+                    const content = $(this).html();
+                    if (content && (content.includes('uip-login') || content.includes('--uip-background'))) {
+                        $(this).remove();
+                    }
+                });
+            }
+
+            // Executar imediatamente e repetir
+            disableUIPress();
+            setInterval(disableUIPress, 100); // Verificar a cada 100ms
+
             // Aguardar um pouco para garantir que os elementos WordPress foram criados
             setTimeout(function() {
                 // Detectar se estamos na tela de login principal (não recuperação de senha)
                 const isMainLogin = $('#loginform').length > 0 && $('#lostpasswordform').length === 0 && $('#resetpassform').length === 0;
-                
+
                 // Se não for tela de login principal, não fazer transformação
                 if (!isMainLogin) {
                     // Apenas remover elementos nativos e aplicar animação
                     $('#nav, #backtoblog').remove();
-                    
+
                     // Adicionar título personalizado baseado na tela
                     let customTitle = '';
                     if ($('#lostpasswordform').length > 0) {
@@ -128,45 +267,45 @@ function mpa_custom_login_footer() {
                     } else if ($('#resetpassform').length > 0) {
                         customTitle = '<h2 class="mpa-welcome-title">Nova Senha</h2>';
                     }
-                    
+
                     if (customTitle) {
                         // Remover h1 nativo do WordPress e adicionar título customizado
                         $('#login h1').after(customTitle).hide();
                     }
-                    
+
                     $('#login').addClass('mpa-animate-in');
                     return;
                 }
-                
+
                 // Pegar referências dos elementos existentes
                 const $loginDiv = $('#login');
                 const $loginForm = $('#loginform');
-                
+
                 // Se não existir, não fazer nada
                 if (!$loginDiv.length || !$loginForm.length) return;
-                
+
                 // Reorganizar completamente a estrutura
                 const originalUserInput = $('#user_login').clone();
                 const originalPassInput = $('#user_pass').clone();
                 const originalRememberMe = $('.forgetmenot').clone();
                 const originalSubmit = $('#wp-submit').clone();
-                
+
                 // Limpar o container #login
                 $loginDiv.empty();
-                
+
                 // Reconstruir HTML seguindo exatamente o modelo
                 const newHTML = `
                     <!-- Logo Section -->
                     <div class="logo-section">
-                        <?php if ($logo_url): ?>
+                        ${logoUrl ? `
                             <div class="logo">
-                                <img src="<?php echo esc_url($logo_url); ?>" alt="Logo" style="max-height: 48px; width: auto;" />
+                                <img src="${logoUrl}" alt="Logo" style="max-height: 48px; width: auto;" />
                             </div>
-                        <?php else: ?>
+                        ` : `
                             <div class="logo">
                                 Analytics <span class="logo-accent">Pro</span>
                             </div>
-                        <?php endif; ?>
+                        `}
                     </div>
 
                     <!-- Login Header -->
@@ -176,7 +315,7 @@ function mpa_custom_login_footer() {
                     </div>
 
                     <!-- Login Form -->
-                    <form id="loginform" name="loginform" method="post" action="<?php echo wp_login_url(); ?>">
+                    <form id="loginform" name="loginform" method="post" action="${loginUrl}">
                         <div class="form-group">
                             <label for="user_login" class="form-label">Usuário ou E-mail</label>
                             <input type="text" name="log" id="user_login" class="form-input" placeholder="Digite seu usuário ou e-mail" required>
@@ -200,14 +339,14 @@ function mpa_custom_login_footer() {
                                 <input type="checkbox" name="rememberme" class="checkbox">
                                 <span class="remember-label">Lembrar de mim</span>
                             </label>
-                            <a href="<?php echo wp_lostpassword_url(); ?>" class="forgot-password">Esqueci a senha</a>
+                            <a href="${lostPasswordUrl}" class="forgot-password">Esqueci a senha</a>
                         </div>
 
                         <button type="submit" name="wp-submit" id="wp-submit" class="login-btn">
                             <span id="loginBtnText">Entrar</span>
                         </button>
-                        
-                        <input type="hidden" name="redirect_to" value="<?php echo admin_url('admin.php?page=mpa-dashboard'); ?>">
+
+                        <input type="hidden" name="redirect_to" value="${adminUrl}">
                         <input type="hidden" name="mpa_custom_login" value="1">
                     </form>
 

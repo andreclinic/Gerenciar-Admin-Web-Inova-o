@@ -1,6 +1,7 @@
 <?php
 // Gerenciador de Capabilities por Role
 
+
 // Adicionar submenu para gerenciar capabilities
 add_action('admin_menu', 'mpa_add_capability_menu');
 
@@ -73,7 +74,37 @@ function mpa_get_all_capabilities() {
             'manage_woocommerce_orders', 'view_admin_dashboard', 'wc_admin_dashboard_access',
             'manage_woocommerce_customers', 'view_woocommerce_customers', 'edit_woocommerce_customers',
             'woocommerce_view_customers', 'woocommerce_manage_customers', 'woocommerce_analytics_access',
-            'woocommerce_analytics_customers', 'wc_admin_read', 'wc_admin_edit', 'woocommerce_admin'
+            'woocommerce_analytics_customers', 'wc_admin_read', 'wc_admin_edit', 'woocommerce_admin',
+            // Capabilities adicionais baseadas na lista fornecida
+            'assign_shop_coupon_terms', 'assign_shop_order_terms', 'create_customers',
+            'delete_shop_coupon_terms', 'delete_shop_order_terms', 'edit_shop_coupon_terms',
+            'edit_shop_order_terms', 'manage_shop_coupon_terms', 'manage_shop_order_terms',
+            // Capabilities de Shop Discounts e Payments
+            'assign_shop_discount_terms', 'assign_shop_payment_terms', 'create_shop_orders',
+            'delete_acf-field-groups', 'delete_custom_css', 'delete_custom_csss',
+            'delete_custom_order_status', 'delete_others_acf-field-groups', 'delete_others_custom_csss',
+            'delete_others_shop_discounts', 'delete_others_shop_payments', 'delete_others_whatsapp-accounts',
+            'delete_private_acf-field-groups', 'delete_private_shop_discounts', 'delete_private_shop_payments',
+            'delete_private_whatsapp-accounts', 'delete_published_acf-field-groups', 'delete_published_custom_csss',
+            'delete_published_shop_discounts', 'delete_published_shop_payments', 'delete_published_whatsapp-accounts',
+            'delete_shop_discounts', 'delete_shop_discount_terms', 'delete_shop_payments',
+            'delete_shop_payment_terms', 'delete_whatsapp-accounts', 'edit_acf-field-groups',
+            'edit_custom_css', 'edit_custom_csss', 'edit_custom_order_status', 'edit_others_acf-field-groups',
+            'edit_others_custom_csss', 'edit_others_shop_discounts', 'edit_others_shop_payments',
+            'edit_others_whatsapp-accounts', 'edit_private_acf-field-groups', 'edit_private_shop_discounts',
+            'edit_private_shop_payments', 'edit_private_whatsapp-accounts', 'edit_published_acf-field-groups',
+            'edit_published_custom_csss', 'edit_published_shop_discounts', 'edit_published_shop_payments',
+            'edit_published_whatsapp-accounts', 'edit_shop_discounts', 'edit_shop_discount_terms',
+            'edit_shop_payments', 'edit_shop_payment_terms', 'edit_whatsapp-accounts',
+            'export_shop_payments', 'export_shop_reports', 'import_shop_discounts', 'import_shop_payments',
+            'manage_custom_order_statuses', 'manage_shop_discounts', 'manage_shop_discount_terms',
+            'manage_shop_payment_terms', 'manage_shop_settings', 'mgwc_delete_orders',
+            'mgwc_manage_all_orders', 'mgwc_manage_orders', 'mgwc_view_orders',
+            'publish_acf-field-groups', 'publish_custom_csss', 'publish_shop_discounts',
+            'publish_shop_payments', 'publish_whatsapp-accounts', 'read_custom_css',
+            'read_custom_order_status', 'read_private_acf-field-groups', 'read_private_shop_discounts',
+            'read_private_shop_payments', 'read_private_whatsapp-accounts', 'view_dwi_dashboard',
+            'view_shop_discount_stats', 'view_shop_payment_stats', 'view_shop_sensitive_data'
         ],
         'JetEngine' => [
             'jet_engine_dashboard_access', 'jet_engine_manage_options', 'jet_engine_edit_listings',
@@ -100,7 +131,9 @@ function mpa_get_all_capabilities() {
             'rank_math_options_general', 'rank_math_analytics', 'rank_math_redirections',
             'rank_math_sitemap', 'rank_math_link_builder', 'rank_math_404_monitor',
             'rank_math_edit_htaccess', 'rank_math_admin_bar', 'rank_math_onpage_general',
-            'rank_math_onpage_advanced', 'rank_math_onpage_snippet', 'rank_math_onpage_social'
+            'rank_math_onpage_advanced', 'rank_math_onpage_snippet', 'rank_math_onpage_social',
+            'rank_math_content_ai', 'rank_math_general', 'rank_math_onpage_analysis',
+            'rank_math_role_manager', 'rank_math_site_analysis', 'rank_math_titles'
         ],
         'Elementor' => [
             'edit_elementor', 'manage_elementor', 'elementor_edit_content',
@@ -117,10 +150,23 @@ function mpa_get_all_capabilities() {
         ],
         'Wordfence Security' => [
             'wordfence_menu', 'wordfence_scan', 'wordfence_options',
-            'wordfence_live_traffic', 'wordfence_blocking'
+            'wordfence_live_traffic', 'wordfence_blocking',
+            'wf2fa_activate_2fa_others', 'wf2fa_activate_2fa_self', 'wf2fa_manage_settings'
         ],
         'CookieYes' => [
             'cookieyes_manage_options', 'cookie_law_info_manage'
+        ],
+        'PublishPress Capabilities' => [
+            'manage_capabilities_dashboard', 'manage_capabilities_roles', 'manage_capabilities',
+            'manage_capabilities_editor_features', 'manage_capabilities_admin_features',
+            'manage_capabilities_admin_menus', 'manage_capabilities_frontend_features',
+            'manage_capabilities_profile_features', 'manage_capabilities_redirects',
+            'manage_capabilities_nav_menus', 'manage_capabilities_user_testing',
+            'manage_capabilities_backup', 'manage_capabilities_settings'
+        ],
+        'Outras Permissões' => [
+            'manage_pys', 'copy_posts', 'delete_categories', 'delete_tags',
+            'edit_categories', 'edit_tags', 'manage_tags', 'delete_files'
         ]
     ];
 
@@ -195,84 +241,182 @@ function mpa_classify_capability($cap) {
     return 'Outro';
 }
 
-// Função para obter categorias organizadas de capabilities como na imagem de referência
+// Função para obter categorias organizadas de capabilities baseada na referência completa
 function mpa_get_capability_categories() {
     return [
         'Edição' => [
-            'Permissões do post Edição' => [
+            'Permissões de Edição' => [
                 'Posts' => ['edit_posts', 'edit_others_posts', 'edit_published_posts', 'edit_private_posts'],
                 'Páginas' => ['edit_pages', 'edit_others_pages', 'edit_published_pages', 'edit_private_pages'],
                 'Mídia' => ['upload_files', 'edit_files'],
-                'Taxonomias' => ['manage_categories', 'edit_terms', 'assign_terms'],
-                'Menus de navegação (bbloq)' => ['edit_theme_options'],
-                'Código personalizado' => ['edit_themes', 'edit_plugins'],
-                'Produtos' => ['edit_products', 'edit_others_products', 'edit_published_products', 'edit_private_products'],
-                'Pedidos' => ['edit_shop_orders', 'edit_others_shop_orders', 'edit_published_shop_orders', 'edit_private_shop_orders'],
-                'Cupons' => ['edit_shop_coupons', 'edit_others_shop_coupons', 'edit_published_shop_coupons', 'edit_private_shop_coupons'],
-                'GDPR Cookie Consent' => ['manage_options'],
-                'Order Statuses' => ['manage_woocommerce'],
-                'Dados estruturados (schema)' => ['manage_options'],
-                'Forms' => ['edit_posts']
+                'Menus de navegação (bloco)' => [],
+                'Código personalizado' => ['edit_themes'],
+                'Produtos' => ['edit_products', 'edit_others_products', 'edit_published_products', 'edit_private_products', 'edit_product'],
+                'Pedidos' => ['edit_shop_orders', 'edit_others_shop_orders', 'edit_published_shop_orders', 'edit_private_shop_orders', 'edit_shop_order', 'create_shop_orders'],
+                'Cupons' => ['edit_shop_coupons', 'edit_others_shop_coupons', 'edit_published_shop_coupons', 'edit_private_shop_coupons', 'edit_shop_coupon'],
+                'GDPR Cookie Consent' => [],
+                'Order Statuses' => ['manage_woocommerce', 'edit_custom_order_status', 'manage_custom_order_statuses'],
+                'Dados estruturados (schemas)' => [],
+                'Forms' => [],
+                'ACF Field Groups' => ['edit_acf-field-groups', 'edit_others_acf-field-groups', 'edit_published_acf-field-groups', 'edit_private_acf-field-groups'],
+                'Custom CSS' => ['edit_custom_css', 'edit_custom_csss', 'edit_others_custom_csss', 'edit_published_custom_csss'],
+                'Shop Discounts' => ['edit_shop_discounts', 'edit_others_shop_discounts', 'edit_published_shop_discounts', 'edit_private_shop_discounts'],
+                'Shop Payments' => ['edit_shop_payments', 'edit_others_shop_payments', 'edit_published_shop_payments', 'edit_private_shop_payments'],
+                'WhatsApp Accounts' => ['edit_whatsapp-accounts', 'edit_others_whatsapp-accounts', 'edit_published_whatsapp-accounts', 'edit_private_whatsapp-accounts'],
+                'Categorias' => ['edit_categories'],
+                'Tags' => ['edit_tags']
             ]
         ],
         'Exclusão' => [
-            'Permissões do post Exclusão' => [
+            'Permissões de Exclusão' => [
                 'Posts' => ['delete_posts', 'delete_others_posts', 'delete_published_posts', 'delete_private_posts'],
                 'Páginas' => ['delete_pages', 'delete_others_pages', 'delete_published_pages', 'delete_private_pages'],
                 'Mídia' => ['delete_files'],
-                'Produtos' => ['delete_products', 'delete_others_products', 'delete_published_products', 'delete_private_products'],
-                'Pedidos' => ['delete_shop_orders', 'delete_others_shop_orders', 'delete_published_shop_orders', 'delete_private_shop_orders'],
-                'Cupons' => ['delete_shop_coupons', 'delete_others_shop_coupons', 'delete_published_shop_coupons', 'delete_private_shop_coupons']
+                'Menus de navegação (bloco)' => [],
+                'Produtos' => ['delete_products', 'delete_others_products', 'delete_published_products', 'delete_private_products', 'delete_product'],
+                'Pedidos' => ['delete_shop_orders', 'delete_others_shop_orders', 'delete_published_shop_orders', 'delete_private_shop_orders', 'delete_shop_order'],
+                'Cupons' => ['delete_shop_coupons', 'delete_others_shop_coupons', 'delete_published_shop_coupons', 'delete_private_shop_coupons', 'delete_shop_coupon'],
+                'GDPR Cookie Consent' => [],
+                'Order Statuses' => ['delete_custom_order_status'],
+                'Forms' => ['delete_posts'],
+                'ACF Field Groups' => ['delete_acf-field-groups', 'delete_others_acf-field-groups', 'delete_published_acf-field-groups', 'delete_private_acf-field-groups'],
+                'Custom CSS' => ['delete_custom_css', 'delete_custom_csss', 'delete_others_custom_csss', 'delete_published_custom_csss'],
+                'Shop Discounts' => ['delete_shop_discounts', 'delete_others_shop_discounts', 'delete_published_shop_discounts', 'delete_private_shop_discounts'],
+                'Shop Payments' => ['delete_shop_payments', 'delete_others_shop_payments', 'delete_published_shop_payments', 'delete_private_shop_payments'],
+                'WhatsApp Accounts' => ['delete_whatsapp-accounts', 'delete_others_whatsapp-accounts', 'delete_published_whatsapp-accounts', 'delete_private_whatsapp-accounts'],
+                'Categorias' => ['delete_categories'],
+                'Tags' => ['delete_tags']
             ]
         ],
         'Visibilidade' => [
-            'Permissões de visibilidade' => [
+            'Permissões de Visibilidade' => [
                 'Posts' => ['read_posts', 'read_private_posts'],
                 'Páginas' => ['read_pages', 'read_private_pages'],
-                'Produtos' => ['read_products', 'read_private_products'],
-                'Pedidos' => ['read_shop_orders', 'read_private_shop_orders'],
-                'Cupons' => ['read_shop_coupons', 'read_private_shop_coupons'],
-                'Usuários' => ['list_users', 'read_users'],
-                'Administrador' => ['read'],
-                'Temas' => ['switch_themes'],
-                'Plugins' => ['activate_plugins'],
-                'WooCommerce' => ['view_woocommerce_reports', 'manage_woocommerce'],
-                'Rank Math SEO' => ['rank_math_admin_bar'],
-                'Loco Translate' => ['loco_admin'],
-                'WPvivid Backup' => ['wpvivid_manage_options'],
-                'Wordfence Security' => ['wordfence_menu'],
-                'Permissões Inválidas' => [],
-                'Adicional' => ['import', 'export']
+                'Menus de navegação (bloco)' => [],
+                'Código personalizado' => ['edit_themes'],
+                'Produtos' => ['read_products', 'read_private_products', 'read_product'],
+                'Pedidos' => ['read_shop_orders', 'read_private_shop_orders', 'read_shop_order'],
+                'Cupons' => ['read_shop_coupons', 'read_private_shop_coupons', 'read_shop_coupon'],
+                'GDPR Cookie Consent' => [],
+                'Order Statuses' => ['read_custom_order_status'],
+                'Dados estruturados (schemas)' => [],
+                'Forms' => [],
+                'ACF Field Groups' => ['read_private_acf-field-groups'],
+                'Custom CSS' => ['read_custom_css'],
+                'Shop Discounts' => ['read_private_shop_discounts'],
+                'Shop Payments' => ['read_private_shop_payments'],
+                'WhatsApp Accounts' => ['read_private_whatsapp-accounts'],
+                'Dashboards' => ['view_admin_dashboard', 'view_dwi_dashboard', 'view_shop_discount_stats', 'view_shop_payment_stats', 'view_shop_reports', 'view_shop_sensitive_data']
             ]
         ],
         'Taxonomias' => [
-            'Permissões de taxonomias' => [
-                'Categorias' => ['manage_categories', 'edit_terms', 'delete_terms', 'assign_terms'],
-                'Tags' => ['manage_post_tags', 'edit_terms', 'delete_terms', 'assign_terms'],
-                'Produtos' => ['manage_product_terms', 'edit_product_terms', 'delete_product_terms', 'assign_product_terms']
-            ]
-        ],
-        'Comentários' => [
-            'Permissões de comentários' => [
-                'Comentários' => ['edit_comments', 'moderate_comments']
-            ]
-        ],
-        'Usuários' => [
-            'Permissões de usuários' => [
-                'Usuários' => ['edit_users', 'create_users', 'delete_users', 'promote_users', 'remove_users', 'add_users']
+            'Permissões de Taxonomias' => [
+                'Taxonomias de Produto' => ['manage_product_terms', 'edit_product_terms', 'delete_product_terms', 'assign_product_terms'],
+                'Menus de navegação (legado)' => ['manage_links'],
+                'Shop Coupons Terms' => ['assign_shop_coupon_terms', 'manage_shop_coupon_terms', 'edit_shop_coupon_terms', 'delete_shop_coupon_terms'],
+                'Shop Orders Terms' => ['assign_shop_order_terms', 'manage_shop_order_terms', 'edit_shop_order_terms', 'delete_shop_order_terms'],
+                'Shop Discounts Terms' => ['assign_shop_discount_terms', 'manage_shop_discount_terms', 'edit_shop_discount_terms', 'delete_shop_discount_terms'],
+                'Shop Payments Terms' => ['assign_shop_payment_terms', 'manage_shop_payment_terms', 'edit_shop_payment_terms', 'delete_shop_payment_terms'],
+                'Categorias Gerais' => ['manage_categories'],
+                'Tags Gerais' => ['manage_tags']
             ]
         ],
         'Mídia' => [
-            'Permissões de mídia' => [
-                'Biblioteca de mídia' => ['upload_files', 'edit_files', 'delete_files']
+            'Permissões de Mídia' => [
+                'Biblioteca de mídia' => ['edit_files', 'upload_files', 'unfiltered_upload', 'delete_files']
+            ]
+        ],
+        'Comentários' => [
+            'Permissões de Comentários' => [
+                'Comentários' => ['moderate_comments', 'edit_comments']
+            ]
+        ],
+        'Usuários' => [
+            'Permissões de Usuários' => [
+                'Usuários' => ['create_users', 'delete_users', 'edit_users', 'list_users', 'promote_users', 'remove_users'],
+                'Clientes' => ['create_customers']
             ]
         ],
         'Administrador' => [
-            'Permissões administrativas' => [
-                'Sistema' => ['manage_options', 'update_core', 'install_plugins', 'delete_plugins', 'update_plugins'],
-                'Temas' => ['install_themes', 'update_themes', 'delete_themes', 'edit_themes'],
-                'Dashboard' => ['edit_dashboard'],
-                'Rede' => ['manage_network', 'manage_sites', 'manage_network_users']
+            'Permissões Administrativas' => [
+                'Sistema' => ['manage_options', 'edit_dashboard', 'export', 'import', 'read', 'update_core', 'unfiltered_html'],
+                'Copy Posts' => ['copy_posts']
+            ]
+        ],
+        'Temas' => [
+            'Permissões de Temas' => [
+                'Temas' => ['delete_themes', 'edit_themes', 'install_themes', 'switch_themes', 'update_themes', 'edit_theme_options', 'manage_links']
+            ]
+        ],
+        'Plugins' => [
+            'Permissões de Plugins' => [
+                'Plugins' => ['activate_plugins', 'delete_plugins', 'edit_plugins', 'install_plugins', 'update_plugins']
+            ]
+        ],
+        'PublishPress Capabilities' => [
+            'Permissões do PublishPress' => [
+                'Capabilities' => [
+                    'manage_capabilities_dashboard',
+                    'manage_capabilities_roles',
+                    'manage_capabilities',
+                    'manage_capabilities_editor_features',
+                    'manage_capabilities_admin_features',
+                    'manage_capabilities_admin_menus',
+                    'manage_capabilities_frontend_features',
+                    'manage_capabilities_profile_features',
+                    'manage_capabilities_redirects',
+                    'manage_capabilities_nav_menus',
+                    'manage_capabilities_user_testing',
+                    'manage_capabilities_backup',
+                    'manage_capabilities_settings'
+                ]
+            ]
+        ],
+        'WooCommerce' => [
+            'Permissões do WooCommerce' => [
+                'WooCommerce Core' => ['manage_woocommerce', 'view_woocommerce_reports'],
+                'Orders Management' => ['mgwc_delete_orders', 'mgwc_manage_all_orders', 'mgwc_manage_orders', 'mgwc_view_orders'],
+                'Shop Management' => ['manage_shop_settings', 'manage_shop_discounts', 'manage_shop_discount_terms', 'manage_shop_payment_terms'],
+                'Import/Export' => ['export_shop_payments', 'export_shop_reports', 'import_shop_discounts', 'import_shop_payments'],
+                'Publishing' => ['publish_acf-field-groups', 'publish_custom_csss', 'publish_shop_discounts', 'publish_shop_payments', 'publish_whatsapp-accounts']
+            ]
+        ],
+        'Loco Translate' => [
+            'Permissões do Loco Translate' => [
+                'Loco Translate' => ['loco_admin']
+            ]
+        ],
+        'Rank Math SEO' => [
+            'Permissões do Rank Math' => [
+                'Rank Math' => [
+                    'rank_math_404_monitor',
+                    'rank_math_admin_bar',
+                    'rank_math_analytics',
+                    'rank_math_content_ai',
+                    'rank_math_edit_htaccess',
+                    'rank_math_general',
+                    'rank_math_link_builder',
+                    'rank_math_onpage_advanced',
+                    'rank_math_onpage_analysis',
+                    'rank_math_onpage_general',
+                    'rank_math_onpage_social',
+                    'rank_math_redirections',
+                    'rank_math_role_manager',
+                    'rank_math_site_analysis',
+                    'rank_math_sitemap',
+                    'rank_math_titles'
+                ]
+            ]
+        ],
+        'Wordfence Security' => [
+            'Permissões do Wordfence' => [
+                'Wordfence' => ['wf2fa_activate_2fa_others', 'wf2fa_activate_2fa_self', 'wf2fa_manage_settings']
+            ]
+        ],
+        'Outras Permissões' => [
+            'Permissões Adicionais' => [
+                'PYS' => ['manage_pys'],
+                'Outras' => ['unfiltered_upload', 'unfiltered_html']
             ]
         ]
     ];
@@ -502,7 +646,6 @@ function mpa_compare_roles($role1_name = 'shop_manager', $role2_name = 'gerentes
     $caps2_count = count($caps2);
     $common_caps = count(array_intersect(array_keys($caps1), array_keys($caps2)));
     $missing_in_role2 = count(array_diff(array_keys($caps1), array_keys($caps2)));
-    $extra_in_role2 = count(array_diff(array_keys($caps2), array_keys($caps1)));
 
     $output .= "<div style='display: flex; gap: 15px; margin-bottom: 20px;'>";
     $output .= "<div class='mpa-stat-card' style='background: #e3f2fd; padding: 15px; border-left: 4px solid #2196f3; flex: 1;'>";
@@ -543,7 +686,6 @@ function mpa_compare_roles($role1_name = 'shop_manager', $role2_name = 'gerentes
         $has_role2 = isset($caps2[$cap]) && $caps2[$cap];
 
         // Determinar cor da linha
-        $row_class = '';
         $row_style = '';
         if ($has_role1 && !$has_role2) {
             $row_style = 'background-color: #fff3e0;'; // Laranja claro - falta em role2
@@ -637,9 +779,6 @@ function mpa_capabilities_page()
     // Definir categorias organizadas como na imagem de referência
     $capability_categories = mpa_get_capability_categories();
 
-    // Debug: Log das capabilities da role selecionada
-    error_log('MPA Capabilities Debug: Role selecionada = ' . $selected_role);
-    error_log('MPA Capabilities Debug: Current capabilities = ' . print_r($current_capabilities, true));
 
     ?>
     <div class="wrap">
@@ -696,98 +835,36 @@ function mpa_capabilities_page()
                             <table class="widefat fixed striped mpa-capabilities-table">
                                 <thead>
                                     <tr style="background: #f9f9f9;">
-                                        <th style="width: 20%;"></th>
-                                        <th style="width: 13%; text-align: center;">Edit</th>
-                                        <th style="width: 13%; text-align: center;">Create</th>
-                                        <th style="width: 13%; text-align: center;">Edit<br>others</th>
-                                        <th style="width: 13%; text-align: center;">Publish</th>
-                                        <th style="width: 14%; text-align: center;">Edit<br>published</th>
-                                        <th style="width: 14%; text-align: center;">Edit<br>private</th>
+                                        <th style="width: 30%;">Tipo de Conteúdo</th>
+                                        <th style="width: 70%;">
+                                            Capabilities Disponíveis
+                                            <button type="button" class="mpa-toggle-section button-secondary"
+                                                    style="float: right; font-size: 11px; padding: 2px 8px; margin-left: 10px;"
+                                                    data-section="<?php echo esc_attr($section_name); ?>"
+                                                    title="Marcar/Desmarcar todas as capabilities desta seção">
+                                                <span class="toggle-text">Marcar Todos</span>
+                                            </button>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($section_items as $item_name => $capabilities): ?>
                                         <tr data-post-type="<?php echo strtolower($item_name); ?>">
-                                            <td style="font-weight: bold;">
+                                            <td style="font-weight: bold; vertical-align: top; padding-top: 15px;">
                                                 <?php echo esc_html($item_name); ?>
                                             </td>
-
-                                            <!-- Edit -->
-                                            <td style="text-align: center;">
-                                                <?php
-                                                $edit_cap = $capabilities[0] ?? '';
-                                                if ($edit_cap):
-                                                ?>
-                                                    <input type="checkbox"
-                                                           name="capabilities[]"
-                                                           value="<?php echo esc_attr($edit_cap); ?>"
-                                                           <?php checked(isset($current_capabilities[$edit_cap]) && $current_capabilities[$edit_cap]); ?>>
-                                                <?php endif; ?>
-                                            </td>
-
-                                            <!-- Create -->
-                                            <td style="text-align: center;">
-                                                <?php
-                                                $create_cap = str_replace('edit_', 'create_', $edit_cap);
-                                                if (in_array($create_cap, $capabilities) || strpos($edit_cap, 'create_') === 0):
-                                                ?>
-                                                    <input type="checkbox"
-                                                           name="capabilities[]"
-                                                           value="<?php echo esc_attr($create_cap); ?>"
-                                                           <?php checked(isset($current_capabilities[$create_cap]) && $current_capabilities[$create_cap]); ?>>
-                                                <?php endif; ?>
-                                            </td>
-
-                                            <!-- Edit others -->
-                                            <td style="text-align: center;">
-                                                <?php
-                                                $others_cap = $capabilities[1] ?? '';
-                                                if ($others_cap):
-                                                ?>
-                                                    <input type="checkbox"
-                                                           name="capabilities[]"
-                                                           value="<?php echo esc_attr($others_cap); ?>"
-                                                           <?php checked(isset($current_capabilities[$others_cap]) && $current_capabilities[$others_cap]); ?>>
-                                                <?php endif; ?>
-                                            </td>
-
-                                            <!-- Publish -->
-                                            <td style="text-align: center;">
-                                                <?php
-                                                $publish_cap = str_replace('edit_', 'publish_', $edit_cap);
-                                                if (in_array($publish_cap, $capabilities) || strpos($edit_cap, 'publish_') === 0):
-                                                ?>
-                                                    <input type="checkbox"
-                                                           name="capabilities[]"
-                                                           value="<?php echo esc_attr($publish_cap); ?>"
-                                                           <?php checked(isset($current_capabilities[$publish_cap]) && $current_capabilities[$publish_cap]); ?>>
-                                                <?php endif; ?>
-                                            </td>
-
-                                            <!-- Edit published -->
-                                            <td style="text-align: center;">
-                                                <?php
-                                                $published_cap = $capabilities[2] ?? '';
-                                                if ($published_cap):
-                                                ?>
-                                                    <input type="checkbox"
-                                                           name="capabilities[]"
-                                                           value="<?php echo esc_attr($published_cap); ?>"
-                                                           <?php checked(isset($current_capabilities[$published_cap]) && $current_capabilities[$published_cap]); ?>>
-                                                <?php endif; ?>
-                                            </td>
-
-                                            <!-- Edit private -->
-                                            <td style="text-align: center;">
-                                                <?php
-                                                $private_cap = $capabilities[3] ?? '';
-                                                if ($private_cap):
-                                                ?>
-                                                    <input type="checkbox"
-                                                           name="capabilities[]"
-                                                           value="<?php echo esc_attr($private_cap); ?>"
-                                                           <?php checked(isset($current_capabilities[$private_cap]) && $current_capabilities[$private_cap]); ?>>
-                                                <?php endif; ?>
+                                            <td>
+                                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; padding: 10px 0;">
+                                                    <?php foreach ($capabilities as $capability): ?>
+                                                        <label style="display: flex; align-items: center; gap: 8px; padding: 5px; background: #f9f9f9; border-radius: 3px;">
+                                                            <input type="checkbox"
+                                                                   name="capabilities[]"
+                                                                   value="<?php echo esc_attr($capability); ?>"
+                                                                   <?php checked(isset($current_capabilities[$capability]) && $current_capabilities[$capability]); ?>>
+                                                            <code style="font-size: 11px; color: #666;"><?php echo esc_html($capability); ?></code>
+                                                        </label>
+                                                    <?php endforeach; ?>
+                                                </div>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -809,6 +886,30 @@ function mpa_capabilities_page()
     <script>
 
     jQuery(document).ready(function($) {
+
+        // Interceptar envio do formulário para confirmação
+        $('form').on('submit', function(e) {
+            const form = $(this);
+            let capabilities = [];
+
+            // Coletar todas as capabilities marcadas
+            $('input[name="capabilities[]"]:checked').each(function() {
+                capabilities.push($(this).val());
+            });
+
+            // Mostrar confirmação antes de enviar se nenhuma capability estiver marcada
+            if (capabilities.length === 0) {
+                if (!confirm('⚠️ NENHUMA capability foi marcada! Isso removerá todas as capabilities da role. Continuar?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+
+            // Permitir envio normal do formulário
+            return true;
+        });
+
+
         // Filtro por tipo de post
         $('#mpa-post-filter-select').on('change', function() {
             const filterValue = $(this).val().toLowerCase();
@@ -877,22 +978,126 @@ function mpa_capabilities_page()
                 categoryTitle.css('color', '#d63638');
             }
         });
+
+        // 🚀 NOVA FUNCIONALIDADE: Botões Marcar/Desmarcar Todos por Seção
+        $('.mpa-toggle-section').on('click', function() {
+            const button = $(this);
+            const section = button.closest('.mpa-capability-section');
+            const checkboxes = section.find('input[type="checkbox"]');
+            const toggleText = button.find('.toggle-text');
+
+            // Verificar estado atual (se todos estão marcados)
+            const allChecked = checkboxes.length === checkboxes.filter(':checked').length;
+
+            if (allChecked) {
+                // Desmarcar todos
+                checkboxes.prop('checked', false);
+                toggleText.text('Marcar Todos');
+                button.removeClass('button-primary').addClass('button-secondary');
+
+                // Feedback visual
+                button.css({
+                    'background': '#f0f0f1',
+                    'border-color': '#c3c4c7',
+                    'color': '#50575e'
+                });
+            } else {
+                // Marcar todos
+                checkboxes.prop('checked', true);
+                toggleText.text('Desmarcar Todos');
+                button.removeClass('button-secondary').addClass('button-primary');
+
+                // Feedback visual
+                button.css({
+                    'background': '#2271b1',
+                    'border-color': '#2271b1',
+                    'color': '#fff'
+                });
+            }
+
+            // Disparar evento change para atualizar cores das categorias
+            checkboxes.trigger('change');
+
+            // Feedback tátil visual
+            button.addClass('mpa-button-flash');
+            setTimeout(() => {
+                button.removeClass('mpa-button-flash');
+            }, 200);
+        });
+
+        // Atualizar texto dos botões baseado no estado inicial
+        $('.mpa-toggle-section').each(function() {
+            const button = $(this);
+            const section = button.closest('.mpa-capability-section');
+            const checkboxes = section.find('input[type="checkbox"]');
+            const toggleText = button.find('.toggle-text');
+
+            const allChecked = checkboxes.length === checkboxes.filter(':checked').length;
+
+            if (allChecked && checkboxes.length > 0) {
+                toggleText.text('Desmarcar Todos');
+                button.removeClass('button-secondary').addClass('button-primary');
+            } else {
+                toggleText.text('Marcar Todos');
+                button.removeClass('button-primary').addClass('button-secondary');
+            }
+        });
     });
     </script>
 
-    <!-- CSS de teste para verificar carregamento -->
+    <!-- CSS para botões de toggle e melhorias visuais -->
     <style>
-        /* CSS de teste - se isso aparecer é porque os estilos estão carregando */
-        .wrap h1 {
-            background: red !important;
-            color: white !important;
-            padding: 10px !important;
+        /* Estilos para botões Marcar/Desmarcar Todos */
+        .mpa-toggle-section {
+            transition: all 0.3s ease;
+            font-size: 11px !important;
+            padding: 3px 10px !important;
+            height: auto !important;
+            line-height: 1.2 !important;
+            border-radius: 3px !important;
         }
 
-        .mpa-role-selector {
-            background: yellow !important;
-            border: 3px solid blue !important;
+        .mpa-toggle-section:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+
+        .mpa-toggle-section:active {
+            transform: translateY(0);
+        }
+
+        /* Efeito flash ao clicar */
+        .mpa-button-flash {
+            animation: buttonFlash 0.2s ease;
+        }
+
+        @keyframes buttonFlash {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Melhorar cabeçalho da tabela */
+        .mpa-capabilities-table thead th {
+            position: relative;
+            vertical-align: middle !important;
+        }
+
+        /* CSS responsivo para mobile */
+        @media (max-width: 768px) {
+            .mpa-toggle-section {
+                float: none !important;
+                display: block;
+                margin-top: 8px;
+                width: 100%;
+            }
+        }
+
+        /* Indicador visual para seções com capabilities marcadas */
+        .mpa-capability-section:has(input[type="checkbox"]:checked) .mpa-toggle-section {
+            border-left: 3px solid #00a32a;
+        }
+
     </style>
 
     <?php
@@ -943,7 +1148,7 @@ function mpa_remove_capability_ajax() {
     global $wp_roles;
     $roles = $wp_roles->roles;
 
-    foreach ($roles as $role_key => $role_data) {
+    foreach ($roles as $role_key => $role_info) {
         $role = get_role($role_key);
         if ($role && isset($role->capabilities[$capability])) {
             $role->remove_cap($capability);
@@ -1021,6 +1226,7 @@ add_action('admin_post_mpa_save_role_capabilities', function () {
         wp_die('Falha na verificação de segurança.');
     }
 
+
     // Processar salvamento
     if (isset($_POST['role'])) {
         $role_key = sanitize_text_field($_POST['role']);
@@ -1028,11 +1234,26 @@ add_action('admin_post_mpa_save_role_capabilities', function () {
             ? array_map('sanitize_text_field', $_POST['capabilities'])
             : [];
 
+
         $role = get_role($role_key);
         if ($role) {
-            // Remover todas as capabilities atuais
-            foreach ($role->capabilities as $cap => $grant) {
-                $role->remove_cap($cap);
+            // Obter todas as capabilities que estão sendo gerenciadas pelo nosso sistema
+            $managed_capabilities = [];
+            $capability_categories = mpa_get_capability_categories();
+            foreach ($capability_categories as $category_data) {
+                foreach ($category_data as $section_items) {
+                    foreach ($section_items as $capabilities) {
+                        $managed_capabilities = array_merge($managed_capabilities, $capabilities);
+                    }
+                }
+            }
+            $managed_capabilities = array_unique($managed_capabilities);
+
+            // Remover apenas as capabilities gerenciadas pelo nosso sistema
+            foreach ($managed_capabilities as $cap) {
+                if (isset($role->capabilities[$cap])) {
+                    $role->remove_cap($cap);
+                }
             }
 
             // Adicionar as capabilities selecionadas
