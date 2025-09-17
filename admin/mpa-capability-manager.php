@@ -21,6 +21,21 @@ function mpa_add_capability_menu() {
     );
 }
 
+// Enqueue CSS específico para capabilities
+add_action('admin_enqueue_scripts', 'mpa_capability_enqueue_assets');
+
+function mpa_capability_enqueue_assets($hook) {
+    // Carregar apenas na página de capabilities
+    if (strpos($hook, 'mpa-capabilities') !== false) {
+        wp_enqueue_style(
+            'mpa-capability-manager',
+            plugin_dir_url(__FILE__) . '../assets/css/mpa-capability-manager.css',
+            [],
+            '1.0.1'
+        );
+    }
+}
+
 // Função para obter todas as capabilities possíveis
 function mpa_get_all_capabilities() {
     global $wp_roles;
@@ -178,6 +193,89 @@ function mpa_classify_capability($cap) {
     if (strpos($cap, 'install_') === 0) return 'Instalar';
     if (strpos($cap, 'activate_') === 0) return 'Ativar';
     return 'Outro';
+}
+
+// Função para obter categorias organizadas de capabilities como na imagem de referência
+function mpa_get_capability_categories() {
+    return [
+        'Edição' => [
+            'Permissões do post Edição' => [
+                'Posts' => ['edit_posts', 'edit_others_posts', 'edit_published_posts', 'edit_private_posts'],
+                'Páginas' => ['edit_pages', 'edit_others_pages', 'edit_published_pages', 'edit_private_pages'],
+                'Mídia' => ['upload_files', 'edit_files'],
+                'Taxonomias' => ['manage_categories', 'edit_terms', 'assign_terms'],
+                'Menus de navegação (bbloq)' => ['edit_theme_options'],
+                'Código personalizado' => ['edit_themes', 'edit_plugins'],
+                'Produtos' => ['edit_products', 'edit_others_products', 'edit_published_products', 'edit_private_products'],
+                'Pedidos' => ['edit_shop_orders', 'edit_others_shop_orders', 'edit_published_shop_orders', 'edit_private_shop_orders'],
+                'Cupons' => ['edit_shop_coupons', 'edit_others_shop_coupons', 'edit_published_shop_coupons', 'edit_private_shop_coupons'],
+                'GDPR Cookie Consent' => ['manage_options'],
+                'Order Statuses' => ['manage_woocommerce'],
+                'Dados estruturados (schema)' => ['manage_options'],
+                'Forms' => ['edit_posts']
+            ]
+        ],
+        'Exclusão' => [
+            'Permissões do post Exclusão' => [
+                'Posts' => ['delete_posts', 'delete_others_posts', 'delete_published_posts', 'delete_private_posts'],
+                'Páginas' => ['delete_pages', 'delete_others_pages', 'delete_published_pages', 'delete_private_pages'],
+                'Mídia' => ['delete_files'],
+                'Produtos' => ['delete_products', 'delete_others_products', 'delete_published_products', 'delete_private_products'],
+                'Pedidos' => ['delete_shop_orders', 'delete_others_shop_orders', 'delete_published_shop_orders', 'delete_private_shop_orders'],
+                'Cupons' => ['delete_shop_coupons', 'delete_others_shop_coupons', 'delete_published_shop_coupons', 'delete_private_shop_coupons']
+            ]
+        ],
+        'Visibilidade' => [
+            'Permissões de visibilidade' => [
+                'Posts' => ['read_posts', 'read_private_posts'],
+                'Páginas' => ['read_pages', 'read_private_pages'],
+                'Produtos' => ['read_products', 'read_private_products'],
+                'Pedidos' => ['read_shop_orders', 'read_private_shop_orders'],
+                'Cupons' => ['read_shop_coupons', 'read_private_shop_coupons'],
+                'Usuários' => ['list_users', 'read_users'],
+                'Administrador' => ['read'],
+                'Temas' => ['switch_themes'],
+                'Plugins' => ['activate_plugins'],
+                'WooCommerce' => ['view_woocommerce_reports', 'manage_woocommerce'],
+                'Rank Math SEO' => ['rank_math_admin_bar'],
+                'Loco Translate' => ['loco_admin'],
+                'WPvivid Backup' => ['wpvivid_manage_options'],
+                'Wordfence Security' => ['wordfence_menu'],
+                'Permissões Inválidas' => [],
+                'Adicional' => ['import', 'export']
+            ]
+        ],
+        'Taxonomias' => [
+            'Permissões de taxonomias' => [
+                'Categorias' => ['manage_categories', 'edit_terms', 'delete_terms', 'assign_terms'],
+                'Tags' => ['manage_post_tags', 'edit_terms', 'delete_terms', 'assign_terms'],
+                'Produtos' => ['manage_product_terms', 'edit_product_terms', 'delete_product_terms', 'assign_product_terms']
+            ]
+        ],
+        'Comentários' => [
+            'Permissões de comentários' => [
+                'Comentários' => ['edit_comments', 'moderate_comments']
+            ]
+        ],
+        'Usuários' => [
+            'Permissões de usuários' => [
+                'Usuários' => ['edit_users', 'create_users', 'delete_users', 'promote_users', 'remove_users', 'add_users']
+            ]
+        ],
+        'Mídia' => [
+            'Permissões de mídia' => [
+                'Biblioteca de mídia' => ['upload_files', 'edit_files', 'delete_files']
+            ]
+        ],
+        'Administrador' => [
+            'Permissões administrativas' => [
+                'Sistema' => ['manage_options', 'update_core', 'install_plugins', 'delete_plugins', 'update_plugins'],
+                'Temas' => ['install_themes', 'update_themes', 'delete_themes', 'edit_themes'],
+                'Dashboard' => ['edit_dashboard'],
+                'Rede' => ['manage_network', 'manage_sites', 'manage_network_users']
+            ]
+        ]
+    ];
 }
 
 // Função para debugar acesso ao WooCommerce Admin
@@ -519,537 +617,281 @@ function mpa_compare_roles($role1_name = 'shop_manager', $role2_name = 'gerentes
     return $output;
 }
 
-// Nova página de capabilities melhorada
+// Nova página de capabilities organizada por role
 function mpa_capabilities_page()
 {
     if (!current_user_can('manage_options')) {
         wp_die('Sem permissão.');
     }
 
-    // Debug: Mostrar capabilities da shop_manager se solicitado
-    if (isset($_GET['debug_role']) && $_GET['debug_role'] === 'shop_manager') {
-        echo '<div class="wrap">';
-        echo '<h1>Debug: Capabilities da Role Shop Manager</h1>';
-        echo mpa_debug_role_capabilities('shop_manager');
-        echo '<p><a href="' . admin_url('admin.php?page=mpa-capabilities') . '" class="button">Voltar</a></p>';
-        echo '</div>';
-        return;
-    }
+    // Obter role selecionada
+    $selected_role = sanitize_text_field($_GET['role'] ?? 'administrator');
 
-    // Comparação entre roles se solicitado
-    if (isset($_GET['compare_roles']) && $_GET['compare_roles'] === '1') {
-        echo '<div class="wrap">';
-        echo '<h1>Comparação: Shop Manager vs Gerentes</h1>';
-        echo mpa_compare_roles('shop_manager', 'gerentes');
-        echo '<p><a href="' . admin_url('admin.php?page=mpa-capabilities') . '" class="button">Voltar</a></p>';
-        echo '</div>';
-        return;
-    }
+    // Obter todas as roles disponíveis
+    $available_roles = get_editable_roles();
 
-    // Debug específico para WooCommerce Admin
-    if (isset($_GET['debug_wc_admin']) && $_GET['debug_wc_admin'] === '1') {
-        echo '<div class="wrap">';
-        echo '<h1>Debug: Acesso ao WooCommerce Admin</h1>';
-        echo mpa_debug_wc_admin_access();
-        echo '<p><a href="' . admin_url('admin.php?page=mpa-capabilities') . '" class="button">Voltar</a></p>';
-        echo '</div>';
-        return;
-    }
+    // Obter capabilities da role selecionada
+    $role = get_role($selected_role);
+    $current_capabilities = $role ? $role->capabilities : [];
 
-    // Obter todas as capabilities
-    $all_caps = mpa_get_all_capabilities();
+    // Definir categorias organizadas como na imagem de referência
+    $capability_categories = mpa_get_capability_categories();
 
-    // Filtros
-    $filter_plugin = sanitize_text_field($_GET['filter_plugin'] ?? '');
-    $filter_type = sanitize_text_field($_GET['filter_type'] ?? '');
-    $filter_assigned = $_GET['filter_assigned'] ?? '';
-
-    // Aplicar filtros
-    if ($filter_plugin) {
-        $all_caps = array_filter($all_caps, function($cap) use ($filter_plugin) {
-            return $cap['plugin'] === $filter_plugin;
-        });
-    }
-
-    if ($filter_type) {
-        $all_caps = array_filter($all_caps, function($cap) use ($filter_type) {
-            return $cap['type'] === $filter_type;
-        });
-    }
-
-    if ($filter_assigned !== '') {
-        $assigned_filter = $filter_assigned === '1';
-        $all_caps = array_filter($all_caps, function($cap) use ($assigned_filter) {
-            return $cap['assigned'] === $assigned_filter;
-        });
-    }
-
-    // Obter listas únicas para filtros
-    $all_caps_full = mpa_get_all_capabilities();
-    $plugins = array_unique(array_column($all_caps_full, 'plugin'));
-    $types = array_unique(array_column($all_caps_full, 'type'));
-    sort($plugins);
-    sort($types);
+    // Debug: Log das capabilities da role selecionada
+    error_log('MPA Capabilities Debug: Role selecionada = ' . $selected_role);
+    error_log('MPA Capabilities Debug: Current capabilities = ' . print_r($current_capabilities, true));
 
     ?>
     <div class="wrap">
-        <h1>Gerenciador de Capabilities Avançado</h1>
-        <p>Lista completa de todas as capabilities conhecidas, incluindo as não atribuídas.</p>
+        <h1>Permissões da função</h1>
 
-        <!-- Filtros -->
-        <div class="mpa-filters-section" style="background: #f9f9f9; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
-            <form method="get" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+        <!-- Dropdown para seleção de role -->
+        <div class="mpa-role-selector" style="margin-bottom: 20px;">
+            <form method="get" style="display: inline-block;">
                 <input type="hidden" name="page" value="mpa-capabilities">
-
-                <div>
-                    <label for="filter_plugin"><strong>Plugin:</strong></label>
-                    <select name="filter_plugin" id="filter_plugin">
-                        <option value="">Todos os plugins</option>
-                        <?php foreach ($plugins as $plugin): ?>
-                            <option value="<?php echo esc_attr($plugin); ?>" <?php selected($filter_plugin, $plugin); ?>>
-                                <?php echo esc_html($plugin); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="filter_type"><strong>Tipo:</strong></label>
-                    <select name="filter_type" id="filter_type">
-                        <option value="">Todos os tipos</option>
-                        <?php foreach ($types as $type): ?>
-                            <option value="<?php echo esc_attr($type); ?>" <?php selected($filter_type, $type); ?>>
-                                <?php echo esc_html($type); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="filter_assigned"><strong>Status:</strong></label>
-                    <select name="filter_assigned" id="filter_assigned">
-                        <option value="">Todos</option>
-                        <option value="1" <?php selected($filter_assigned, '1'); ?>>Atribuídas</option>
-                        <option value="0" <?php selected($filter_assigned, '0'); ?>>Não atribuídas</option>
-                    </select>
-                </div>
-
-                <div>
-                    <?php submit_button('Filtrar', 'secondary', 'filter', false); ?>
-                    <a href="<?php echo admin_url('admin.php?page=mpa-capabilities'); ?>" class="button">Limpar</a>
-                </div>
+                <select name="role" id="mpa-role-select" onchange="this.form.submit()" style="padding: 8px; font-size: 14px; min-width: 200px;">
+                    <?php foreach ($available_roles as $role_key => $role_info): ?>
+                        <option value="<?php echo esc_attr($role_key); ?>" <?php selected($selected_role, $role_key); ?>>
+                            <?php echo esc_html($role_info['name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </form>
         </div>
 
-        <!-- Estatísticas -->
-        <div class="mpa-stats" style="display: flex; gap: 20px; margin-bottom: 20px;">
-            <div class="mpa-stat-card" style="background: #fff; padding: 15px; border-left: 4px solid #0073aa; flex: 1;">
-                <h3 style="margin: 0 0 5px 0;">Total de Capabilities</h3>
-                <p style="margin: 0; font-size: 24px; font-weight: bold;"><?php echo count($all_caps_full); ?></p>
-            </div>
-            <div class="mpa-stat-card" style="background: #fff; padding: 15px; border-left: 4px solid #00a32a; flex: 1;">
-                <h3 style="margin: 0 0 5px 0;">Atribuídas</h3>
-                <p style="margin: 0; font-size: 24px; font-weight: bold; color: #00a32a;">
-                    <?php echo count(array_filter($all_caps_full, function($cap) { return $cap['assigned']; })); ?>
-                </p>
-            </div>
-            <div class="mpa-stat-card" style="background: #fff; padding: 15px; border-left: 4px solid #d63638; flex: 1;">
-                <h3 style="margin: 0 0 5px 0;">Não Atribuídas</h3>
-                <p style="margin: 0; font-size: 24px; font-weight: bold; color: #d63638;">
-                    <?php echo count(array_filter($all_caps_full, function($cap) { return !$cap['assigned']; })); ?>
-                </p>
-            </div>
-        </div>
+        <!-- Formulário para salvar capabilities -->
+        <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+            <input type="hidden" name="action" value="mpa_save_role_capabilities">
+            <input type="hidden" name="role" value="<?php echo esc_attr($selected_role); ?>">
+            <?php wp_nonce_field('mpa_capability_nonce'); ?>
 
-        <!-- Tabela de capabilities -->
-        <div class="mpa-capabilities-table">
-            <table class="widefat fixed striped" style="margin-top: 20px;">
-                <thead>
-                    <tr>
-                        <th style="width: 300px;">Capability</th>
-                        <th style="width: 120px;">Tipo</th>
-                        <th style="width: 150px;">Plugin</th>
-                        <th style="width: 100px;">Status</th>
-                        <th>Roles Atribuídas</th>
-                        <th style="width: 200px;">Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($all_caps)): ?>
-                        <tr>
-                            <td colspan="6" style="text-align: center; padding: 40px;">
-                                Nenhuma capability encontrada com os filtros aplicados.
-                            </td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($all_caps as $cap_name => $cap_data): ?>
-                            <tr>
-                                <td>
-                                    <code style="font-weight: bold; color: #0073aa;"><?php echo esc_html($cap_name); ?></code>
-                                </td>
-                                <td>
-                                    <span class="mpa-type-badge" style="background: #f0f0f0; padding: 2px 8px; border-radius: 3px; font-size: 12px;">
-                                        <?php echo esc_html($cap_data['type']); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo esc_html($cap_data['plugin']); ?></td>
-                                <td>
-                                    <?php if ($cap_data['assigned']): ?>
-                                        <span style="color: #00a32a; font-weight: bold;">✓ Atribuída</span>
-                                    <?php else: ?>
-                                        <span style="color: #d63638;">✗ Não atribuída</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php
-                                    if (!empty($cap_data['roles'])):
-                                        echo esc_html(implode(', ', $cap_data['roles']));
-                                    else:
-                                        echo '<span style="color: #666;">Nenhuma</span>';
-                                    endif;
-                                    ?>
-                                </td>
-                                <td>
-                                    <button class="button button-small mpa-assign-cap"
-                                            data-capability="<?php echo esc_attr($cap_name); ?>">
-                                        Atribuir a Role
-                                    </button>
-                                    <?php if ($cap_data['assigned']): ?>
-                                        <button class="button button-small mpa-remove-cap"
-                                                data-capability="<?php echo esc_attr($cap_name); ?>"
-                                                style="margin-left: 5px;">
-                                            Remover
-                                        </button>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Modal para atribuir capability -->
-        <div id="mpa-assign-modal" style="display: none; position: fixed; z-index: 999999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
-            <div style="background-color: #fff; margin: 5% auto; padding: 20px; border-radius: 5px; width: 500px; max-width: 90%;">
-                <h3>Atribuir Capability</h3>
-                <form id="mpa-assign-form">
-                    <input type="hidden" id="mpa-capability-name" name="capability" value="">
-                    <div style="margin-bottom: 15px;">
-                        <label for="mpa-role-select"><strong>Selecionar Role:</strong></label>
-                        <select id="mpa-role-select" name="role" style="width: 100%; padding: 5px;">
-                            <?php foreach (get_editable_roles() as $role_key => $role_info): ?>
-                                <option value="<?php echo esc_attr($role_key); ?>">
-                                    <?php echo esc_html($role_info['name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div style="text-align: right;">
-                        <button type="button" id="mpa-modal-cancel" class="button">Cancelar</button>
-                        <button type="submit" class="button button-primary" style="margin-left: 10px;">Atribuir</button>
-                    </div>
-                </form>
+            <!-- Filtro por tipo de post -->
+            <div class="mpa-post-filter" style="margin-bottom: 20px;">
+                <label for="mpa-post-filter-select"><strong>Filtrar por tipo de post:</strong></label>
+                <select id="mpa-post-filter-select" style="padding: 5px; margin-left: 10px;">
+                    <option value="">Mostrar todos</option>
+                    <option value="posts">Posts</option>
+                    <option value="pages">Páginas</option>
+                    <option value="media">Mídia</option>
+                    <option value="products">Produtos</option>
+                    <option value="orders">Pedidos</option>
+                    <option value="coupons">Cupons</option>
+                </select>
+                <button type="button" class="button" id="mpa-limpar-filtro" style="margin-left: 10px;">Limpar</button>
             </div>
-        </div>
 
-        <!-- Ações em lote -->
-        <div class="mpa-bulk-actions" style="margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 5px;">
-            <h3>Ações Avançadas</h3>
-            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                <button class="button button-secondary" id="mpa-export-json">
-                    Exportar Lista (JSON)
-                </button>
-                <button class="button button-secondary" id="mpa-create-capability">
-                    Criar Nova Capability
-                </button>
-                <button class="button button-secondary" id="mpa-refresh-scan">
-                    Atualizar Scan
-                </button>
-                <a href="<?php echo admin_url('admin.php?page=mpa-capabilities&debug_role=shop_manager'); ?>"
-                   class="button button-secondary">
-                    🔍 Debug Role Shop_Manager
-                </a>
-                <!-- Comparação removida - usar role shop_manager nativa -->
-                <!-- Debug WooCommerce removido - usar role shop_manager nativa -->
-            </div>
-        </div>
+            <!-- Tabelas de capabilities organizadas por categoria -->
+            <?php foreach ($capability_categories as $category_name => $category_data): ?>
+                <div class="mpa-capability-category" style="margin-bottom: 30px;">
+                    <h2 style="background: #f0f0f0; padding: 10px; margin: 0 0 15px 0; border-left: 4px solid #0073aa;">
+                        <?php echo esc_html($category_name); ?>
+                    </h2>
+
+                    <?php foreach ($category_data as $section_name => $section_items): ?>
+                        <div class="mpa-capability-section" style="margin-bottom: 25px;">
+                            <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #333;">
+                                <?php echo esc_html($section_name); ?>
+                            </h3>
+
+                            <table class="widefat fixed striped mpa-capabilities-table">
+                                <thead>
+                                    <tr style="background: #f9f9f9;">
+                                        <th style="width: 20%;"></th>
+                                        <th style="width: 13%; text-align: center;">Edit</th>
+                                        <th style="width: 13%; text-align: center;">Create</th>
+                                        <th style="width: 13%; text-align: center;">Edit<br>others</th>
+                                        <th style="width: 13%; text-align: center;">Publish</th>
+                                        <th style="width: 14%; text-align: center;">Edit<br>published</th>
+                                        <th style="width: 14%; text-align: center;">Edit<br>private</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($section_items as $item_name => $capabilities): ?>
+                                        <tr data-post-type="<?php echo strtolower($item_name); ?>">
+                                            <td style="font-weight: bold;">
+                                                <?php echo esc_html($item_name); ?>
+                                            </td>
+
+                                            <!-- Edit -->
+                                            <td style="text-align: center;">
+                                                <?php
+                                                $edit_cap = $capabilities[0] ?? '';
+                                                if ($edit_cap):
+                                                ?>
+                                                    <input type="checkbox"
+                                                           name="capabilities[]"
+                                                           value="<?php echo esc_attr($edit_cap); ?>"
+                                                           <?php checked(isset($current_capabilities[$edit_cap]) && $current_capabilities[$edit_cap]); ?>>
+                                                <?php endif; ?>
+                                            </td>
+
+                                            <!-- Create -->
+                                            <td style="text-align: center;">
+                                                <?php
+                                                $create_cap = str_replace('edit_', 'create_', $edit_cap);
+                                                if (in_array($create_cap, $capabilities) || strpos($edit_cap, 'create_') === 0):
+                                                ?>
+                                                    <input type="checkbox"
+                                                           name="capabilities[]"
+                                                           value="<?php echo esc_attr($create_cap); ?>"
+                                                           <?php checked(isset($current_capabilities[$create_cap]) && $current_capabilities[$create_cap]); ?>>
+                                                <?php endif; ?>
+                                            </td>
+
+                                            <!-- Edit others -->
+                                            <td style="text-align: center;">
+                                                <?php
+                                                $others_cap = $capabilities[1] ?? '';
+                                                if ($others_cap):
+                                                ?>
+                                                    <input type="checkbox"
+                                                           name="capabilities[]"
+                                                           value="<?php echo esc_attr($others_cap); ?>"
+                                                           <?php checked(isset($current_capabilities[$others_cap]) && $current_capabilities[$others_cap]); ?>>
+                                                <?php endif; ?>
+                                            </td>
+
+                                            <!-- Publish -->
+                                            <td style="text-align: center;">
+                                                <?php
+                                                $publish_cap = str_replace('edit_', 'publish_', $edit_cap);
+                                                if (in_array($publish_cap, $capabilities) || strpos($edit_cap, 'publish_') === 0):
+                                                ?>
+                                                    <input type="checkbox"
+                                                           name="capabilities[]"
+                                                           value="<?php echo esc_attr($publish_cap); ?>"
+                                                           <?php checked(isset($current_capabilities[$publish_cap]) && $current_capabilities[$publish_cap]); ?>>
+                                                <?php endif; ?>
+                                            </td>
+
+                                            <!-- Edit published -->
+                                            <td style="text-align: center;">
+                                                <?php
+                                                $published_cap = $capabilities[2] ?? '';
+                                                if ($published_cap):
+                                                ?>
+                                                    <input type="checkbox"
+                                                           name="capabilities[]"
+                                                           value="<?php echo esc_attr($published_cap); ?>"
+                                                           <?php checked(isset($current_capabilities[$published_cap]) && $current_capabilities[$published_cap]); ?>>
+                                                <?php endif; ?>
+                                            </td>
+
+                                            <!-- Edit private -->
+                                            <td style="text-align: center;">
+                                                <?php
+                                                $private_cap = $capabilities[3] ?? '';
+                                                if ($private_cap):
+                                                ?>
+                                                    <input type="checkbox"
+                                                           name="capabilities[]"
+                                                           value="<?php echo esc_attr($private_cap); ?>"
+                                                           <?php checked(isset($current_capabilities[$private_cap]) && $current_capabilities[$private_cap]); ?>>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endforeach; ?>
+
+            <!-- Botão de salvar -->
+            <p class="submit">
+                <input type="submit" name="submit" id="submit" class="button button-primary" value="Salvar alterações">
+            </p>
+        </form>
     </div>
 
-    <!-- JavaScript para funcionalidades AJAX -->
+    <!-- JavaScript para filtros e funcionalidades -->
     <script>
+
     jQuery(document).ready(function($) {
-        // Nonce para segurança AJAX
-        const nonce = '<?php echo wp_create_nonce('mpa_capability_nonce'); ?>';
+        // Filtro por tipo de post
+        $('#mpa-post-filter-select').on('change', function() {
+            const filterValue = $(this).val().toLowerCase();
 
-        // Função para mostrar notificações
-        function showNotice(message, type = 'success') {
-            const notice = $('<div class="notice notice-' + type + ' is-dismissible"><p>' + message + '</p></div>');
-            $('.wrap h1').after(notice);
-            setTimeout(() => notice.fadeOut(), 3000);
-        }
+            if (filterValue === '') {
+                $('.mpa-capability-category').show();
+                $('.mpa-capabilities-table tbody tr').show();
+            } else {
+                $('.mpa-capability-category').hide();
+                $('.mpa-capabilities-table tbody tr').hide();
 
-        // Atribuir capability
-        $(document).on('click', '.mpa-assign-cap', function() {
-            const capability = $(this).data('capability');
-            $('#mpa-capability-name').val(capability);
-            $('#mpa-assign-modal').show();
-        });
-
-        // Fechar modal
-        $('#mpa-modal-cancel, #mpa-assign-modal').click(function(e) {
-            if (e.target === this) {
-                $('#mpa-assign-modal').hide();
-            }
-        });
-
-        // Submeter formulário de atribuição
-        $('#mpa-assign-form').submit(function(e) {
-            e.preventDefault();
-
-            const capability = $('#mpa-capability-name').val();
-            const role = $('#mpa-role-select').val();
-
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                data: {
-                    action: 'mpa_assign_capability',
-                    capability: capability,
-                    role: role,
-                    nonce: nonce
-                },
-                success: function(response) {
-                    if (response.success) {
-                        showNotice(response.data, 'success');
-                        location.reload();
-                    } else {
-                        showNotice(response.data, 'error');
-                    }
-                },
-                error: function() {
-                    showNotice('Erro na requisição AJAX', 'error');
-                }
-            });
-
-            $('#mpa-assign-modal').hide();
-        });
-
-        // Remover capability
-        $(document).on('click', '.mpa-remove-cap', function() {
-            const capability = $(this).data('capability');
-
-            if (!confirm('Tem certeza que deseja remover a capability "' + capability + '" de todas as roles?')) {
-                return;
-            }
-
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                data: {
-                    action: 'mpa_remove_capability',
-                    capability: capability,
-                    nonce: nonce
-                },
-                success: function(response) {
-                    if (response.success) {
-                        showNotice(response.data, 'success');
-                        location.reload();
-                    } else {
-                        showNotice(response.data, 'error');
-                    }
-                },
-                error: function() {
-                    showNotice('Erro na requisição AJAX', 'error');
-                }
-            });
-        });
-
-        // Exportar JSON
-        $('#mpa-export-json').click(function() {
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                data: {
-                    action: 'mpa_export_capabilities',
-                    nonce: nonce
-                },
-                success: function(response) {
-                    if (response.success) {
-                        const dataStr = JSON.stringify(response.data, null, 2);
-                        const dataBlob = new Blob([dataStr], {type: 'application/json'});
-                        const url = URL.createObjectURL(dataBlob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = 'capabilities-export.json';
-                        link.click();
-                        showNotice('Arquivo JSON exportado com sucesso!', 'success');
-                    } else {
-                        showNotice(response.data, 'error');
-                    }
-                },
-                error: function() {
-                    showNotice('Erro na exportação', 'error');
-                }
-            });
-        });
-
-        // Criar nova capability
-        $('#mpa-create-capability').click(function() {
-            const capability = prompt('Digite o nome da nova capability:');
-            if (!capability) return;
-
-            const role = prompt('Digite a role para atribuir (deixe vazio para administrator):') || 'administrator';
-
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                data: {
-                    action: 'mpa_create_capability',
-                    capability: capability,
-                    role: role,
-                    nonce: nonce
-                },
-                success: function(response) {
-                    if (response.success) {
-                        showNotice(response.data, 'success');
-                        location.reload();
-                    } else {
-                        showNotice(response.data, 'error');
-                    }
-                },
-                error: function() {
-                    showNotice('Erro ao criar capability', 'error');
-                }
-            });
-        });
-
-        // Atualizar scan
-        $('#mpa-refresh-scan').click(function() {
-            location.reload();
-        });
-
-        // Sincronizar todas as capabilities faltantes
-        $(document).on('click', '#mpa-sync-all-missing', function() {
-            if (!confirm('Tem certeza que deseja copiar TODAS as capabilities de shop_manager para gerentes?\\n\\nIsso pode levar alguns segundos...')) {
-                return;
-            }
-
-            const buttons = $('.mpa-assign-cap');
-            let completed = 0;
-            let total = buttons.length;
-
-            if (total === 0) {
-                showNotice('Nenhuma capability para sincronizar!', 'info');
-                return;
-            }
-
-            showNotice('Sincronizando ' + total + ' capabilities...', 'info');
-
-            buttons.each(function() {
-                const capability = $(this).data('capability');
-
-                $.ajax({
-                    url: ajaxurl,
-                    type: 'POST',
-                    data: {
-                        action: 'mpa_assign_capability',
-                        capability: capability,
-                        role: 'gerentes',
-                        nonce: nonce
-                    },
-                    success: function(response) {
-                        completed++;
-                        if (completed === total) {
-                            showNotice('✅ Sincronização completa! ' + total + ' capabilities copiadas.', 'success');
-                            setTimeout(() => location.reload(), 2000);
-                        }
-                    },
-                    error: function() {
-                        completed++;
-                        if (completed === total) {
-                            showNotice('⚠️ Sincronização completa com alguns erros.', 'warning');
-                            setTimeout(() => location.reload(), 2000);
-                        }
+                // Mostrar apenas linhas que correspondem ao filtro
+                $('.mpa-capabilities-table tbody tr').each(function() {
+                    const postType = $(this).data('post-type');
+                    if (postType && postType.includes(filterValue)) {
+                        $(this).show();
+                        $(this).closest('.mpa-capability-category').show();
                     }
                 });
-            });
+            }
         });
 
-        // Sincronizar apenas capabilities do WooCommerce
-        $(document).on('click', '#mpa-sync-woocommerce-only', function() {
-            if (!confirm('Copiar apenas as capabilities relacionadas ao WooCommerce?')) {
-                return;
+        // Limpar filtro
+        $('#mpa-limpar-filtro').on('click', function() {
+            $('#mpa-post-filter-select').val('');
+            $('.mpa-capability-category').show();
+            $('.mpa-capabilities-table tbody tr').show();
+        });
+
+        // Função para selecionar/deselecionar todas as capabilities de uma categoria
+        $('.mpa-capability-category h2').on('click', function() {
+            const category = $(this).closest('.mpa-capability-category');
+            const checkboxes = category.find('input[type="checkbox"]');
+            const allChecked = checkboxes.length === checkboxes.filter(':checked').length;
+
+            checkboxes.prop('checked', !allChecked);
+        });
+
+        // Melhorar usabilidade - indicar quando categoria está parcialmente selecionada
+        $('input[type="checkbox"]').on('change', function() {
+            const category = $(this).closest('.mpa-capability-category');
+            const checkboxes = category.find('input[type="checkbox"]');
+            const checkedBoxes = checkboxes.filter(':checked');
+            const categoryTitle = category.find('h2');
+
+            if (checkedBoxes.length === 0) {
+                categoryTitle.css('color', '#666');
+            } else if (checkedBoxes.length === checkboxes.length) {
+                categoryTitle.css('color', '#00a32a');
+            } else {
+                categoryTitle.css('color', '#d63638');
             }
+        });
 
-            const woocommerce_patterns = ['woocommerce', 'shop_', 'product', 'order', 'coupon', 'customer', 'manage_woocommerce', 'view_woocommerce', 'export_shop'];
-            const buttons = $('.mpa-assign-cap').filter(function() {
-                const capability = $(this).data('capability');
-                return woocommerce_patterns.some(pattern => capability.includes(pattern));
-            });
+        // Inicializar cores das categorias
+        $('.mpa-capability-category').each(function() {
+            const checkboxes = $(this).find('input[type="checkbox"]');
+            const checkedBoxes = checkboxes.filter(':checked');
+            const categoryTitle = $(this).find('h2');
 
-            let completed = 0;
-            let total = buttons.length;
-
-            if (total === 0) {
-                showNotice('Nenhuma capability do WooCommerce para sincronizar!', 'info');
-                return;
+            if (checkedBoxes.length === 0) {
+                categoryTitle.css('color', '#666');
+            } else if (checkedBoxes.length === checkboxes.length) {
+                categoryTitle.css('color', '#00a32a');
+            } else {
+                categoryTitle.css('color', '#d63638');
             }
-
-            showNotice('Sincronizando ' + total + ' capabilities do WooCommerce...', 'info');
-
-            buttons.each(function() {
-                const capability = $(this).data('capability');
-
-                $.ajax({
-                    url: ajaxurl,
-                    type: 'POST',
-                    data: {
-                        action: 'mpa_assign_capability',
-                        capability: capability,
-                        role: 'gerentes',
-                        nonce: nonce
-                    },
-                    success: function(response) {
-                        completed++;
-                        if (completed === total) {
-                            showNotice('✅ Capabilities do WooCommerce sincronizadas!', 'success');
-                            setTimeout(() => location.reload(), 2000);
-                        }
-                    },
-                    error: function() {
-                        completed++;
-                        if (completed === total) {
-                            showNotice('⚠️ Sincronização do WooCommerce completa com alguns erros.', 'warning');
-                            setTimeout(() => location.reload(), 2000);
-                        }
-                    }
-                });
-            });
         });
     });
     </script>
 
-    <!-- CSS adicional -->
+    <!-- CSS de teste para verificar carregamento -->
     <style>
-        .mpa-type-badge {
-            display: inline-block;
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 3px;
-            background: #0073aa;
-            color: white;
-            font-weight: bold;
+        /* CSS de teste - se isso aparecer é porque os estilos estão carregando */
+        .wrap h1 {
+            background: red !important;
+            color: white !important;
+            padding: 10px !important;
         }
-        .mpa-stat-card {
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .mpa-capabilities-table .widefat th,
-        .mpa-capabilities-table .widefat td {
-            padding: 12px 8px;
-        }
-        .mpa-assign-cap, .mpa-remove-cap {
-            font-size: 12px;
+
+        .mpa-role-selector {
+            background: yellow !important;
+            border: 3px solid blue !important;
         }
     </style>
 
@@ -1169,24 +1011,38 @@ function mpa_test_capability_ajax() {
 
 // Salva capabilities
 add_action('admin_post_mpa_save_role_capabilities', function () {
+    // Verificar permissões
     if (!current_user_can('manage_options')) {
         wp_die('Sem permissão.');
     }
 
-    if (isset($_POST['role']) && isset($_POST['capabilities']) && is_array($_POST['capabilities'])) {
+    // Verificar nonce
+    if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'mpa_capability_nonce')) {
+        wp_die('Falha na verificação de segurança.');
+    }
+
+    // Processar salvamento
+    if (isset($_POST['role'])) {
         $role_key = sanitize_text_field($_POST['role']);
-        $selected_caps = array_map('sanitize_text_field', $_POST['capabilities']);
+        $selected_caps = isset($_POST['capabilities']) && is_array($_POST['capabilities'])
+            ? array_map('sanitize_text_field', $_POST['capabilities'])
+            : [];
 
         $role = get_role($role_key);
         if ($role) {
+            // Remover todas as capabilities atuais
             foreach ($role->capabilities as $cap => $grant) {
                 $role->remove_cap($cap);
             }
 
+            // Adicionar as capabilities selecionadas
             foreach ($selected_caps as $cap) {
-                $role->add_cap($cap);
+                if (!empty($cap)) {
+                    $role->add_cap($cap);
+                }
             }
 
+            // Redirecionar com sucesso
             wp_redirect(add_query_arg([
                 'page' => 'mpa-capabilities',
                 'role' => $role_key,
@@ -1196,6 +1052,7 @@ add_action('admin_post_mpa_save_role_capabilities', function () {
         }
     }
 
+    // Redirecionar com erro
     wp_redirect(admin_url('admin.php?page=mpa-capabilities&error=1'));
     exit;
 });

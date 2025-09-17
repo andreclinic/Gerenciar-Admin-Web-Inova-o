@@ -1,0 +1,197 @@
+/* CSS para o Gerenciador de Capabilities - Interface por Role */
+
+.mpa-capabilities-table th,
+.mpa-capabilities-table td {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+.mpa-capabilities-table th {
+    background: #f9f9f9;
+    font-weight: bold;
+    color: #333;
+}
+
+.mpa-capabilities-table td:first-child {
+    text-align: left;
+    font-weight: bold;
+    background: #fbfbfb;
+}
+
+.mpa-capabilities-table tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+.mpa-capabilities-table tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+.mpa-capabilities-table tbody tr:nth-child(even):hover {
+    background-color: #f0f0f0;
+}
+
+.mpa-capability-category {
+    margin-bottom: 30px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.mpa-capability-category h2 {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.3s ease;
+    margin: 0;
+    padding: 15px;
+    background: linear-gradient(90deg, #0073aa, #005a87);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border-bottom: 1px solid #ddd;
+}
+
+.mpa-capability-category h2:hover {
+    background: linear-gradient(90deg, #005a87, #0073aa);
+    transform: translateX(5px);
+}
+
+.mpa-capability-section {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.mpa-capability-section:last-child {
+    border-bottom: none;
+}
+
+.mpa-capability-section h3 {
+    background: #f8f8f8;
+    padding: 12px 15px;
+    margin: 0;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 14px;
+    color: #555;
+    font-weight: 600;
+}
+
+.mpa-role-selector {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    margin-bottom: 25px;
+}
+
+.mpa-role-selector select {
+    border: 2px solid #0073aa;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 14px;
+    min-width: 200px;
+    background: white;
+    color: #333;
+}
+
+.mpa-role-selector select:focus {
+    outline: none;
+    border-color: #005a87;
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.1);
+}
+
+.mpa-post-filter {
+    background: #fff;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    margin-bottom: 25px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.mpa-post-filter select {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin-left: 10px;
+}
+
+input[type="checkbox"] {
+    transform: scale(1.3);
+    margin: 0;
+    accent-color: #0073aa;
+}
+
+input[type="checkbox"]:checked {
+    background-color: #0073aa;
+    border-color: #0073aa;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .mpa-capabilities-table {
+        font-size: 12px;
+    }
+
+    .mpa-capabilities-table th,
+    .mpa-capabilities-table td {
+        padding: 6px 8px;
+    }
+
+    .mpa-capability-category h2 {
+        padding: 12px;
+        font-size: 14px;
+    }
+
+    .mpa-capability-section h3 {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .mpa-role-selector,
+    .mpa-post-filter {
+        padding: 15px;
+    }
+}
+
+/* Estados visuais para indicar status das capabilities */
+.mpa-capability-category[data-status="none"] h2 {
+    background: linear-gradient(90deg, #666, #555);
+}
+
+.mpa-capability-category[data-status="full"] h2 {
+    background: linear-gradient(90deg, #00a32a, #008a20);
+}
+
+.mpa-capability-category[data-status="partial"] h2 {
+    background: linear-gradient(90deg, #d63638, #b32d2e);
+}
+
+/* Animações suaves */
+.mpa-capabilities-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.mpa-capability-category {
+    transition: transform 0.2s ease;
+}
+
+.mpa-capability-category:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Melhor destacamento do botão de salvar */
+.submit input[type="submit"] {
+    background: linear-gradient(90deg, #0073aa, #005a87);
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.submit input[type="submit"]:hover {
+    background: linear-gradient(90deg, #005a87, #0073aa);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
