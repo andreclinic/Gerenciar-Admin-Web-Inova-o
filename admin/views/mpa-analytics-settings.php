@@ -90,16 +90,20 @@ $is_connected = !empty($ga4_settings['access_token']) && time() < $ga4_settings[
 
             <div class="mpa-form-group">
                 <label for="ga4_client_secret">Client Secret *</label>
-                <input 
-                    type="password" 
-                    id="ga4_client_secret" 
-                    name="ga4_client_secret" 
-                    value="<?php echo esc_attr($ga4_settings['client_secret']); ?>"
+                <input
+                    type="password"
+                    id="ga4_client_secret"
+                    name="ga4_client_secret"
+                    value="<?php echo !empty($ga4_settings['client_secret']) ? '••••••••••••••••••••••••••••••••' : ''; ?>"
                     placeholder="GOCSPX-abcdefghijklmnopqrstuvwxyz"
-                    required
+                    <?php echo !empty($ga4_settings['client_secret']) ? '' : 'required'; ?>
                     class="mpa-form-input"
                 />
-                <p class="mpa-form-help">Client Secret obtido no Google Cloud Console</p>
+                <?php if (!empty($ga4_settings['client_secret'])): ?>
+                    <p class="mpa-form-help">✅ <strong>Client Secret configurado</strong> - deixe vazio para manter o atual</p>
+                <?php else: ?>
+                    <p class="mpa-form-help">Client Secret obtido no Google Cloud Console</p>
+                <?php endif; ?>
             </div>
         </div>
 

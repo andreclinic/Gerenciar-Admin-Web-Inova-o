@@ -190,15 +190,21 @@ class MPA_Analytics_Page {
             $client_secret = sanitize_text_field($_POST['ga4_client_secret'] ?? '');
             $property_id = sanitize_text_field($_POST['ga4_property_id'] ?? '');
             $data_stream_id = sanitize_text_field($_POST['ga4_data_stream_id'] ?? '');
-            
+
+            // Obter client_secret atual se campo estiver vazio (mascarado)
+            $current_settings = self::get_ga4_settings();
+            if (empty($client_secret) && !empty($current_settings['client_secret'])) {
+                $client_secret = $current_settings['client_secret']; // Manter o atual
+            }
+
             // Validar campos obrigatórios
             if (empty($client_id) || empty($client_secret) || empty($property_id)) {
                 throw new Exception('Todos os campos obrigatórios devem ser preenchidos.');
             }
-            
+
             // Salvar no banco
             update_option('mpa_ga4_client_id', $client_id);
-            update_option('mpa_ga4_client_secret', $client_secret);
+            update_option('mpa_ga4_client_secret', $client_secret, false);
             update_option('mpa_ga4_property_id', $property_id);
             update_option('mpa_ga4_data_stream_id', $data_stream_id);
             

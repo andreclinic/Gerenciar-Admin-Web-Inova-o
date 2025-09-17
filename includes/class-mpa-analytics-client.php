@@ -115,8 +115,91 @@ class MPA_Analytics_Client {
      * Verificar permissões para endpoints
      */
     public function check_permissions($request = null) {
-        // Sempre permitir para usuários com manage_options
-        return current_user_can('manage_options');
+        // Verificar permissões básicas
+        if (!current_user_can('manage_options')) {
+            return false;
+        }
+
+        // Aplicar rate limiting
+        return $this->check_rate_limit($request);
+    }
+
+    /**
+     * Verificar rate limiting para endpoints REST
+     */
+    private function check_rate_limit($request = null) {
+        $user_id = get_current_user_id();
+        $ip_address = $this->get_client_ip();
+        $rate_key = 'mpa_analytics_rate_' . $user_id . '_' . md5($ip_address);
+
+        // Limite: 60 requisições por minuto por usuário/IP
+        $limit = 60;
+        $window = 60; // segundos
+
+        $current_time = time();
+        $rate_data = get_transient($rate_key);
+
+        if (!$rate_data) {
+            // Primeira requisição na janela
+            $rate_data = array(
+                'count' => 1,
+                'window_start' => $current_time
+            );
+            set_transient($rate_key, $rate_data, $window);
+            return true;
+        }
+
+        // Verificar se ainda estamos na mesma janela de tempo
+        if (($current_time - $rate_data['window_start']) >= $window) {
+            // Nova janela de tempo
+            $rate_data = array(
+                'count' => 1,
+                'window_start' => $current_time
+            );
+            set_transient($rate_key, $rate_data, $window);
+            return true;
+        }
+
+        // Verificar se excedeu o limite
+        if ($rate_data['count'] >= $limit) {
+            return new WP_Error('rate_limit_exceeded',
+                'Rate limit exceeded. Maximum ' . $limit . ' requests per minute allowed.',
+                array('status' => 429)
+            );
+        }
+
+        // Incrementar contador
+        $rate_data['count']++;
+        set_transient($rate_key, $rate_data, $window);
+
+        return true;
+    }
+
+    /**
+     * Obter IP do cliente de forma segura
+     */
+    private function get_client_ip() {
+        $headers = array(
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_X_REAL_IP',
+            'HTTP_CLIENT_IP',
+            'REMOTE_ADDR'
+        );
+
+        foreach ($headers as $header) {
+            if (!empty($_SERVER[$header])) {
+                $ips = explode(',', $_SERVER[$header]);
+                $ip = trim($ips[0]);
+
+                // Validar IP
+                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                    return $ip;
+                }
+            }
+        }
+
+        // Fallback para IP local/privado se necessário
+        return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '127.0.0.1';
     }
     
     /**
@@ -591,8 +674,8 @@ class MPA_Analytics_Client {
         
         if (isset($data['access_token'])) {
             // Salvar novo token
-            update_option('mpa_ga4_access_token', $data['access_token']);
-            update_option('mpa_ga4_token_expires', time() + $data['expires_in']);
+            update_option('mpa_ga4_access_token', $data['access_token'], false);
+            update_option('mpa_ga4_token_expires', time() + $data['expires_in'], false);
             
             return $data['access_token'];
         }
@@ -626,10 +709,7 @@ class MPA_Analytics_Client {
             )
         ));
         
-        // Debug: Log da resposta da API
-        
         if (!isset($data['rows'][0]['metricValues'])) {
-            // Debug: Log quando não há dados
             return array(
                 'users' => 0,
                 'pageviews' => 0,
@@ -893,7 +973,7 @@ class MPA_Analytics_Client {
         
         // Gerar state para segurança
         $state = wp_generate_password(32, false);
-        update_option('mpa_ga4_oauth_state', $state);
+        update_option('mpa_ga4_oauth_state', $state, false);
         
         // URL de callback
         $redirect_uri = admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG);
@@ -997,11 +1077,11 @@ class MPA_Analytics_Client {
         }
         
         // Salvar tokens
-        update_option('mpa_ga4_access_token', $data['access_token']);
-        update_option('mpa_ga4_token_expires', time() + $data['expires_in']);
-        
+        update_option('mpa_ga4_access_token', $data['access_token'], false);
+        update_option('mpa_ga4_token_expires', time() + $data['expires_in'], false);
+
         if (isset($data['refresh_token'])) {
-            update_option('mpa_ga4_refresh_token', $data['refresh_token']);
+            update_option('mpa_ga4_refresh_token', $data['refresh_token'], false);
         }
         
         $this->log_activity('Tokens OAuth obtidos com sucesso', 'success');

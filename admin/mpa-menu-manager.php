@@ -647,7 +647,29 @@ function mpa_import_menu_settings_callback() {
     }
 
     if (!empty($_FILES['mpa_import_file']['tmp_name'])) {
-        $file_content = file_get_contents($_FILES['mpa_import_file']['tmp_name']);
+        // Usar wp_handle_upload para segurança
+        $upload_overrides = array(
+            'test_form' => false,
+            'mimes' => array('json' => 'application/json')
+        );
+
+        $uploaded_file = wp_handle_upload($_FILES['mpa_import_file'], $upload_overrides);
+
+        if (isset($uploaded_file['error'])) {
+            wp_die('Tipo de arquivo não permitido: ' . $uploaded_file['error']);
+        }
+
+        // Validação adicional de tipo MIME
+        $file_type = wp_check_filetype($uploaded_file['file']);
+        if ($file_type['ext'] !== 'json') {
+            unlink($uploaded_file['file']); // Limpar arquivo
+            wp_die('Apenas arquivos JSON são permitidos.');
+        }
+
+        $file_content = file_get_contents($uploaded_file['file']);
+        // Limpar arquivo após leitura
+        unlink($uploaded_file['file']);
+
         $data = json_decode($file_content, true);
 
         if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {

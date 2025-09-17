@@ -33,9 +33,6 @@ function mpa_get_scroll_redirect_url($base_url) {
         ? preg_replace('/[^a-zA-Z0-9\-\_\:]/', '', $_REQUEST['mpa_anchor'])
         : '';
 
-    // Debug log
-    error_log('MPA DEBUG: mpa_anchor recebido = ' . ($anchor ?: 'VAZIO'));
-    error_log('MPA DEBUG: $_REQUEST = ' . print_r($_REQUEST, true));
 
     if ($anchor) {
         // Preferível: anexar #hash (anchor) — o browser rola sozinho
@@ -44,11 +41,9 @@ function mpa_get_scroll_redirect_url($base_url) {
         // Fallback por query, caso algum proxy remova fragmento
         $redirect = add_query_arg('mpa_anchor', rawurlencode($anchor), $redirect);
 
-        error_log('MPA DEBUG: URL final = ' . $redirect);
         return $redirect;
     }
 
-    error_log('MPA DEBUG: Nenhuma âncora, URL original = ' . $base_url);
     return $base_url;
 }
 
@@ -458,17 +453,32 @@ add_action('admin_init', function () {
             exit;
         }
 
-        $upload_file = $_FILES['mpa_import_file'];
+        // Usar wp_handle_upload para segurança
+        $upload_overrides = array(
+            'test_form' => false,
+            'mimes' => array('json' => 'application/json')
+        );
 
-        // Validar tipo de arquivo
-        if ($upload_file['type'] !== 'application/json' &&
-            !str_ends_with($upload_file['name'], '.json')) {
+        $uploaded_file = wp_handle_upload($_FILES['mpa_import_file'], $upload_overrides);
+
+        if (isset($uploaded_file['error'])) {
             wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=2')));
             exit;
         }
 
-        // Ler conteúdo do arquivo
-        $file_content = file_get_contents($upload_file['tmp_name']);
+        // Validação adicional de tipo MIME
+        $file_type = wp_check_filetype($uploaded_file['file']);
+        if ($file_type['ext'] !== 'json') {
+            unlink($uploaded_file['file']); // Limpar arquivo
+            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=2')));
+            exit;
+        }
+
+        // Ler conteúdo do arquivo com segurança
+        $file_content = file_get_contents($uploaded_file['file']);
+
+        // Limpar arquivo após leitura
+        unlink($uploaded_file['file']);
         $import_data = json_decode($file_content, true);
 
         if (json_last_error() !== JSON_ERROR_NONE || !isset($import_data['data'])) {
