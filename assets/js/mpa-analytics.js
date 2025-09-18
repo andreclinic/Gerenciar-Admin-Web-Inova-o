@@ -27,26 +27,19 @@
         }
 
         init() {
-            console.log('🔍 [MPA DEBUG] Inicializando MPAAnalyticsDashboard');
-            
             // Corrigir menu ativo - fazer Painel ficar ativo ao invés de Analytics
             this.fixActiveMenu();
-            
+
             // Verificar se objeto mpaAnalytics existe
             if (typeof mpaAnalytics === 'undefined') {
-                console.error('❌ [MPA DEBUG] Objeto mpaAnalytics não existe!');
+                console.error('❌ [MPA ERROR] Objeto mpaAnalytics não existe!');
                 this.showNotification('Erro: Configurações JavaScript não carregadas', 'error');
                 return;
             }
-            
-            console.log('🔍 [MPA DEBUG] Objeto mpaAnalytics encontrado:', mpaAnalytics);
-            console.log('🔍 [MPA DEBUG] Chart.js disponível:', typeof Chart !== 'undefined' ? 'SIM' : 'NÃO');
-            
+
             // Se Chart.js não está disponível, aguardar um pouco
             if (typeof Chart === 'undefined') {
-                console.log('⏳ [MPA DEBUG] Aguardando Chart.js carregar...');
                 setTimeout(() => {
-                    console.log('🔍 [MPA DEBUG] Verificação Chart.js após delay:', typeof Chart !== 'undefined' ? 'SIM' : 'NÃO');
                     this.continueInit();
                 }, 2000);
                 return;
@@ -205,7 +198,6 @@
                     return null;
                 }
                 
-                console.log(`📦 [MPA CACHE] Dados encontrados no cache para ${endpoint}`);
                 return data.value;
             } catch (e) {
                 sessionStorage.removeItem(cacheKey);
@@ -230,7 +222,6 @@
 
         shouldLoadInitialData() {
             // Carrega dados na primeira visita da sessão ou quando o filtro de período muda
-            console.log('🔍 [MPA DEBUG] shouldLoadInitialData - isInitialLoad:', this.isInitialLoad);
             return this.isInitialLoad;
         }
 
@@ -240,7 +231,6 @@
         }
 
         loadCachedDataIfAvailable() {
-            console.log('📦 [MPA CACHE] Verificando cache disponível...');
             const cacheParams = this.currentDateRange;
             
             // Tentar carregar dados principais do cache
@@ -252,19 +242,9 @@
             const pages = this.getCachedData('pages', cacheParams);
             const events = this.getCachedData('events', cacheParams);
             
-            console.log('📦 [MPA CACHE] Status do cache:', {
-                metrics: !!metrics,
-                visitors: !!visitors, 
-                devices: !!devices,
-                sources: !!sources,
-                cities: !!cities,
-                pages: !!pages,
-                events: !!events
-            });
             
             // Se todos os dados principais estão em cache, usar eles
             if (metrics && visitors && devices && sources) {
-                console.log('✅ [MPA CACHE] Todos os dados principais em cache, carregando...');
                 
                 this.updateMetricsDisplay(metrics);
                 this.updateVisitorsChart(visitors);
@@ -274,11 +254,9 @@
                 if (cities) this.updateTopCities(cities);
                 if (pages) this.updateTopPages(pages);
                 if (events) {
-                    console.log('🔥 [MPA CACHE] Carregando eventos do cache:', events);
                     this.updateEventsChart(events);
                     this.updateTopEvents(events);
                 } else {
-                    console.log('⚠️ [MPA CACHE] Dados de eventos não encontrados no cache, carregando da API...');
                     this.loadEventsData();
                 }
                 
@@ -291,7 +269,6 @@
                 return true;
             }
             
-            console.log('❌ [MPA CACHE] Cache incompleto, será necessário carregar da API');
             return false;
         }
 
@@ -299,26 +276,19 @@
         // DATA LOADING
         // ===================================
         loadAllData() {
-            console.log('🔍 [MPA DEBUG] loadAllData() iniciado');
-            console.log('🔍 [MPA DEBUG] currentDateRange:', this.currentDateRange);
-            console.log('🔍 [MPA DEBUG] mpaAnalytics object:', mpaAnalytics);
-            console.log('🔍 [MPA DEBUG] shouldLoadInitialData:', this.shouldLoadInitialData());
             
             // Verificar se já está carregando para evitar loops
             if (this.isLoading) {
-                console.log('⚠️ [MPA DEBUG] Já está carregando dados, ignorando nova chamada');
                 return;
             }
             
             // Se não é o carregamento inicial, apenas mostrar dados em cache se existirem
             if (!this.shouldLoadInitialData()) {
-                console.log('📦 [MPA DEBUG] Tentando usar cache...');
                 const cachedData = this.loadCachedDataIfAvailable();
                 if (cachedData) {
                     console.log('📦 [MPA CACHE] Usando dados em cache, pulando requisições API');
                     return;
                 }
-                console.log('📦 [MPA DEBUG] Cache não disponível, carregando da API...');
             }
             
             this.isLoading = true;
@@ -334,7 +304,6 @@
                 this.loadEventsData(),
                 this.loadRealtimeData()
             ]).then(() => {
-                console.log('✅ [MPA DEBUG] Todos os dados carregados com sucesso');
                 this.hideLoading();
                 this.showNotification('Dados atualizados com sucesso!', 'success');
                 this.markAsLoaded();
@@ -503,7 +472,6 @@
          * Corrigir menu ativo - fazer Painel ficar ativo ao invés de Analytics
          */
         fixActiveMenu() {
-            console.log('🔄 [MPA DEBUG] Corrigindo menu ativo...');
             
             // Remover classes 'current' e 'wp-has-current-submenu' do menu Gerenciar Admin
             $('#adminmenu a[href*="mpa-main"], #adminmenu .wp-submenu a[href*="mpa-analytics"]').removeClass('current');
@@ -515,9 +483,7 @@
             if (dashboardMenu.length > 0) {
                 dashboardMenu.addClass('current wp-has-current-submenu wp-menu-open');
                 dashboardMenu.find('a').addClass('current');
-                console.log('✅ [MPA DEBUG] Menu Dashboard ativado');
             } else {
-                console.log('⚠️ [MPA DEBUG] Menu Dashboard não encontrado');
             }
             
             // Se não encontrar por href, tentar por classe
@@ -525,7 +491,6 @@
                 const firstDashboardItem = $('#adminmenu li').first();
                 firstDashboardItem.addClass('current wp-has-current-submenu');
                 firstDashboardItem.find('a').first().addClass('current');
-                console.log('✅ [MPA DEBUG] Primeiro item do menu ativado como fallback');
             }
         }
 
@@ -549,11 +514,6 @@
             if (params.start_date) url.searchParams.append('start_date', params.start_date);
             if (params.end_date) url.searchParams.append('end_date', params.end_date);
 
-            console.log(`🌐 [MPA DEBUG] Fazendo requisição para: ${url.toString()}`);
-            console.log('🌐 [MPA DEBUG] Headers enviados:', {
-                'X-WP-Nonce': mpaAnalytics.nonce,
-                'Content-Type': 'application/json'
-            });
 
             const response = await fetch(url, {
                 method: 'GET',
@@ -563,7 +523,6 @@
                 }
             });
 
-            console.log(`🌐 [MPA DEBUG] Response status: ${response.status} ${response.statusText}`);
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
@@ -572,7 +531,6 @@
             }
 
             const result = await response.json();
-            console.log(`✅ [MPA DEBUG] Response recebida para ${endpoint}:`, result);
             return result;
         }
 
@@ -614,7 +572,6 @@
 
             // Verificar se Chart.js está disponível
             if (typeof Chart === 'undefined') {
-                console.log('⚠️ [MPA DEBUG] Chart.js não disponível, exibindo dados sem gráfico');
                 ctx.outerHTML = '<div style="padding: 20px; text-align: center; color: #666;">📊 Dados carregados com sucesso<br>Gráfico indisponível (Chart.js não carregado)</div>';
                 return;
             }
@@ -673,7 +630,6 @@
 
             // Verificar se Chart.js está disponível
             if (typeof Chart === 'undefined') {
-                console.log('⚠️ [MPA DEBUG] Chart.js não disponível para device chart');
                 ctx.outerHTML = '<div style="padding: 20px; text-align: center; color: #666;">📱 Dados de dispositivos carregados<br>Gráfico indisponível</div>';
                 return;
             }
@@ -902,14 +858,11 @@
         }
 
         updateTopEvents(data) {
-            console.log('🔥 [MPA DEBUG] updateTopEvents chamado com data:', data);
             const container = $('#topEvents');
-            console.log('🔥 [MPA DEBUG] Container #topEvents encontrado:', container.length > 0);
             if (!container.length) return;
 
             let html = '';
             const events = data?.events || [];
-            console.log('🔥 [MPA DEBUG] Eventos para processar:', events.length, events);
 
             events.forEach((event, index) => {
                 const eventName = event.event_name || 'Evento';

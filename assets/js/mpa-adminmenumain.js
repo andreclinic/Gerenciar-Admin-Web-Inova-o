@@ -516,11 +516,7 @@ jQuery(function ($) {
         });
 
         // Initialize drag events for existing submenu items
-        console.log('Found', $('.mpa-submenu-item').length, 'submenu items');
-        console.log('Found', $('.mpa-menu-list').length, 'main menu areas');
-
         $('.mpa-submenu-item').each(function() {
-            console.log('Adding drag events to submenu item:', this);
             addSubmenuDragEvents($(this));
         });
 
