@@ -423,7 +423,6 @@ INSTRUÇÕES PARA EXECUÇÃO:
 
    - Sistema de analytics (funcionando perfeitamente)
    - Sistema de login customizado (funcionando perfeitamente)
-   - Sistema de capabilities (funcionando perfeitamente)
 
 3. RECRIAR IDENTICAMENTE o sistema de gerenciamento de menus:
 

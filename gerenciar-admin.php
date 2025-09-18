@@ -2,18 +2,15 @@
 /*
 Plugin Name: Gerenciar Admin Web Inovação
 Description: Gerenciar e estilizar admin do Wordpress.
-Version: 1.1
+Version: 1.2
 Author: Web Inovação
 */
 
-// Plugin carregamento
-
-// Caminho absoluto até a pasta do plugin
+// Definir caminhos do plugin
 define('ADMIN_BAR_MENU_PATH', plugin_dir_path(__FILE__));
 define('ADMIN_BAR_MENU_URL', plugin_dir_url(__FILE__));
 
-
-// Carregar todos os módulos (voltando ao método simples para corrigir problemas de permissão)
+// Carregar módulos do plugin
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-admin.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-adminmenumain.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-wpadminbar.php';
@@ -21,15 +18,14 @@ include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-wpbody.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-wpcontent.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-wpfooter.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-menu-manager.php';
-include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-capability-manager.php';
 include_once ADMIN_BAR_MENU_PATH . '/admin/class-mpa-analytics-page.php';
 include_once ADMIN_BAR_MENU_PATH . '/includes/class-mpa-analytics-client.php';
-include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-custom-login.php'; // Tela de login personalizada
-include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-hide-updates.php'; // Sistema para esconder updates
+include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-custom-login.php';
+include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-hide-updates.php';
 
 
 
-// Redirecionar para mpa-analytics para usuários com permissões administrativas
+// Redirecionamento para dashboard analytics
 add_action('admin_init', 'mpa_redirect_to_analytics');
 
 function mpa_redirect_to_analytics()

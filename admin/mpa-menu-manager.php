@@ -380,8 +380,11 @@ function mpa_user_can_see_submenu($parent_slug, $submenu_slug, array $user_roles
     return $found_config ? $decision : true;
 }
 
-// 4. Aplicação robusta de restrições
+// 4. Aplicação robusta de restrições - TEMPORARIAMENTE DESABILITADO
 add_action('admin_menu', function() {
+    // TESTE: Desabilitar completamente para testar Rank Math
+    return;
+
     $user = wp_get_current_user();
     if (in_array('administrator', (array) $user->roles, true)) return;
 
@@ -405,11 +408,17 @@ add_action('admin_menu', function() {
         }
         
         $slug = mpa_normalize_slug($menu_item['slug']);
-        
+
         if (!mpa_user_can_see_menu($slug, $roles, $opts)) {
+            // PROTEÇÃO: Nunca remover menus do Rank Math SEO
+            if (strpos($menu_item['slug'], 'rank-math') !== false) {
+                $debug_info[] = "PROTEGIDO Rank Math: {$menu_item['slug']} (não removido)";
+                continue; // Pular remoção para Rank Math
+            }
+
             remove_menu_page($menu_item['slug']); // usar slug original para remoção
             $debug_info[] = "REMOVIDO menu: {$menu_item['slug']} (normalizado: $slug)";
-            
+
             if ($slug === 'edit.php') {
                 $debug_info[] = "*** POSTS REMOVIDO ***";
             }
@@ -419,8 +428,14 @@ add_action('admin_menu', function() {
         if (!empty($menu_item['submenus'])) {
             foreach ($menu_item['submenus'] as $sub) {
                 $sub_slug = mpa_normalize_slug($sub['slug']);
-                
+
                 if (!mpa_user_can_see_submenu($slug, $sub_slug, $roles, $opts)) {
+                    // PROTEÇÃO: Nunca remover submenus do Rank Math SEO
+                    if (strpos($sub['slug'], 'rank-math') !== false) {
+                        $debug_info[] = "PROTEGIDO Rank Math submenu: {$sub['slug']} (não removido)";
+                        continue; // Pular remoção para submenus Rank Math
+                    }
+
                     remove_submenu_page($menu_item['slug'], $sub['slug']); // usar slugs originais
                     $debug_info[] = "REMOVIDO submenu: {$menu_item['slug']} -> {$sub['slug']}";
                 }

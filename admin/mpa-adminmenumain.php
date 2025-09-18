@@ -29,7 +29,8 @@ function mpa_adminmenumain_assets($hook)
 }
 
 // Implementar sidebar dinâmico baseado nos menus do WordPress
-add_action('in_admin_header', 'mpa_render_dynamic_sidebar', 10);
+// Renderizar após o processamento completo dos menus (prioridade 9999)
+add_action('in_admin_header', 'mpa_render_dynamic_sidebar', 99999);
 
 function mpa_render_dynamic_sidebar() {
     global $menu, $submenu;
@@ -61,15 +62,17 @@ function mpa_render_dynamic_sidebar() {
             <?php
             $current_screen = get_current_screen();
             $current_page = isset($_GET['page']) ? $_GET['page'] : '';
-            
+
+
             foreach ($menu as $menu_item) {
                 if (empty($menu_item[0]) || $menu_item[0] == 'separator') continue;
-                
+
+                $menu_file = $menu_item[2];
+
+
                 // Pular se usuário não tem permissão
                 if (!current_user_can($menu_item[1])) continue;
-                
-                $menu_file = $menu_item[2];
-                
+
                 // NOVA VERIFICAÇÃO: Pular se menu está restrito por role
                 if (mpa_is_menu_restricted($menu_file, $user_restrictions)) continue;
                 $menu_title = wp_strip_all_tags($menu_item[0]);
@@ -302,37 +305,53 @@ add_action('admin_head', function() {
 // NOVAS FUNÇÕES PARA CONTROLE DE RESTRIÇÕES DE MENU
 
 function mpa_get_user_menu_restrictions() {
-    // Administradores não têm restrições
+    // Administradores e gerentes não têm restrições
     $user = wp_get_current_user();
-    if (in_array('administrator', (array) $user->roles, true)) {
+    if (in_array('administrator', (array) $user->roles, true) || in_array('gerentes', (array) $user->roles, true)) {
         return array();
     }
-    
-    $user = wp_get_current_user();
+
+    // Usar o novo sistema de configurações
+    if (function_exists('mpa_get_effective_settings_for_current_user')) {
+        $settings = mpa_get_effective_settings_for_current_user();
+
+        $restricted_menus = $settings['remove'] ?? array();
+        $restricted_submenus = array();
+
+        // Converter submenu removidos para o formato esperado
+        if (!empty($settings['remove_submenu']) && is_array($settings['remove_submenu'])) {
+            foreach ($settings['remove_submenu'] as $parent_slug => $submenu_slugs) {
+                foreach ($submenu_slugs as $submenu_slug) {
+                    $restricted_submenus[] = $parent_slug . '|' . $submenu_slug;
+                }
+            }
+        }
+
+        return array(
+            'menus' => array_unique($restricted_menus),
+            'submenus' => array_unique($restricted_submenus)
+        );
+    }
+
+    // Fallback para sistema antigo (se função não existir)
     $user_roles = $user->roles;
-    
     if (empty($user_roles)) return array();
-    
+
     $menu_permissions = get_option('mpa_menu_permissions', array());
     $restricted_menus = array();
     $restricted_submenus = array();
-    
-    // Coletar todas as restrições para as roles do usuário
+
     foreach ($user_roles as $role) {
         if (!isset($menu_permissions[$role])) continue;
-        
         $role_permissions = $menu_permissions[$role];
-        
-        // Coletar menus principais restritos
+
         foreach ($role_permissions as $menu_slug => $permission) {
             if ($menu_slug === 'submenus') continue;
-            
             if ($permission === false) {
                 $restricted_menus[] = $menu_slug;
             }
         }
-        
-        // Coletar submenus restritos
+
         if (isset($role_permissions['submenus']) && is_array($role_permissions['submenus'])) {
             foreach ($role_permissions['submenus'] as $submenu_key => $permission) {
                 if ($permission === false) {
@@ -341,7 +360,7 @@ function mpa_get_user_menu_restrictions() {
             }
         }
     }
-    
+
     return array(
         'menus' => array_unique($restricted_menus),
         'submenus' => array_unique($restricted_submenus)
@@ -366,8 +385,8 @@ function mpa_filtrar_menu_principal_por_role() {
     global $menu;
 
     $user = wp_get_current_user();
-    if (in_array('administrator', (array) $user->roles, true)) {
-        return; // Administradores não têm restrições
+    if (in_array('administrator', (array) $user->roles, true) || in_array('gerentes', (array) $user->roles, true)) {
+        return; // Administradores e gerentes não têm restrições
     }
 
     $user = wp_get_current_user();

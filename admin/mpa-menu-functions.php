@@ -319,10 +319,18 @@ if (!function_exists('mpa_apply_settings_to_arrays')) {
  * - Se for URL interna: redireciona.
  * - Se for externa: mostra um botão para abrir em nova aba (fallback).
  */
+// Verificação de capabilities do Rank Math removida - gerenciada por plugin específico
+
 if (!function_exists('mpa_custom_menu_router')) {
     function mpa_custom_menu_router()
     {
         $slug = isset($_GET['page']) ? sanitize_key($_GET['page']) : '';
+
+        // PROTEÇÃO: Nunca processar páginas do Rank Math como menus personalizados
+        if (strpos($slug, 'rank-math') !== false) {
+            return; // Deixar o WordPress/Rank Math processar normalmente
+        }
+
         $map = $GLOBALS['mpa_custom_links_map'] ?? [];
         $item = $map[$slug] ?? null;
 
@@ -345,11 +353,22 @@ if (!function_exists('mpa_custom_menu_router')) {
 }
 
 /**
- * Aplica as customizações para o USUÁRIO ATUAL (produção).
- * Inclui a injeção dos MENUS PERSONALIZADOS e o JS para external links.
+ * SISTEMA ATIVO DE GERENCIAMENTO DE MENUS POR ROLE
+ * Aplica todas as configurações: custom menus, rename, remove, promote, demote, order
+ * Com proteções para administradores e Rank Math SEO
  */
+
+
 add_action('admin_menu', function () {
     global $menu, $submenu;
+
+    // EXCEÇÕES: Roles que nunca devem ter menus processados
+    $current_user = wp_get_current_user();
+    $role = $current_user->roles[0] ?? '';
+
+    if ($role === 'administrator' || $role === 'gerentes') {
+        return; // Essas roles têm acesso completo, pular todo o processamento
+    }
 
     $settings = mpa_get_effective_settings_for_current_user();
 
@@ -363,6 +382,11 @@ add_action('admin_menu', function () {
             if (!$id || !$title || !$url)
                 continue;
 
+            // PROTEÇÃO: Nunca criar menus personalizados que conflitem com Rank Math
+            if (strpos($id, 'rank-math') !== false || strpos($title, 'rank-math') !== false) {
+                continue;
+            }
+
             $icon = $cm['icon'] ?? 'dashicons-admin-links';
             $pos = $cm['pos'] ?? 82;
             $slug = 'mpa_custom_' . sanitize_key($id);
@@ -370,7 +394,6 @@ add_action('admin_menu', function () {
             $is_external = mpa_is_external_url($url);
             $finalUrl = $is_external ? $url : mpa_normalize_local_admin_url($url);
 
-            // mapeia para router/JS
             $GLOBALS['mpa_custom_links_map'][$slug] = [
                 'url' => $finalUrl,
                 'external' => $is_external,
@@ -378,18 +401,18 @@ add_action('admin_menu', function () {
             ];
 
             add_menu_page(
-                $title,               // page title
-                $title,               // menu title
-                'manage_options',     // capability
-                $slug,                // slug
-                'mpa_custom_menu_router', // callback
-                $icon,                // icon
-                $pos                  // position hint
+                $title,
+                $title,
+                'manage_options',
+                $slug,
+                'mpa_custom_menu_router',
+                $icon,
+                $pos
             );
         }
     }
 
-    /* === A PARTIR DAQUI segue o pipeline usual (rename/remove/promote/demote/order) === */
+    /* === PIPELINE COMPLETO (rename/remove/promote/demote/order) === */
 
     // 1) Renomear MENUS
     if (!empty($settings['rename'])) {
@@ -537,5 +560,32 @@ add_action('admin_menu', function () {
         }
     }
 
-}, 9999);
+    /* 🔒 FILTRAGEM ADICIONAL DE MENUS POR ROLE */
+    // 🚨 Se for admin ou gerentes, não aplicar restrições
+    if (in_array($role, ['administrator', 'gerentes'], true)) {
+        return;
+    }
 
+    // Buscar restrições para roles normais
+    $restricoes = get_option("mpa_restricoes_menus_$role", []);
+
+    if (!empty($restricoes) && is_array($restricoes)) {
+        // Menus principais
+        foreach ($menu as $key => $item) {
+            $slug = $item[2] ?? '';
+            if (in_array($slug, $restricoes, true)) {
+                remove_menu_page($slug);
+            }
+        }
+
+        // Submenus
+        foreach ($submenu as $parent_slug => $items) {
+            foreach ($items as $key => $sub_item) {
+                $sub_slug = $sub_item[2] ?? '';
+                if (in_array($sub_slug, $restricoes, true)) {
+                    remove_submenu_page($parent_slug, $sub_slug);
+                }
+            }
+        }
+    }
+}, 9999);
