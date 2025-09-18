@@ -80,7 +80,7 @@ add_action('admin_init', function () {
                 echo '<div class="notice notice-success is-dismissible"><p>Ícone atualizado com sucesso!</p></div>';
             });
 
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&icone_atualizado=1')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&icone_atualizado=1')));
             exit;
         }
     }
@@ -98,7 +98,7 @@ add_action('admin_init', function () {
             $cfg = mpa_get_role_settings($role_key);
             $cfg['rename_submenu'][$menu_pai][$submenu_slug] = $novo_nome;
             mpa_update_role_settings($role_key, $cfg);
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&renomeado=1')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&renomeado=1')));
             exit;
         }
     }
@@ -115,7 +115,7 @@ add_action('admin_init', function () {
             if (!in_array($slug, $cfg['remove'], true))
                 $cfg['remove'][] = $slug;
             mpa_update_role_settings($role_key, $cfg);
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&removido=1')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&removido=1')));
             exit;
         }
     }
@@ -134,7 +134,7 @@ add_action('admin_init', function () {
             if (!in_array($submenu_slug, $cfg['remove_submenu'][$menu_pai], true))
                 $cfg['remove_submenu'][$menu_pai][] = $submenu_slug;
             mpa_update_role_settings($role_key, $cfg);
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&subremovido=1')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&subremovido=1')));
             exit;
         }
     }
@@ -150,7 +150,7 @@ add_action('admin_init', function () {
             $cfg['remove'] = array_values(array_diff($cfg['remove'], [$slug]));
             mpa_update_role_settings($role_key, $cfg);
         }
-        wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&restaurado=1')));
+        wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&restaurado=1')));
         exit;
     }
 
@@ -168,7 +168,7 @@ add_action('admin_init', function () {
                 unset($cfg['remove_submenu'][$menu_pai]);
             mpa_update_role_settings($role_key, $cfg);
         }
-        wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&subrestaurado=1')));
+        wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&subrestaurado=1')));
         exit;
     }
 
@@ -186,7 +186,7 @@ add_action('admin_init', function () {
             $cfg['promote_submenu'] = $cfg['promote_submenu'] ?? [];
             $cfg['promote_submenu'][] = ['parent' => $menu_pai, 'slug' => $submenu_slug, 'name' => $submenu_nome, 'icon' => 'dashicons-admin-generic', 'pos' => 80];
             mpa_update_role_settings($role_key, $cfg);
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&promovido=1')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&promovido=1')));
             exit;
         }
     }
@@ -204,7 +204,7 @@ add_action('admin_init', function () {
             $cfg['demote_menu'] = $cfg['demote_menu'] ?? [];
             $cfg['demote_menu'][] = ['slug' => $menu_slug, 'parent' => $new_parent];
             mpa_update_role_settings($role_key, $cfg);
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&rebaixado=1')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&rebaixado=1')));
             exit;
         }
     }
@@ -221,7 +221,7 @@ add_action('admin_init', function () {
             $cfg['demote_menu'] = array_values($cfg['demote_menu']);
             mpa_update_role_settings($role_key, $cfg);
         }
-        wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&demoterestaurado=1')));
+        wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&demoterestaurado=1')));
         exit;
     }
 
@@ -237,7 +237,7 @@ add_action('admin_init', function () {
             $cfg['promote_submenu'] = array_values($cfg['promote_submenu']);
             mpa_update_role_settings($role_key, $cfg);
         }
-        wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&promoterestaurado=1')));
+        wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&promoterestaurado=1')));
         exit;
     }
 
@@ -265,7 +265,7 @@ add_action('admin_init', function () {
                 'pos' => 82
             ];
             mpa_update_role_settings($role_key, $cfg);
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&customadd=1')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&customadd=1')));
             exit;
         }
     }
@@ -294,7 +294,7 @@ add_action('admin_init', function () {
                 unset($cm);
                 mpa_update_role_settings($role_key, $cfg);
             }
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&customedit=1')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&customedit=1')));
             exit;
         }
     }
@@ -313,7 +313,7 @@ add_action('admin_init', function () {
                 }));
                 mpa_update_role_settings($role_key, $cfg);
             }
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&customdel=1')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&customdel=1')));
             exit;
         }
     }
@@ -339,7 +339,7 @@ add_action('admin_init', function () {
         }
 
         mpa_update_role_settings($role_key, $cfg);
-        wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&ordenado=1')));
+        wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&ordenado=1')));
         exit;
     }
 
@@ -375,7 +375,7 @@ add_action('admin_init', function () {
             }
 
             mpa_update_role_settings($role_key, $cfg);
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&renomeado=1')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&renomeado=1')));
             exit;
         }
     }
@@ -393,7 +393,7 @@ add_action('admin_init', function () {
             update_option('mpa_menu_settings_roles', $all_settings);
         }
 
-        wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&resetado=1')));
+        wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&role=' . $role_key . '&resetado=1')));
         exit;
     }
 
@@ -449,7 +449,7 @@ add_action('admin_init', function () {
         $import_mode = sanitize_text_field($_POST['mpa_import_mode'] ?? 'replace');
 
         if (!isset($_FILES['mpa_import_file']) || $_FILES['mpa_import_file']['error'] !== UPLOAD_ERR_OK) {
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=1')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=1')));
             exit;
         }
 
@@ -462,7 +462,7 @@ add_action('admin_init', function () {
         $uploaded_file = wp_handle_upload($_FILES['mpa_import_file'], $upload_overrides);
 
         if (isset($uploaded_file['error'])) {
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=2')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=2')));
             exit;
         }
 
@@ -470,7 +470,7 @@ add_action('admin_init', function () {
         $file_type = wp_check_filetype($uploaded_file['file']);
         if ($file_type['ext'] !== 'json') {
             unlink($uploaded_file['file']); // Limpar arquivo
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=2')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=2')));
             exit;
         }
 
@@ -482,13 +482,13 @@ add_action('admin_init', function () {
         $import_data = json_decode($file_content, true);
 
         if (json_last_error() !== JSON_ERROR_NONE || !isset($import_data['data'])) {
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=3')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=3')));
             exit;
         }
 
         // Validar estrutura do arquivo
         if (!isset($import_data['plugin']) || $import_data['plugin'] !== 'Gerenciar Admin Web Inovação') {
-            wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=4')));
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=4')));
             exit;
         }
 
@@ -511,7 +511,7 @@ add_action('admin_init', function () {
         }
 
         update_option('mpa_menu_settings_roles', $final_data);
-        wp_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&importado=1')));
+        wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&importado=1')));
         exit;
     }
 });

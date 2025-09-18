@@ -342,7 +342,7 @@ if (!function_exists('mpa_custom_menu_router')) {
         $url = $item['url'];
         if (!empty($item['external'])) {
             // Para links externos: redireciona diretamente
-            wp_redirect($url);
+            wp_safe_redirect($url);
             exit;
         }
 
@@ -362,12 +362,12 @@ if (!function_exists('mpa_custom_menu_router')) {
 add_action('admin_menu', function () {
     global $menu, $submenu;
 
-    // EXCEÇÕES: Roles que nunca devem ter menus processados
+    // EXCEÇÕES: Administradores têm acesso completo
     $current_user = wp_get_current_user();
-    $role = $current_user->roles[0] ?? '';
+    $user_roles = (array) $current_user->roles;
 
-    if ($role === 'administrator' || $role === 'gerentes') {
-        return; // Essas roles têm acesso completo, pular todo o processamento
+    if (in_array('administrator', $user_roles)) {
+        return; // Administradores têm acesso completo
     }
 
     $settings = mpa_get_effective_settings_for_current_user();
@@ -560,32 +560,5 @@ add_action('admin_menu', function () {
         }
     }
 
-    /* 🔒 FILTRAGEM ADICIONAL DE MENUS POR ROLE */
-    // 🚨 Se for admin ou gerentes, não aplicar restrições
-    if (in_array($role, ['administrator', 'gerentes'], true)) {
-        return;
-    }
-
-    // Buscar restrições para roles normais
-    $restricoes = get_option("mpa_restricoes_menus_$role", []);
-
-    if (!empty($restricoes) && is_array($restricoes)) {
-        // Menus principais
-        foreach ($menu as $key => $item) {
-            $slug = $item[2] ?? '';
-            if (in_array($slug, $restricoes, true)) {
-                remove_menu_page($slug);
-            }
-        }
-
-        // Submenus
-        foreach ($submenu as $parent_slug => $items) {
-            foreach ($items as $key => $sub_item) {
-                $sub_slug = $sub_item[2] ?? '';
-                if (in_array($sub_slug, $restricoes, true)) {
-                    remove_submenu_page($parent_slug, $sub_slug);
-                }
-            }
-        }
-    }
+    /* SISTEMA ATUALIZADO - removemos restrições antigas que entravam em conflito */
 }, 9999);

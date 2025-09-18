@@ -4,6 +4,8 @@
 // Incluir funções do sistema de menus
 require_once plugin_dir_path(__FILE__) . 'mpa-menu-functions.php';
 require_once plugin_dir_path(__FILE__) . 'mpa-menu-settings.php';
+require_once plugin_dir_path(__FILE__) . 'mpa-migration-tools.php';
+require_once plugin_dir_path(__FILE__) . 'mpa-quick-fix.php';
 
 // Adicionar menu principal do plugin apenas para administradores
 add_action('admin_menu', 'mpa_add_main_menu');
@@ -74,11 +76,31 @@ function mpa_add_main_menu() {
         'mpa-analytics-settings',       // Menu slug
         'mpa_render_analytics_settings_page' // Function wrapper
     );
+
+    // Submenu Ferramentas de Migração
+    add_submenu_page(
+        'mpa-main',                     // Parent slug
+        'Ferramentas de Migração',     // Page title
+        'Migração/Limpeza',            // Menu title
+        'manage_options',               // Capability
+        'mpa-migration-tools',          // Menu slug
+        'mpa_render_migration_tools_page' // Function
+    );
+
+    // Submenu Quick Fix (Correção Rápida)
+    add_submenu_page(
+        'mpa-main',                     // Parent slug
+        'Correção Rápida',             // Page title
+        '🚀 Quick Fix',                // Menu title
+        'manage_options',               // Capability
+        'mpa-quick-fix',                // Menu slug
+        'mpa_render_quick_fix_page'     // Function
+    );
 }
 
 // Função para redirecionar o Dashboard para Analytics
 function mpa_dashboard_redirect_to_analytics() {
-    wp_redirect(admin_url('admin.php?page=mpa-analytics'));
+    wp_safe_redirect(admin_url('admin.php?page=mpa-analytics'));
     exit;
 }
 
@@ -323,10 +345,7 @@ function mpa_user_can_see_menu($menu_slug, array $user_roles, array $menu_permis
     $found_config = false;
 
     // Debug detalhado SEMPRE ATIVO para debugging
-    error_log("[MPA NOVO DEBUG] === mpa_user_can_see_menu ===");
-    error_log("[MPA NOVO DEBUG] Verificando menu: $menu_slug");
-    error_log("[MPA NOVO DEBUG] User roles: " . implode(', ', $user_roles));
-    error_log("[MPA NOVO DEBUG] Permissões disponíveis: " . print_r($menu_permissions, true));
+    // Debug removido por segurança - dados sensíveis não devem aparecer em logs de produção
 
     foreach ($user_roles as $role) {
         $rolePerms = $menu_permissions[$role] ?? null;
@@ -380,10 +399,8 @@ function mpa_user_can_see_submenu($parent_slug, $submenu_slug, array $user_roles
     return $found_config ? $decision : true;
 }
 
-// 4. Aplicação robusta de restrições - TEMPORARIAMENTE DESABILITADO
+// 4. Aplicação robusta de restrições - REATIVADO
 add_action('admin_menu', function() {
-    // TESTE: Desabilitar completamente para testar Rank Math
-    return;
 
     $user = wp_get_current_user();
     if (in_array('administrator', (array) $user->roles, true)) return;
@@ -712,7 +729,7 @@ function mpa_import_menu_settings_callback() {
         $redirect = add_query_arg('mpa_status', 'no_file', admin_url('admin.php?page=mpa-menu-roles'));
     }
 
-    wp_redirect($redirect);
+    wp_safe_redirect($redirect);
     exit;
 }
 
@@ -735,7 +752,7 @@ function mpa_reset_menu_settings_callback() {
     
     // Redirect com mensagem de sucesso
     $redirect = add_query_arg('mpa_status', 'reset_success', admin_url('admin.php?page=mpa-menu-roles'));
-    wp_redirect($redirect);
+    wp_safe_redirect($redirect);
     exit;
 }
 
@@ -1484,7 +1501,7 @@ function mpa_add_custom_menus_to_admin() {
                 'read',                              // capability
                 $menu_slug,                          // menu_slug
                 function() use ($url) {              // callback - redirecionar diretamente
-                    wp_redirect($url);
+                    wp_safe_redirect($url);
                     exit;
                 },
                 $icon,                               // icon_url
