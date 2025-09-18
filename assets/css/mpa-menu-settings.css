@@ -820,15 +820,29 @@ body.wp-admin {
 
 .mpa-file-upload input[type="file"] {
     position: absolute;
+    top: 0;
+    left: 0;
     opacity: 0;
     width: 100%;
     height: 100%;
     cursor: pointer;
+    z-index: 1;
 }
 
 .mpa-file-upload-text {
     color: #64748b;
     font-weight: 500;
+    position: relative;
+    z-index: 0;
+}
+
+.mpa-file-upload.file-selected {
+    border-color: #46d369;
+    background: #f0fff4;
+}
+
+.mpa-file-upload.file-selected .mpa-file-upload-text {
+    color: #16a34a;
 }
 
 /* Tooltips */
