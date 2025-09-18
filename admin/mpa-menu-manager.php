@@ -73,7 +73,7 @@ function mpa_add_main_menu() {
         'Analytics - Configurações',   // Page title
         'Analytics Config',             // Menu title
         'manage_options',               // Capability
-        'mpa-analytics-settings',       // Menu slug
+        'mpa-config-analytics',          // Menu slug (corrigido para corresponder à URL)
         'mpa_render_analytics_settings_page' // Function wrapper
     );
 

@@ -278,11 +278,37 @@ class MPA_Analytics_Client {
             );
             
         } catch (Exception $e) {
-            $this->log_activity('Erro no teste de conexão: ' . $e->getMessage(), 'error');
-            
+            $error_message = $e->getMessage();
+            $this->log_activity('Erro no teste de conexão: ' . $error_message, 'error');
+
+            // Melhorar mensagens de erro específicas
+            if (strpos($error_message, 'User does not have sufficient permissions') !== false) {
+                $error_message = '❌ Erro de Permissões no Google Analytics:
+
+• O usuário conectado não tem acesso à propriedade GA4 especificada
+• Verifique se o Property ID está correto
+• Certifique-se que o usuário tem pelo menos permissão de "Visualizador" na propriedade
+
+Para resolver:
+1. Acesse https://analytics.google.com
+2. Vá em Admin → Gerenciar usuários
+3. Adicione o usuário com permissão de "Visualizador" ou superior
+4. Ou verifique se o Property ID está correto nas configurações';
+            } elseif (strpos($error_message, 'Property ID') !== false) {
+                $error_message = '❌ Property ID Inválido:
+
+• O Property ID informado não existe ou não pode ser acessado
+• Formato correto: números (ex: 123456789)
+
+Para encontrar seu Property ID:
+1. Acesse https://analytics.google.com
+2. Clique em Admin (ícone de engrenagem)
+3. Na coluna "Propriedade", o ID aparece abaixo do nome';
+            }
+
             return array(
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $error_message
             );
         }
     }
@@ -622,9 +648,13 @@ class MPA_Analytics_Client {
         
         if ($response_code !== 200) {
             $error_data = json_decode($response_body, true);
-            $error_message = isset($error_data['error']['message']) ? 
-                $error_data['error']['message'] : 
+            $error_message = isset($error_data['error']['message']) ?
+                $error_data['error']['message'] :
                 'Erro HTTP ' . $response_code;
+
+            // Log do erro completo para debug
+            error_log('[MPA Analytics] Erro GA4 API: ' . $response_body);
+
             throw new Exception($error_message);
         }
         
@@ -1014,7 +1044,12 @@ class MPA_Analytics_Client {
         try {
             // Verificar state
             $saved_state = get_option('mpa_ga4_oauth_state', '');
-            if (empty($saved_state) || $saved_state !== $_GET['state']) {
+            $current_state = $_GET['state'] ?? '';
+
+            error_log('[MPA OAuth] State recebido: ' . $current_state);
+            error_log('[MPA OAuth] State salvo: ' . $saved_state);
+
+            if (empty($saved_state) || $saved_state !== $current_state) {
                 throw new Exception('State inválido - possível ataque CSRF');
             }
             
@@ -1022,7 +1057,9 @@ class MPA_Analytics_Client {
             delete_option('mpa_ga4_oauth_state');
             
             // Trocar código por token
-            $this->exchange_code_for_token($_GET['code']);
+            $code = $_GET['code'] ?? '';
+            error_log('[MPA OAuth] Código recebido: ' . substr($code, 0, 20) . '...');
+            $this->exchange_code_for_token($code);
             
             // Redirecionar com sucesso
             wp_redirect(admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG . '&oauth=success'));
@@ -1043,7 +1080,13 @@ class MPA_Analytics_Client {
     private function exchange_code_for_token($code) {
         $settings = MPA_Analytics_Page::get_ga4_settings();
         $redirect_uri = admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG);
-        
+
+        // Log detalhado da requisição de token
+        error_log('[MPA OAuth] Trocando código por token...');
+        error_log('[MPA OAuth] Redirect URI: ' . $redirect_uri);
+        error_log('[MPA OAuth] Client ID: ' . substr($settings['client_id'], 0, 20) . '...');
+        error_log('[MPA OAuth] Tem Client Secret: ' . (!empty($settings['client_secret']) ? 'SIM' : 'NÃO'));
+
         $response = wp_remote_post(self::TOKEN_ENDPOINT, array(
             'body' => array(
                 'client_id' => $settings['client_id'],
@@ -1064,9 +1107,14 @@ class MPA_Analytics_Client {
         
         if ($response_code !== 200) {
             $error_data = json_decode($response_body, true);
-            $error_message = isset($error_data['error_description']) ? 
-                $error_data['error_description'] : 
+
+            // Log completo do erro OAuth para debug
+            error_log('[MPA OAuth] Erro na troca de token: ' . $response_body);
+
+            $error_message = isset($error_data['error_description']) ?
+                $error_data['error_description'] :
                 'Erro HTTP ' . $response_code;
+
             throw new Exception($error_message);
         }
         

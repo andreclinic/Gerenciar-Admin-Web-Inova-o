@@ -25,6 +25,51 @@ include_once ADMIN_BAR_MENU_PATH . '/admin/mpa-hide-updates.php';
 
 
 
+// Controlar exibição da admin bar no frontend apenas para administradores
+add_action('after_setup_theme', 'mpa_control_frontend_admin_bar');
+
+// Filtro adicional para controlar a admin bar
+add_filter('show_admin_bar', 'mpa_show_admin_bar_filter');
+
+function mpa_control_frontend_admin_bar() {
+    // No frontend, mostrar admin bar apenas para administradores
+    if (!is_admin()) {
+        $current_user = wp_get_current_user();
+        $user_roles = (array) $current_user->roles;
+
+        // Se não for administrador, esconder admin bar
+        if (!in_array('administrator', $user_roles)) {
+            show_admin_bar(false);
+
+            // Adicionar CSS para garantir que a admin bar não apareça
+            add_action('wp_head', function() {
+                echo '<style>
+                    #wpadminbar { display: none !important; }
+                    html { margin-top: 0 !important; }
+                    body { margin-top: 0 !important; }
+                    .admin-bar body { margin-top: 0 !important; }
+                </style>';
+            });
+        }
+    }
+}
+
+// Função do filtro para controlar admin bar
+function mpa_show_admin_bar_filter($show_admin_bar) {
+    // No frontend, verificar se é administrador
+    if (!is_admin()) {
+        $current_user = wp_get_current_user();
+        $user_roles = (array) $current_user->roles;
+
+        // Mostrar admin bar apenas para administradores no frontend
+        if (!in_array('administrator', $user_roles)) {
+            return false;
+        }
+    }
+
+    return $show_admin_bar;
+}
+
 // Redirecionamento para dashboard analytics
 add_action('admin_init', 'mpa_redirect_to_analytics');
 

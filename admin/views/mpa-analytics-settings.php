@@ -46,6 +46,42 @@ $is_connected = !empty($ga4_settings['access_token']) && time() < $ga4_settings[
         </div>
     <?php endif; ?>
 
+    <!-- Mensagens de feedback OAuth -->
+    <?php if (isset($_GET['oauth'])): ?>
+        <?php if ($_GET['oauth'] === 'success'): ?>
+            <div class="mpa-notice mpa-notice-success">
+                <div class="mpa-notice-icon">✅</div>
+                <div class="mpa-notice-content">
+                    <h4>Autenticação realizada com sucesso!</h4>
+                    <p>A conexão com o Google Analytics foi estabelecida. Você pode testar a conexão abaixo.</p>
+                </div>
+            </div>
+        <?php elseif ($_GET['oauth'] === 'error'): ?>
+            <div class="mpa-notice mpa-notice-error">
+                <div class="mpa-notice-icon">❌</div>
+                <div class="mpa-notice-content">
+                    <h4>Erro na autenticação OAuth</h4>
+                    <p><?php
+                        if (isset($_GET['message'])) {
+                            $error_msg = urldecode($_GET['message']);
+                            echo esc_html($error_msg);
+
+                            // Se for "Unauthorized", dar dicas específicas
+                            if (strpos($error_msg, 'Unauthorized') !== false) {
+                                echo '<br><br><strong>Possíveis soluções:</strong>';
+                                echo '<br>1. Verifique se a URL de redirecionamento está correta no Google Cloud Console';
+                                echo '<br>2. Confirme que o Client ID e Client Secret estão corretos';
+                                echo '<br>3. Verifique se o projeto do Google Cloud está ativo';
+                            }
+                        } else {
+                            echo 'Erro desconhecido na autenticação.';
+                        }
+                    ?></p>
+                </div>
+            </div>
+        <?php endif; ?>
+    <?php endif; ?>
+
     <!-- Instruções -->
     <div class="mpa-instructions-card">
         <h3>📋 Como configurar a integração</h3>
@@ -60,7 +96,11 @@ $is_connected = !empty($ga4_settings['access_token']) && time() < $ga4_settings[
             <li><strong>Habilite a API do Google Analytics</strong> no projeto</li>
             <li><strong>Crie credenciais OAuth 2.0</strong> para aplicação web</li>
             <li><strong>Configure as URLs de redirecionamento:</strong>
-                <code><?php echo admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG); ?></code>
+                <div style="background: #f9f9f9; padding: 10px; margin: 5px 0; border-left: 3px solid #0073aa;">
+                    <code style="font-size: 12px; word-break: break-all;"><?php echo admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG); ?></code>
+                </div>
+                <small><strong>⚠️ CRÍTICO:</strong> Copie esta URL EXATAMENTE como está para o Google Cloud Console!</small>
+                <br><small>Qualquer diferença (http vs https, www vs sem www, etc.) causará erro "Unauthorized"</small>
             </li>
             <li><strong>Copie o Client ID e Client Secret</strong> gerados</li>
             <li><strong>No Google Analytics,</strong> obtenha o Property ID da sua propriedade GA4</li>
@@ -166,6 +206,35 @@ $is_connected = !empty($ga4_settings['access_token']) && time() < $ga4_settings[
     <!-- Seção de diagnóstico -->
     <div class="mpa-diagnostic-section">
         <h3>🔧 Diagnóstico da Conexão</h3>
+
+        <!-- Info de diagnóstico OAuth -->
+        <div class="mpa-diagnostic-info" style="background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 5px;">
+            <h4>📋 Informações para Debug OAuth:</h4>
+            <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+                <tr style="background: #fff;">
+                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">URL de Redirecionamento:</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace; font-size: 11px; word-break: break-all;">
+                        <?php echo admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG); ?>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">SSL/HTTPS:</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">
+                        <?php echo is_ssl() ? '✅ HTTPS (correto)' : '❌ HTTP (pode causar problemas OAuth)'; ?>
+                    </td>
+                </tr>
+                <tr style="background: #fff;">
+                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Host:</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">
+                        <?php echo $_SERVER['HTTP_HOST'] ?? 'Não detectado'; ?>
+                    </td>
+                </tr>
+            </table>
+            <p style="font-size: 12px; color: #d63384; font-weight: bold;">
+                ⚠️ Para resolver "Unauthorized": A URL acima deve estar EXATAMENTE igual no Google Cloud Console!
+            </p>
+        </div>
+
         <div id="diagnosticResults" class="mpa-diagnostic-results">
             <p>Clique em "Testar Conexão" para verificar a configuração.</p>
         </div>
