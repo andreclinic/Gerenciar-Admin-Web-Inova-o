@@ -1007,7 +1007,15 @@ Para encontrar seu Property ID:
         
         // URL de callback
         $redirect_uri = admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG);
-        
+
+        // Log detalhado do que será enviado ao Google
+        error_log('[MPA OAuth] === INÍCIO FLUXO OAUTH ===');
+        error_log('[MPA OAuth] Redirect URI que será usado: ' . $redirect_uri);
+        error_log('[MPA OAuth] Redirect URI (URL encoded): ' . urlencode($redirect_uri));
+        error_log('[MPA OAuth] Client ID: ' . substr($settings['client_id'], 0, 20) . '...');
+        error_log('[MPA OAuth] Client ID (tamanho): ' . strlen($settings['client_id']) . ' chars');
+        error_log('[MPA OAuth] State gerado: ' . $state);
+
         // Construir URL de autorização
         $auth_url = self::OAUTH_ENDPOINT . '?' . http_build_query(array(
             'client_id' => $settings['client_id'],
@@ -1018,7 +1026,8 @@ Para encontrar seu Property ID:
             'prompt' => 'consent',
             'state' => $state
         ));
-        
+
+        error_log('[MPA OAuth] URL autorização: ' . substr($auth_url, 0, 200) . '...');
         $this->log_activity('Iniciando fluxo OAuth para GA4', 'info');
         
         wp_send_json_success(array(
@@ -1035,10 +1044,15 @@ Para encontrar seu Property ID:
         if (!isset($_GET['code']) || !isset($_GET['state'])) {
             return;
         }
-        
+
         // Verificar se estamos na página correta
         if (!isset($_GET['page']) || $_GET['page'] !== MPA_Analytics_Page::SETTINGS_SLUG) {
             return;
+        }
+
+        // Verificar permissões
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Você não tem permissão para acessar esta página.'));
         }
         
         try {
@@ -1082,10 +1096,14 @@ Para encontrar seu Property ID:
         $redirect_uri = admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG);
 
         // Log detalhado da requisição de token
-        error_log('[MPA OAuth] Trocando código por token...');
-        error_log('[MPA OAuth] Redirect URI: ' . $redirect_uri);
+        error_log('[MPA OAuth] === TROCA DE CÓDIGO POR TOKEN ===');
+        error_log('[MPA OAuth] Redirect URI USADO: ' . $redirect_uri);
         error_log('[MPA OAuth] Client ID: ' . substr($settings['client_id'], 0, 20) . '...');
         error_log('[MPA OAuth] Tem Client Secret: ' . (!empty($settings['client_secret']) ? 'SIM' : 'NÃO'));
+        error_log('[MPA OAuth] URL atual da requisição: ' . ($_SERVER['REQUEST_URI'] ?? 'N/A'));
+        error_log('[MPA OAuth] Host atual: ' . ($_SERVER['HTTP_HOST'] ?? 'N/A'));
+        error_log('[MPA OAuth] HTTPS: ' . (is_ssl() ? 'SIM' : 'NÃO'));
+        error_log('[MPA OAuth] URL completa atual: ' . (is_ssl() ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? '') . ($_SERVER['REQUEST_URI'] ?? ''));
 
         $response = wp_remote_post(self::TOKEN_ENDPOINT, array(
             'body' => array(
@@ -1109,11 +1127,19 @@ Para encontrar seu Property ID:
             $error_data = json_decode($response_body, true);
 
             // Log completo do erro OAuth para debug
-            error_log('[MPA OAuth] Erro na troca de token: ' . $response_body);
+            error_log('[MPA OAuth] === ERRO NA TROCA DE TOKEN ===');
+            error_log('[MPA OAuth] HTTP Status: ' . $response_code);
+            error_log('[MPA OAuth] Resposta completa do Google: ' . $response_body);
+            error_log('[MPA OAuth] Parâmetros enviados:');
+            error_log('[MPA OAuth] - client_id: ' . substr($settings['client_id'], 0, 20) . '... (tamanho: ' . strlen($settings['client_id']) . ')');
+            error_log('[MPA OAuth] - client_secret: ' . (!empty($settings['client_secret']) ? '[PRESENTE]' : '[AUSENTE]') . ' (tamanho: ' . strlen($settings['client_secret']) . ')');
+            error_log('[MPA OAuth] - redirect_uri: ' . $redirect_uri);
+            error_log('[MPA OAuth] - grant_type: authorization_code');
+            error_log('[MPA OAuth] - code: ' . substr($code, 0, 20) . '... (tamanho: ' . strlen($code) . ')');
 
             $error_message = isset($error_data['error_description']) ?
                 $error_data['error_description'] :
-                'Erro HTTP ' . $response_code;
+                (isset($error_data['error']) ? $error_data['error'] : 'Erro HTTP ' . $response_code);
 
             throw new Exception($error_message);
         }

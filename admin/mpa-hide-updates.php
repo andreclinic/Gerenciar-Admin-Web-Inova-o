@@ -20,7 +20,10 @@ if (!defined('ABSPATH')) {
  */
 function mpa_hide_update_notifications() {
     // Verificar se é administrador - se for, não aplicar nenhuma restrição
-    if (current_user_can('administrator')) {
+    $current_user = wp_get_current_user();
+    $user_roles = (array) $current_user->roles;
+
+    if (in_array('administrator', $user_roles)) {
         return;
     }
 
@@ -53,7 +56,10 @@ function mpa_hide_update_notifications() {
  */
 function mpa_hide_update_elements_css() {
     // Verificar se é administrador - se for, não aplicar CSS
-    if (current_user_can('administrator')) {
+    $current_user = wp_get_current_user();
+    $user_roles = (array) $current_user->roles;
+
+    if (in_array('administrator', $user_roles)) {
         return;
     }
     ?>
@@ -176,7 +182,10 @@ function mpa_hide_update_elements_css() {
  */
 function mpa_remove_update_submenu() {
     // Verificar se é administrador - se for, não remover
-    if (current_user_can('administrator')) {
+    $current_user = wp_get_current_user();
+    $user_roles = (array) $current_user->roles;
+
+    if (in_array('administrator', $user_roles)) {
         return;
     }
 
@@ -191,7 +200,10 @@ function mpa_remove_update_submenu() {
  */
 function mpa_filter_dashboard_update_data($wp_get_update_data) {
     // Verificar se é administrador - se for, não filtrar
-    if (current_user_can('administrator')) {
+    $current_user = wp_get_current_user();
+    $user_roles = (array) $current_user->roles;
+
+    if (in_array('administrator', $user_roles)) {
         return $wp_get_update_data;
     }
 
@@ -213,7 +225,10 @@ function mpa_filter_dashboard_update_data($wp_get_update_data) {
  */
 function mpa_hide_admin_bar_updates() {
     // Verificar se é administrador - se for, não esconder
-    if (current_user_can('administrator')) {
+    $current_user = wp_get_current_user();
+    $user_roles = (array) $current_user->roles;
+
+    if (in_array('administrator', $user_roles)) {
         return;
     }
 
@@ -226,7 +241,10 @@ function mpa_hide_admin_bar_updates() {
  */
 function mpa_hide_wp_version_footer($footer_text) {
     // Verificar se é administrador - se for, mostrar versão normal
-    if (current_user_can('administrator')) {
+    $current_user = wp_get_current_user();
+    $user_roles = (array) $current_user->roles;
+
+    if (in_array('administrator', $user_roles)) {
         return $footer_text;
     }
 
@@ -260,7 +278,10 @@ add_action('init', 'mpa_init_hide_updates');
  * Função para debug - mostrar quais roles têm acesso às notificações
  */
 function mpa_debug_update_visibility() {
-    if (!isset($_GET['debug_updates']) || !current_user_can('administrator')) {
+    $current_user = wp_get_current_user();
+    $user_roles = (array) $current_user->roles;
+
+    if (!isset($_GET['debug_updates']) || !in_array('administrator', $user_roles)) {
         return;
     }
 
@@ -270,8 +291,8 @@ function mpa_debug_update_visibility() {
     $user = wp_get_current_user();
     echo '<p><strong>Usuário atual:</strong> ' . $user->user_login . '</p>';
     echo '<p><strong>Roles:</strong> ' . implode(', ', $user->roles) . '</p>';
-    echo '<p><strong>É administrador:</strong> ' . (current_user_can('administrator') ? 'SIM' : 'NÃO') . '</p>';
-    echo '<p><strong>Vê updates:</strong> ' . (current_user_can('administrator') ? 'SIM' : 'NÃO') . '</p>';
+    echo '<p><strong>É administrador:</strong> ' . (in_array('administrator', $user->roles) ? 'SIM' : 'NÃO') . '</p>';
+    echo '<p><strong>Vê updates:</strong> ' . (in_array('administrator', $user->roles) ? 'SIM' : 'NÃO') . '</p>';
 
     echo '</div>';
 }

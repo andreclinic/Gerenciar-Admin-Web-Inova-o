@@ -131,19 +131,15 @@ $is_connected = !empty($ga4_settings['access_token']) && time() < $ga4_settings[
             <div class="mpa-form-group">
                 <label for="ga4_client_secret">Client Secret *</label>
                 <input
-                    type="password"
+                    type="text"
                     id="ga4_client_secret"
                     name="ga4_client_secret"
-                    value="<?php echo !empty($ga4_settings['client_secret']) ? '••••••••••••••••••••••••••••••••' : ''; ?>"
+                    value="<?php echo esc_attr($ga4_settings['client_secret']); ?>"
                     placeholder="GOCSPX-abcdefghijklmnopqrstuvwxyz"
                     <?php echo !empty($ga4_settings['client_secret']) ? '' : 'required'; ?>
                     class="mpa-form-input"
                 />
-                <?php if (!empty($ga4_settings['client_secret'])): ?>
-                    <p class="mpa-form-help">✅ <strong>Client Secret configurado</strong> - deixe vazio para manter o atual</p>
-                <?php else: ?>
-                    <p class="mpa-form-help">Client Secret obtido no Google Cloud Console</p>
-                <?php endif; ?>
+                <p class="mpa-form-help">Client Secret obtido no Google Cloud Console (formato: GOCSPX-XXXXXXXXXXXXXXXXXXXXXXXX)</p>
             </div>
         </div>
 
@@ -229,6 +225,18 @@ $is_connected = !empty($ga4_settings['access_token']) && time() < $ga4_settings[
                         <?php echo $_SERVER['HTTP_HOST'] ?? 'Não detectado'; ?>
                     </td>
                 </tr>
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">URL Base WordPress:</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace; font-size: 11px;">
+                        <?php echo get_site_url(); ?>
+                    </td>
+                </tr>
+                <tr style="background: #fff;">
+                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">URL Admin:</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace; font-size: 11px;">
+                        <?php echo admin_url(); ?>
+                    </td>
+                </tr>
             </table>
             <p style="font-size: 12px; color: #d63384; font-weight: bold;">
                 ⚠️ Para resolver "Unauthorized": A URL acima deve estar EXATAMENTE igual no Google Cloud Console!
@@ -237,6 +245,89 @@ $is_connected = !empty($ga4_settings['access_token']) && time() < $ga4_settings[
 
         <div id="diagnosticResults" class="mpa-diagnostic-results">
             <p>Clique em "Testar Conexão" para verificar a configuração.</p>
+        </div>
+    </div>
+
+    <!-- Status dos Tokens OAuth -->
+    <div class="mpa-token-status" style="background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 5px;">
+        <h3>🔑 Status da Autenticação OAuth</h3>
+        <?php
+        $settings = MPA_Analytics_Page::get_ga4_settings();
+        $has_access_token = !empty($settings['access_token']);
+        $token_expires = $settings['token_expires'] ?? 0;
+        $has_refresh_token = !empty($settings['refresh_token']);
+        $is_token_valid = $has_access_token && time() < $token_expires;
+        ?>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 10px 0;">
+            <div>
+                <strong>Token de Acesso:</strong>
+                <?php if ($has_access_token): ?>
+                    <span style="color: #2e7d32;">✅ Presente</span>
+                <?php else: ?>
+                    <span style="color: #d63384;">❌ Ausente</span>
+                <?php endif; ?>
+            </div>
+
+            <div>
+                <strong>Token Válido:</strong>
+                <?php if ($is_token_valid): ?>
+                    <span style="color: #2e7d32;">✅ Válido até <?php echo date('d/m/Y H:i:s', $token_expires); ?></span>
+                <?php elseif ($has_access_token): ?>
+                    <span style="color: #ff6f00;">⚠️ Expirado</span>
+                <?php else: ?>
+                    <span style="color: #d63384;">❌ Não disponível</span>
+                <?php endif; ?>
+            </div>
+
+            <div>
+                <strong>Token de Renovação:</strong>
+                <?php if ($has_refresh_token): ?>
+                    <span style="color: #2e7d32;">✅ Presente</span>
+                <?php else: ?>
+                    <span style="color: #d63384;">❌ Ausente</span>
+                <?php endif; ?>
+            </div>
+
+            <div>
+                <strong>Status Geral:</strong>
+                <?php if ($is_token_valid): ?>
+                    <span style="color: #2e7d32; font-weight: bold;">✅ Autenticado</span>
+                <?php elseif ($has_refresh_token): ?>
+                    <span style="color: #ff6f00; font-weight: bold;">⚠️ Precisa renovar</span>
+                <?php else: ?>
+                    <span style="color: #d63384; font-weight: bold;">❌ Não autenticado</span>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <?php if (!$is_token_valid): ?>
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin: 10px 0; border-radius: 3px;">
+                <p style="margin: 0; color: #856404; font-size: 13px;">
+                    <strong>💡 Para resolver:</strong>
+                    <?php if (!$has_access_token): ?>
+                        Clique em "Conectar com Google Analytics" para fazer a autenticação OAuth.
+                    <?php elseif (!$is_token_valid && $has_refresh_token): ?>
+                        O token será renovado automaticamente na próxima requisição.
+                    <?php else: ?>
+                        Faça uma nova autenticação OAuth clicando em "Conectar com Google Analytics".
+                    <?php endif; ?>
+                </p>
+            </div>
+        <?php endif; ?>
+
+        <!-- Verificação detalhada das credenciais -->
+        <div style="background: #e3f2fd; border: 1px solid #2196f3; padding: 10px; margin: 10px 0; border-radius: 3px;">
+            <strong>🔍 Verificação das Credenciais:</strong>
+            <div style="font-family: monospace; font-size: 11px; margin: 5px 0;">
+                <div>Client ID: <?php echo !empty($settings['client_id']) ? 'Configurado (' . strlen($settings['client_id']) . ' chars)' : 'NÃO CONFIGURADO'; ?></div>
+                <div>Client Secret: <?php echo !empty($settings['client_secret']) ? 'Configurado (' . strlen($settings['client_secret']) . ' chars)' : 'NÃO CONFIGURADO'; ?></div>
+                <div>Property ID: <?php echo !empty($settings['property_id']) ? 'Configurado (' . $settings['property_id'] . ')' : 'NÃO CONFIGURADO'; ?></div>
+            </div>
+            <small style="color: #1976d2;">
+                ⚠️ <strong>Client ID deve ter 72 caracteres</strong> e terminar com ".googleusercontent.com"<br>
+                ⚠️ <strong>Client Secret deve ter 24 caracteres</strong> (formato: GOCSPX-XXXXXXXXXXXXXXXXXXXXXXXX)
+            </small>
         </div>
     </div>
 

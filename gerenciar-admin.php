@@ -32,9 +32,15 @@ add_action('after_setup_theme', 'mpa_control_frontend_admin_bar');
 add_filter('show_admin_bar', 'mpa_show_admin_bar_filter');
 
 function mpa_control_frontend_admin_bar() {
-    // No frontend, mostrar admin bar apenas para administradores
-    if (!is_admin()) {
+    // Aplicar apenas no frontend, nunca no admin
+    if (!is_admin() && !wp_doing_ajax() && !defined('REST_REQUEST')) {
         $current_user = wp_get_current_user();
+
+        // Verificar se usuário está logado
+        if (!$current_user || empty($current_user->roles)) {
+            return;
+        }
+
         $user_roles = (array) $current_user->roles;
 
         // Se não for administrador, esconder admin bar
@@ -56,9 +62,15 @@ function mpa_control_frontend_admin_bar() {
 
 // Função do filtro para controlar admin bar
 function mpa_show_admin_bar_filter($show_admin_bar) {
-    // No frontend, verificar se é administrador
-    if (!is_admin()) {
+    // Aplicar apenas no frontend, nunca no admin
+    if (!is_admin() && !wp_doing_ajax() && !defined('REST_REQUEST')) {
         $current_user = wp_get_current_user();
+
+        // Verificar se usuário está logado
+        if (!$current_user || empty($current_user->roles)) {
+            return $show_admin_bar;
+        }
+
         $user_roles = (array) $current_user->roles;
 
         // Mostrar admin bar apenas para administradores no frontend

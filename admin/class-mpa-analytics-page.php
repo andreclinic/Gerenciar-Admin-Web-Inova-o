@@ -185,17 +185,13 @@ class MPA_Analytics_Page {
      */
     private function save_ga4_settings() {
         try {
-            // Sanitizar e salvar dados
-            $client_id = sanitize_text_field($_POST['ga4_client_id'] ?? '');
-            $client_secret = sanitize_text_field($_POST['ga4_client_secret'] ?? '');
-            $property_id = sanitize_text_field($_POST['ga4_property_id'] ?? '');
-            $data_stream_id = sanitize_text_field($_POST['ga4_data_stream_id'] ?? '');
+            // Sanitizar e salvar dados - remover espaços extras que podem causar problemas OAuth
+            $client_id = trim(sanitize_text_field($_POST['ga4_client_id'] ?? ''));
+            $client_secret = trim(sanitize_text_field($_POST['ga4_client_secret'] ?? ''));
+            $property_id = trim(sanitize_text_field($_POST['ga4_property_id'] ?? ''));
+            $data_stream_id = trim(sanitize_text_field($_POST['ga4_data_stream_id'] ?? ''));
 
-            // Obter client_secret atual se campo estiver vazio (mascarado)
-            $current_settings = self::get_ga4_settings();
-            if (empty($client_secret) && !empty($current_settings['client_secret'])) {
-                $client_secret = $current_settings['client_secret']; // Manter o atual
-            }
+            // Não precisamos mais da lógica de mascaramento, o valor vem direto do formulário
 
             // Validar campos obrigatórios
             if (empty($client_id) || empty($client_secret) || empty($property_id)) {
