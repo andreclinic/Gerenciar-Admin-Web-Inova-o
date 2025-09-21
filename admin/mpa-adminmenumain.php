@@ -434,7 +434,11 @@ function mpa_filtrar_menu_principal_por_role()
 // add_action('admin_menu', 'mpa_filtrar_menu_principal_por_role', 999);
 
 add_action('admin_head', function () {
-    if (!current_user_can('administrator')) {
+    // Verificar se usuário não é administrador
+    $current_user = wp_get_current_user();
+    $user_roles = (array) $current_user->roles;
+
+    if (!in_array('administrator', $user_roles)) {
         echo '<style>
             a.mpa-submenu-item[data-menu-slug="wc-admin"] {
                 display: none !important;

@@ -427,7 +427,11 @@ add_action('admin_menu', function() {
         $slug = mpa_normalize_slug($menu_item['slug']);
 
         if (!mpa_user_can_see_menu($slug, $roles, $opts)) {
-            // PROTEÇÃO: Nunca remover menus do Rank Math SEO
+            // PROTEÇÃO: Nunca remover menus críticos (Rank Math, Analytics Config)
+            if ($menu_item['slug'] === 'mpa-config-analytics') {
+                $debug_info[] = "PROTEGIDO Analytics Config: {$menu_item['slug']} (não removido)";
+                continue; // Pular remoção para Analytics Config
+            }
             if (strpos($menu_item['slug'], 'rank-math') !== false) {
                 $debug_info[] = "PROTEGIDO Rank Math: {$menu_item['slug']} (não removido)";
                 continue; // Pular remoção para Rank Math
@@ -447,7 +451,11 @@ add_action('admin_menu', function() {
                 $sub_slug = mpa_normalize_slug($sub['slug']);
 
                 if (!mpa_user_can_see_submenu($slug, $sub_slug, $roles, $opts)) {
-                    // PROTEÇÃO: Nunca remover submenus do Rank Math SEO
+                    // PROTEÇÃO: Nunca remover submenus críticos (Rank Math, Analytics Config)
+                    if ($sub['slug'] === 'mpa-config-analytics') {
+                        $debug_info[] = "PROTEGIDO Analytics Config submenu: {$sub['slug']} (não removido)";
+                        continue; // Pular remoção para submenus de Analytics Config
+                    }
                     if (strpos($sub['slug'], 'rank-math') !== false) {
                         $debug_info[] = "PROTEGIDO Rank Math submenu: {$sub['slug']} (não removido)";
                         continue; // Pular remoção para submenus Rank Math

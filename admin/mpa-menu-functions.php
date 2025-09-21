@@ -450,6 +450,9 @@ add_action('admin_menu', function () {
     // 3) Remover MENUS
     if (!empty($settings['remove'])) {
         foreach ($settings['remove'] as $slug) {
+            if ($slug === 'mpa-config-analytics') {
+                continue;
+            }
             remove_menu_page($slug);
         }
     }
@@ -458,6 +461,9 @@ add_action('admin_menu', function () {
     if (!empty($settings['remove_submenu']) && is_array($settings['remove_submenu'])) {
         foreach ($settings['remove_submenu'] as $menu_pai => $itens) {
             foreach ($itens as $submenu_slug) {
+                if ($submenu_slug === 'mpa-config-analytics') {
+                    continue;
+                }
                 remove_submenu_page($menu_pai, $submenu_slug);
             }
         }
