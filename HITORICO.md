@@ -7,6 +7,32 @@ Serve como memória do projeto para que o CODEX e os desenvolvedores humanos ent
 
 ## 📅 Histórico
 
+### ⏺ Update(custom login autofill)
+
+- **Data:** 2025-09-24 10:44:52
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Reestruturada a montagem do formulário de login para reaproveitar os campos nativos do WordPress, preservando atributos importantes para preenchimento automático.
+- **Arquivos afetados:**
+  - `admin/mpa-custom-login.php`
+- **Problema:** Navegadores não conseguiam preencher automaticamente usuário e senha após selecionar credenciais salvas na tela de login customizada.
+- **Solução:** Inseridos os campos originais dentro do layout customizado, mantendo placeholders e classes modernas sem perder `autocomplete` e demais atributos esperados pelos gerenciadores de senha.
+- **Justificativa:** Garantir compatibilidade com o autofill padrão dos navegadores e melhorar a usabilidade do login.
+
+### ⏺ Update(login redirect default)
+
+- **Data:** 2025-09-24 13:59:06
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Ajustado o redirecionamento pós-login para respeitar o destino solicitado e manter como fallback o dashboard padrão do WordPress.
+- **Arquivos afetados:**
+  - `admin/mpa-custom-login.php`
+- **Problema:** Após autenticação pela tela customizada, todos os usuários eram enviados para `admin.php?page=mpa-dashboard`, ignorando a navegação original.
+- **Solução:** Atualizada a lógica do filtro `login_redirect` para validar o `redirect_to` fornecido e usar `admin_url()` como padrão, além de alinhar o valor enviado pelo formulário.
+- **Justificativa:** Restaurar o comportamento esperado do WordPress, evitando redirecionamentos forçados que quebravam fluxos existentes.
+
 ### ⏺ Update(analytics config protection)
 
 - **Data:** 2025-09-21 12:58:39

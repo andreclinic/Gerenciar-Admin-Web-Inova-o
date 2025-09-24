@@ -202,7 +202,7 @@ function mpa_custom_login_footer() {
     $js_logo_url = esc_url($logo_url);
     $js_login_url = wp_login_url();
     $js_lost_password_url = wp_lostpassword_url();
-    $js_admin_url = admin_url('admin.php?page=mpa-dashboard');
+    $js_admin_url = admin_url();
     ?>
     <script>
         jQuery(document).ready(function($) {
@@ -290,6 +290,21 @@ function mpa_custom_login_footer() {
                 const originalRememberMe = $('.forgetmenot').clone();
                 const originalSubmit = $('#wp-submit').clone();
 
+                // Garantir atributos necessários para preenchimento automático
+                originalUserInput
+                    .removeClass('input')
+                    .addClass('form-input')
+                    .attr('placeholder', 'Digite seu usuário ou e-mail')
+                    .attr('required', true)
+                    .attr('autocomplete', originalUserInput.attr('autocomplete') || 'username');
+
+                originalPassInput
+                    .removeClass('input')
+                    .addClass('form-input')
+                    .attr('placeholder', 'Digite sua senha')
+                    .attr('required', true)
+                    .attr('autocomplete', originalPassInput.attr('autocomplete') || 'current-password');
+
                 // Limpar o container #login
                 $loginDiv.empty();
 
@@ -318,13 +333,13 @@ function mpa_custom_login_footer() {
                     <form id="loginform" name="loginform" method="post" action="${loginUrl}">
                         <div class="form-group">
                             <label for="user_login" class="form-label">Usuário ou E-mail</label>
-                            <input type="text" name="log" id="user_login" class="form-input" placeholder="Digite seu usuário ou e-mail" required>
+                            <div class="input-wrapper" data-original-input="user_login"></div>
                         </div>
 
                         <div class="form-group">
                             <label for="user_pass" class="form-label">Senha</label>
                             <div class="password-container">
-                                <input type="password" name="pwd" id="user_pass" class="form-input" placeholder="Digite sua senha" required>
+                                <div class="input-wrapper" data-original-input="user_pass"></div>
                                 <button type="button" class="password-toggle" id="passwordToggle">
                                     <svg class="icon" viewBox="0 0 20 20" fill="currentColor">
                                         <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
@@ -380,6 +395,18 @@ function mpa_custom_login_footer() {
                 
                 // Inserir novo HTML
                 $loginDiv.html(newHTML);
+
+                // Recolocar inputs originais para preservar atributos de autofill do navegador
+                const $usernameWrapper = $loginDiv.find('[data-original-input="user_login"]');
+                const $passwordWrapper = $loginDiv.find('[data-original-input="user_pass"]');
+
+                if ($usernameWrapper.length) {
+                    $usernameWrapper.replaceWith(originalUserInput);
+                }
+
+                if ($passwordWrapper.length) {
+                    $passwordWrapper.replaceWith(originalPassInput);
+                }
                 
                 // Adicionar eventos
                 $('#loginform').on('submit', function() {
@@ -648,12 +675,36 @@ function mpa_custom_login_redirect($redirect_to, $request, $user) {
         return $redirect_to;
     }
     
+    $roles = (array) $user->roles;
+    $is_customer = in_array('customer', $roles, true) || in_array('cliente', $roles, true);
+
+    if ($is_customer) {
+        if (function_exists('wc_get_page_permalink')) {
+            $my_account = wc_get_page_permalink('myaccount');
+            if ($my_account) {
+                return $my_account;
+            }
+        }
+
+        return home_url('/minha-conta/');
+    }
+
     // Verificar se veio do login personalizado
     if (isset($_POST['mpa_custom_login'])) {
-        // Sempre redirecionar para o dashboard personalizado
-        return admin_url('admin.php?page=mpa-dashboard');
+        $target = '';
+
+        if (isset($_REQUEST['redirect_to']) && $_REQUEST['redirect_to'] !== '') {
+            $target = wp_unslash($_REQUEST['redirect_to']);
+        } elseif (!empty($redirect_to)) {
+            $target = $redirect_to;
+        }
+
+        // Fallback para o dashboard padrão do WordPress
+        $target = wp_validate_redirect($target, admin_url());
+
+        return $target;
     }
-    
+
     return $redirect_to;
 }
 
