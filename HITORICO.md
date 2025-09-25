@@ -7,6 +7,49 @@ Serve como memória do projeto para que o CODEX e os desenvolvedores humanos ent
 
 ## 📅 Histórico
 
+### ⏺ Update(version 1.3)
+
+- **Data:** 2025-09-25 13:33:44
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Incrementada a versão do plugin para 1.3 após a inclusão do preloader e ajustes de layout.
+- **Arquivos afetados:**
+  - `gerenciar-admin.php`
+- **Problema:** O cabeçalho do plugin ainda marcava a versão 1.2 mesmo com as novas funcionalidades implantadas.
+- **Solução:** Atualizado o metadado `Version` no arquivo principal para refletir a entrega atual.
+- **Justificativa:** Manter o versionamento alinhado aos recursos publicados, facilitando controle e deploys.
+
+### ⏺ Update(admin preloader layout)
+
+- **Data:** 2025-09-25 13:31:02
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Corrigida a centralização do preloader garantindo que o spinner fique alinhado ao centro da tela.
+- **Arquivos afetados:**
+  - `admin/mpa-admin.php`
+  - `assets/css/mpa-preloader.css`
+  - `assets/js/mpa-preloader.js`
+- **Problema:** O overlay era renderizado com `display: block`, fazendo o spinner aparecer no topo da página em vez de centralizado.
+- **Solução:** Ajustados CSS e JS para manter o container em `display: flex`, oculto por classe, e exibir/esconder usando transição de opacidade.
+- **Justificativa:** Garantir feedback visual consistente e alinhado com o layout do painel, evitando distrações para o usuário.
+
+### ⏺ Update(admin preloader)
+
+- **Data:** 2025-09-25 13:24:34
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Inserido preloader global no admin para mostrar feedback de carregamento em navegações internas.
+- **Arquivos afetados:**
+  - `admin/mpa-admin.php`
+  - `assets/css/mpa-preloader.css`
+  - `assets/js/mpa-preloader.js`
+- **Problema:** A navegação entre páginas do admin não indicava progresso, gerando sensação de travamento em carregamentos mais lentos.
+- **Solução:** Adicionados estilo e script dedicados, além do markup no rodapé do admin, para exibir um spinner enquanto novas páginas são solicitadas.
+- **Justificativa:** Melhorar a experiência do usuário com feedback visual imediato após interações no painel.
+
 ### ⏺ Update(custom login autofill)
 
 - **Data:** 2025-09-24 10:44:52

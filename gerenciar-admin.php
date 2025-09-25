@@ -2,7 +2,7 @@
 /*
 Plugin Name: Gerenciar Admin Web Inovação
 Description: Gerenciar e estilizar admin do Wordpress.
-Version: 1.2
+Version: 1.3
 Author: Web Inovação
 */
 
@@ -104,4 +104,3 @@ function mpa_redirect_to_analytics()
         }
     }
 }
-

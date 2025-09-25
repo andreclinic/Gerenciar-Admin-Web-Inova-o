@@ -47,6 +47,21 @@ function mpa_admin_assets($hook)
         null,
         true
     );
+
+    wp_enqueue_style(
+        'mpa-preloader-css',
+        ADMIN_BAR_MENU_URL . 'assets/css/mpa-preloader.css',
+        [],
+        null
+    );
+
+    wp_enqueue_script(
+        'mpa-preloader-js',
+        ADMIN_BAR_MENU_URL . 'assets/js/mpa-preloader.js',
+        ['jquery'],
+        null,
+        true
+    );
 }
 
 // CSS para targets com scroll-margin (evitar header fixo)
@@ -55,3 +70,15 @@ add_action('admin_head', function(){
         echo '<style>:target{scroll-margin-top:72px}</style>';
     }
 });
+
+// Preloader global para feedback em navegação do admin
+add_action('admin_footer', 'mpa_render_admin_preloader');
+
+function mpa_render_admin_preloader() {
+    ?>
+    <div id="mpa-preloader" class="mpa-preloader" aria-hidden="true">
+        <div class="mpa-spinner" role="status" aria-live="polite"></div>
+        <p><?php esc_html_e('Carregando...', 'gerenciar-admin'); ?></p>
+    </div>
+    <?php
+}
