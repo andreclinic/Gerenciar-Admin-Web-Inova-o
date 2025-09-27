@@ -1,387 +1,108 @@
 # Gerenciar Admin Web Inovação
 
-Plugin WordPress que moderniza completamente a interface de administração, transformando o painel tradicional em um dashboard profissional e responsivo.
+Plugin WordPress que substitui a experiência administrativa padrão por um tema completo, combinando um dashboard de Analytics integrado ao Google Analytics 4, gerenciamento granular de menus por role e uma camada visual moderna (header, sidebar, footer e tela de login customizados).
 
-## 🚀 Características Principais
+## Visão Geral
+- Redireciona usuários autorizados diretamente para `admin.php?page=mpa-analytics`, transformando o painel inicial em um centro de métricas.
+- Integração nativa com GA4 via REST API própria e Chart.js, incluindo filtros de período, modo escuro e fallbacks defensivos.
+- Sistema avançado de menus por role com suporte a ícones, drag-and-drop, menus personalizados, promover/demover submenus e exportação/importação de configurações.
+- Reestilização total do admin (header com notificações, sidebar dinâmica, preloader global, ajustes de layout e dark mode persistente) mais tela de login em estilo aplicativo SaaS.
+- Ferramentas auxiliares para migração do sistema de menus legado, correções rápidas em produção e ocultação de notificações de atualização para roles não administrativas.
 
-### Interface Moderna
-- **Dashboard Redesenhado**: Interface limpa e profissional baseada em design moderno
-- **Tela de Login Customizada**: Interface de login moderna e interativa
-- **Layout Responsivo**: Adaptação perfeita para desktop, tablet e mobile
-- **Tipografia Otimizada**: Fonte Inter para melhor legibilidade
-- **Cores Consistentes**: Paleta de cores profissional e harmoniosa
+## Principais Funcionalidades
 
-### Sistema de Navegação Inteligente
-- **Menu Lateral Dinâmico**: Lista automaticamente todos os menus disponíveis do WordPress
-- **Submenus Retráteis**: Organização hierárquica com animações suaves
-- **Toggle de Sidebar**: Botão para expandir/recolher o menu lateral
-- **Estado Persistente**: Lembra a preferência do usuário (expandido/recolhido)
-- **Navegação Ativa**: Destaque visual da página atual
+### Dashboard Analytics (GA4)
+- Usa `admin/views/mpa-analytics.php`, `assets/js/mpa-analytics.js` e `assets/css/mpa-analytics.css` como fonte de verdade para layout e estilo.
+- Coleta métricas de usuários, sessões, pageviews, engajamento, duração média, dispositivos, fontes de tráfego, páginas e eventos através da classe `includes/class-mpa-analytics-client.php`.
+- Enfileira Chart.js (CDN) e aplica cache em `sessionStorage`, com verificações adicionais para garantir carregamento mesmo quando o enqueue falha.
+- Disponibiliza modo dark/light sincronizado com o tema global e atualizações em tempo real (30s) para visitantes ativos.
 
-### Sistema de Login Personalizado
-- **Interface Moderna**: Design limpo seguindo padrões contemporâneos
-- **Logo Configurável**: Integração com configurações do plugin
-- **Toggle de Senha**: Botão para mostrar/ocultar senha com ícones animados
-- **Seletor de Idioma**: Suporte a PT-BR, EN, ES com tradução em tempo real
-- **Animações Suaves**: Transições elegantes e microinterações
-- **Compatibilidade Total**: Mantém funcionalidade nativa do WordPress
-- **Telas de Recuperação**: Suporte completo a reset de senha
+### Gerenciamento de Menus por Role
+- Núcleo em `admin/mpa-menu-functions.php`, UI em `admin/mpa-menu-settings.php` + `assets/js/mpa-menu-settings.js` + `assets/css/mpa-menu-settings.css`.
+- Permite renomear menus/submenus, alterar ícones, remover/restaurar itens, promover/demover submenus, criar links personalizados (internos ou externos) e reordenar via drag-and-drop.
+- Configurações persistidas na option `mpa_menu_settings_roles`, com herança `_global` + roles específicas e proteção para administradores/role `gerentes`.
+- Exportação/importação de JSON, reset por role, pré-visualização com âncoras de rolagem e correções para manter posição após reload.
 
-### Dashboard de Métricas
-- **Analytics em Tempo Real**: Visualização de métricas importantes
-- **Cards Informativos**: Usuários, visualizações, taxa de rejeição
-- **Dados Simulados**: Base para integração com analytics reais
-- **Layout em Grid**: Organização visual otimizada
+### Experiência Admin Customizada
+- `admin/mpa-adminmenumain.php`, `admin/mpa-wpadminbar.php`, `admin/mpa-wpbody.php`, `admin/mpa-wpcontent.php` e `admin/mpa-wpfooter.php` reescrevem header, sidebar, corpo e rodapé.
+- Sidebar dinâmica respeita permissões e restrições configuradas, com suporte mobile (overlay), estado persistido e descrições contextuais.
+- Header inclui logo configurável (`option mpa_logo_url`), notificações AJAX, menu do usuário, modo escuro e botão de menu responsivo.
+- Layout aplica tipografia Inter, normaliza botões/ tabelas em páginas de listagem, remove notices em excesso e oculta admin bar padrão para não administradores no front.
+- Preloader global (`assets/js/mpa-preloader.js`, `assets/css/mpa-preloader.css`) melhora feedback de navegação.
 
-### Compatibilidade Universal
-- **Plugins Suportados**: Funciona com WooCommerce, Elementor, Yoast SEO, ACF, etc.
-- **Padronização Automática**: Ajusta automaticamente novos plugins instalados
-- **Botões Universais**: Todos os botões "Adicionar" e customizados funcionam
-- **Tabelas Responsivas**: Todas as tabelas se ajustam ao layout
+### Tela de Login Customizada
+- `admin/mpa-custom-login.php` + `assets/css/mpa-custom-login.css` redesenham a tela de login com gradiente, cartão centralizado, toggle de senha, suporte a notices e overrides para plugins como Wordfence/UIPress.
+- Logo pode ser alterado via option `mpa_logo_url`; fallback exibe logotipo textual estilizado.
 
-## 📱 Responsividade Completa
+### Ferramentas e Salvaguardas
+- `admin/mpa-hide-updates.php` oculta notices e badges de update para roles não administradoras sem alterar capabilities.
+- `admin/mpa-migration-tools.php` diagnostica/migra dados das opções legadas (`mpa_menu_*`) para o novo formato.
+- `admin/mpa-quick-fix.php` expõe interface de “Correção Rápida” (limpeza de dados antigos + inicialização segura) para uso emergencial.
+- Debug da sidebar disponível via query `?debug_sidebar_restrictions=1` para usuários com `edit_posts`.
 
-### Desktop (≥783px)
-- Menu lateral fixo com toggle
-- Conteúdo centralizado e bem espaçado
-- Botões perfeitamente alinhados
-- Tabelas com largura otimizada
+## Arquitetura do Plugin
+- `gerenciar-admin.php` inicializa constantes de caminho/URL, inclui módulos e controla visibilidade da admin bar no front.
+- Documentação complementar em `ARQUITETURA.md` (mapa técnico atualizado), `AGENTS.md` (guidelines operacionais) e `HITORICO.md` (registro cronológico de mudanças).
+- Para detalhes linha a linha consulte os arquivos PHP/JS/CSS correspondentes; cada módulo carrega apenas seus assets específicos via `admin_enqueue_scripts`.
 
-### Mobile (≤782px)
-- Menu lateral com overlay
-- Conteúdo adaptado para tela pequena
-- Navegação por toque otimizada
-- Prevenção de scroll horizontal
+## Requisitos
+- WordPress 5.8+ (recomendado) com PHP 7.4+.
+- Permissões para registrar rotas REST (`rest_api_init`) e executar AJAX (`admin-ajax.php`).
+- Chart.js 4.4.0 carregado via CDN (automático ao acessar o dashboard).
+- Credenciais válidas do Google Analytics 4 (Client ID, Client Secret, Property ID e opcional Data Stream ID).
 
-## 🛠️ Funcionalidades Técnicas
+## Instalação
+1. Faça upload do diretório `gerenciar-admin` para `wp-content/plugins/` ou instale via ferramentas de deploy.
+2. Ative em **Plugins > Gerenciar Admin Web Inovação**.
+3. Acesso inicial será redirecionado para `Gerenciar Admin > Analytics` quando o usuário tiver `edit_posts` ou `manage_options`.
 
-### Arquitetura Modular
-```
-admin/
-├── mpa-wpadminbar.php     # Header customizado
-├── mpa-adminmenumain.php  # Sistema de menu dinâmico
-├── mpa-wpbody.php         # Layout principal e CSS
-├── mpa-wpfooter.php       # Footer personalizado
-└── mpa-custom-login.php   # Sistema de login customizado
+## Configuração Inicial
 
-assets/
-├── css/
-│   ├── mpa-custom-login.css  # Estilos da tela de login
-│   └── ...                   # Outros estilos por módulo
-└── js/
-    ├── mpa-custom-login.js   # Scripts interativos do login
-    └── ...                   # Outros scripts
-```
+### 1. Integração com Google Analytics 4
+- Acesse **Gerenciar Admin > Analytics Config** (`admin.php?page=mpa-config-analytics`).
+- Crie/seleciona projeto no Google Cloud, habilite a API Analytics Data e configure uma credencial OAuth2 (aplicação web).
+- Cadastre a URL de redirecionamento exatamente como exibido na tela (observa http/https, www e caminho).
+- Informe Client ID, Client Secret, Property ID e (opcional) Data Stream ID e salve.
+- Clique em **Conectar com Google Analytics** para realizar o fluxo OAuth, depois teste conexão. Tokens são armazenados com tempo de expiração e podem ser revogados via botão **Desconectar**.
 
-### Hooks WordPress Utilizados
-- `in_admin_header` - Header personalizado
-- `admin_enqueue_scripts` - Carregamento de assets
-- `admin_head` - Estilos críticos inline
-- `admin_footer` - Scripts de inicialização
-- `login_enqueue_scripts` - Assets da tela de login
-- `login_head` - Customizações no head do login
-- `login_footer` - Scripts interativos do login
+### 2. Configuração de Menus por Role
+- Abra **Gerenciar Admin > Menus por Role** (`admin.php?page=mpa-menu-roles`).
+- Selecione `_global` para regras padrão e aplique customizações específicas por role (administrator, editor, gerentes, etc.).
+- Use formulários para renomear/remover/promover/demover, criar menus personalizados e drag-and-drop para ordenar.
+- Exporte configurações (backup), importe pacotes `.json` quando migrar ambientes e utilize o reset por role quando necessário.
 
-### JavaScript Avançado
-- **Gestão de Estado**: LocalStorage para persistência
-- **Eventos Otimizados**: Delegação de eventos eficiente
-- **Animações Suaves**: Transições CSS3 com fallbacks
-- **Fix de URLs**: Correção automática de links quebrados
-- **Scroll Preservation**: Mantém posição do scroll na navegação
+### 3. Personalização Visual
+- Ajuste o logo usado no header/login via option `mpa_logo_url` (pode ser mantido em um plugin de configurações ou via `update_option`).
+- Avalie o impacto do modo escuro nos plugins instalados; classes CSS principais usam prefixo `mpa-` para minimizar colisões.
+- Para reverter ao layout padrão do WordPress em cenários de compatibilidade, implemente a função `mpa_should_disable_for_admin()` retornando `true` conforme sua lógica e carregue em um mu-plugin ou snippet.
 
-## 🔧 Instalação
+## Fluxos Recomendados de Verificação
+- Teste o dashboard Analytics após a autenticação com um usuário administrador e valide os gráficos (metrics, visitors, devices, fontes, páginas, eventos, realtime).
+- Valide menus para roles críticas (administrator, editor, shop_manager/gerentes) garantindo que menus essenciais como WooCommerce e Rank Math permaneçam acessíveis.
+- Exercite o sistema de import/export antes de mover configurações entre ambientes.
+- Utilize ambientes com e sem modo escuro para confirmar contraste e usabilidade.
 
-1. **Upload do Plugin**
-   ```bash
-   # Copie os arquivos para:
-   /wp-content/plugins/gerenciar-admin/
-   ```
+## Boas Práticas e Cuidados
+- Siga o fluxo descrito em `AGENTS.md`: planejar alterações, registrar em `HITORICO.md` e manter branch de trabalho conforme diretrizes do projeto.
+- Evite editar arquivos core do WordPress ou plugins externos; todas as customizações devem acontecer via hooks/filters existentes no plugin.
+- A ocultação de updates é intencional para roles limitadas; comunique usuários sobre políticas de atualização para evitar perda de alertas críticos.
+- Preserve a role `gerentes` caso sua instalação dependa da exceção de acesso total implementada no código.
 
-2. **Ativação**
-   - Acesse wp-admin/plugins.php
-   - Ative "Gerenciar Admin Web Inovação"
+## Diagnóstico e Manutenção
+- **Migração de dados:** utilize a aba "Migração/Limpeza" (`admin.php?page=mpa-migration-tools`) para verificar opções legadas e migrar automaticamente para `mpa_menu_settings_roles`.
+- **Correção rápida:** em casos de inconsistência grave, execute **🚀 Quick Fix** (`admin.php?page=mpa-quick-fix`) para limpar opções antigas e recriar a configuração básica.
+- **Debug da sidebar:** adicione `?debug_sidebar_restrictions=1` à URL do admin para visualizar restrições aplicadas ao usuário atual.
 
-3. **Configuração**
-   - O plugin funciona automaticamente após ativação
-   - Nenhuma configuração adicional necessária
+## Limitações Conhecidas
+- `admin/mpa-admin.php` referencia `assets/css/mpa-admin.css` e `assets/js/mpa-admin.js`, arquivos inexistentes que resultam em 404 a cada carregamento; avalie remover ou restaurar esses assets.
+- Alguns estilos ainda atuam diretamente sobre `body.wp-admin`, `.wrap` e `#wpcontent` sem escopo `body.dwi-theme`, podendo conflitar com plugins visuais.
+- A view `admin/views/mpa-analytics.php` contém scripts de fallback que duplicam lógica de `assets/js/mpa-analytics.js`; mantenha ambos sincronizados ao realizar ajustes.
+- `mpa-hide-updates.php` pode ocultar avisos importantes para usuários não administradores; avalie a política de comunicação interna antes de habilitar em produção.
 
-## 💻 Requisitos
+## Documentação Complementar
+- `ARQUITETURA.md` — mapa técnico detalhado.
+- `AGENTS.md` — instruções operacionais para agentes/automação.
+- `HITORICO.md` — registro cronológico de alterações.
 
-- **WordPress**: 5.0 ou superior
-- **PHP**: 7.4 ou superior  
-- **Navegadores**: Chrome, Firefox, Safari, Edge (versões modernas)
-- **JavaScript**: Habilitado no navegador
-
-## 🎯 Compatibilidade Testada
-
-### Plugins Principais
-- ✅ **WooCommerce** - E-commerce completo
-- ✅ **Elementor** - Page builder
-- ✅ **Yoast SEO** - Otimização SEO
-- ✅ **Advanced Custom Fields** - Campos customizados
-- ✅ **Contact Form 7** - Formulários
-- ✅ **Rank Math SEO** - SEO alternativo
-
-### Temas
-- ✅ **Twenty Twenty-Four** - Tema padrão
-- ✅ **Astra** - Tema popular
-- ✅ **GeneratePress** - Tema leve
-- ✅ **Temas customizados** - Compatibilidade universal
-
-## 📊 Estrutura do Dashboard
-
-### Seção Analytics
-```php
-// Métricas principais exibidas:
-- Usuários do Site: 24,532 (+12.5%)
-- Visualizações: 89,247 (-3.2%)
-- Taxa de Rejeição: 42.3% (-5.1%)
-- Duração Média: 3:42 (+8.7%)
-```
-
-### Seção Real Time
-```php
-// Dados em tempo real:
-- Usuários Ativos: 127
-- Páginas Ativas: 43  
-- Conversões (30min): 0
-```
-
-## 🔄 Sistema de Menu Dinâmico
-
-### Funcionalidades
-- **Auto-Discovery**: Detecta automaticamente todos os menus
-- **Permissões**: Respeita capabilities do WordPress
-- **Ícones Inteligentes**: Mapeia ícones para cada tipo de menu
-- **Descrições**: Adiciona descrições contextuais
-- **Estado Ativo**: Destaca a página atual
-- **URLs Limpas**: Corrige automaticamente URLs malformadas
-
-### Exemplo de Implementação - Menu Dinâmico
-```php
-// Menu principal detectado automaticamente
-foreach ($menu as $menu_item) {
-    if (!current_user_can($menu_item[1])) continue;
-    
-    $menu_title = wp_strip_all_tags($menu_item[0]);
-    $menu_icon = mpa_get_menu_icon($menu_item[6]);
-    $is_active = mpa_is_menu_active($menu_file, $current_screen);
-    
-    // Renderiza item com submenu se existir
-}
-```
-
-### Exemplo de Implementação - Login Customizado
-```php
-// Hook principal para customização do login
-add_action('login_enqueue_scripts', 'mpa_custom_login_styles');
-add_action('login_footer', 'mpa_custom_login_footer');
-
-function mpa_custom_login_styles() {
-    // Carrega CSS e JS customizados
-    wp_enqueue_style('mpa-custom-login', /* ... */);
-    wp_enqueue_script('mpa-custom-login-js', /* ... */);
-}
-
-function mpa_custom_login_footer() {
-    // Logo configurável das configurações
-    $logo_url = get_option('mpa_logo_url', $default);
-    
-    // JavaScript inteligente que detecta contexto
-    // - Tela principal: Aplica transformação completa
-    // - Recuperação de senha: Mantém estrutura nativa
-}
-```
-
-### Recursos da Tela de Login
-```javascript
-// Funcionalidades implementadas em JavaScript
-const loginFeatures = {
-    // Toggle de senha com ícones SVG animados
-    passwordToggle: () => {
-        const input = document.getElementById('user_pass');
-        input.type = input.type === 'password' ? 'text' : 'password';
-    },
-    
-    // Seletor de idioma com tradução em tempo real
-    languageSelector: {
-        languages: ['pt', 'en', 'es'],
-        changeLanguage: (lang) => {
-            // Atualiza textos da interface dinamicamente
-            updateLabels(lang);
-            updatePlaceholders(lang);
-        }
-    },
-    
-    // Animações suaves de entrada
-    animations: {
-        containerEntry: 'mpa-animate-in',
-        duration: '0.6s ease'
-    }
-};
-```
-
-## 🎨 Customização de Estilos
-
-### Variáveis CSS Principais
-```css
-:root {
-    /* Dashboard */
-    --mpa-primary: #2563eb;
-    --mpa-background: #f9fafb;
-    --mpa-sidebar-width: 16rem;
-    --mpa-header-height: 50px;
-    --mpa-border-radius: 0.75rem;
-    
-    /* Login */
-    --mpa-login-container-bg: white;
-    --mpa-login-input-bg: #fafafa;
-    --mpa-login-border: #dfdfdf;
-    --mpa-login-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    --mpa-login-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-```
-
-### Classes Principais
-**Dashboard:**
-- `.mpa-sidebar` - Menu lateral
-- `.mpa-nav-item` - Itens de navegação
-- `.mpa-submenu` - Submenus retráteis
-- `.mpa-nav-item.active` - Item ativo
-- `.mpa-main-content` - Conteúdo principal
-
-**Login:**
-- `#login` - Container principal da tela de login
-- `.mpa-welcome-title` - Títulos personalizados (Recuperar Senha, etc.)
-- `.form-input`, `.input` - Campos de entrada
-- `.password-toggle` - Botão de mostrar/ocultar senha
-- `.language-selector` - Seletor de idioma
-- `.flag-br`, `.flag-us`, `.flag-es` - Bandeiras dos países
-
-## 🚨 Solução de Problemas
-
-### Menu Lateral Não Aparece
-```php
-// Verifique se os hooks estão carregando:
-add_action('in_admin_header', 'mpa_render_header');
-```
-
-### Botões Desalinhados
-```css
-/* CSS universal já incluído para corrigir */
-.wp-admin .page-title-action {
-    display: inline-block !important;
-    visibility: visible !important;
-}
-```
-
-### Tela de Login Não Aparece Customizada
-```php
-// Verifique se os hooks estão carregando:
-add_action('login_enqueue_scripts', 'mpa_custom_login_styles');
-add_action('login_footer', 'mpa_custom_login_footer');
-
-// Limpe o cache do navegador
-// Verifique se não há conflitos com outros plugins de login
-```
-
-### Seletor de Idioma Cortado
-```css
-/* Problema comum com overflow hidden */
-#login {
-    overflow: visible !important;
-}
-.language-options {
-    z-index: 200 !important;
-}
-```
-
-### Conflitos com Plugins
-- O sistema usa regras CSS defensivas
-- Seletores específicos previnem conflitos
-- Compatibilidade universal implementada
-- Detecção inteligente de contexto (login vs recuperação)
-
-## 📈 Performance
-
-### Otimizações Implementadas
-- **CSS Crítico**: Inline no head para render mais rápido
-- **JS Deferido**: Scripts carregados após DOM ready
-- **Cache de Estado**: LocalStorage para persistência
-- **Seletores Eficientes**: CSS otimizado para performance
-
-### Métricas
-- **First Paint**: < 100ms adicional
-- **JavaScript**: ~15KB minificado
-- **CSS**: ~25KB minificado
-- **HTTP Requests**: +4 requests otimizados
-
-## 🔐 Segurança
-
-### Medidas Implementadas
-- **Sanitização**: `esc_html()`, `esc_url()`, `esc_attr()`
-- **Capacities**: `current_user_can()` para permissões
-- **Nonces**: Validação de formulários (quando aplicável)
-- **Input Validation**: Validação de dados de entrada
-
-## 📝 Changelog
-
-### v1.1.0 - Sistema de Login Personalizado
-- ✅ **Nova tela de login moderna** seguindo padrões de design contemporâneo
-- ✅ **Logo configurável** integrado com as configurações do plugin
-- ✅ **Toggle de senha interativo** com ícones SVG animados
-- ✅ **Seletor de idioma** com suporte a PT-BR, EN, ES e tradução em tempo real
-- ✅ **Bandeira do Brasil realista** com cores e proporções oficiais
-- ✅ **Compatibilidade total** com sistema de autenticação WordPress
-- ✅ **Suporte às telas de recuperação** mantendo funcionalidade nativa
-- ✅ **Animações suaves** e microinterações elegantes
-- ✅ **JavaScript inteligente** que detecta contexto automaticamente
-- ✅ **Design responsivo** adaptado para mobile e desktop
-
-### v1.0.0 - Release Inicial
-- ✅ Interface administrativa moderna
-- ✅ Menu lateral dinâmico e responsivo
-- ✅ Dashboard com métricas customizadas
-- ✅ Compatibilidade universal com plugins
-- ✅ Layout responsivo desktop/mobile
-- ✅ Sistema de toggle com persistência
-- ✅ Botões universais para todos post types
-
-## 👥 Contribuição
-
-### Como Contribuir
-1. Fork o repositório
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-funcionalidade`)
-3. Commit suas mudanças (`git commit -am 'Adiciona nova funcionalidade'`)
-4. Push para a branch (`git push origin feature/nova-funcionalidade`)
-5. Abra um Pull Request
-
-### Issues
-- Reporte bugs em: [GitHub Issues](https://github.com/andreclinic/Gerenciar-Admin-Web-Inova-o/issues)
-- Suggira melhorias usando labels apropriados
-- Forneça informações de versão WordPress/PHP
-
-## 📄 Licença
-
-Este projeto está sob a licença GPL v2 ou posterior - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
-## 🏆 Créditos
-
-### Desenvolvimento
-- **Conceito Original**: Baseado em modelo_dashboard.html
-- **Implementação WordPress**: Integração nativa com hooks
-- **Responsividade**: Mobile-first approach
-- **Compatibilidade**: Testes extensivos com plugins populares
-
-### Tecnologias
-- **WordPress**: Framework base
-- **jQuery**: Interações JavaScript  
-- **CSS3**: Animações e layout responsivo
-- **HTML5**: Estrutura semântica
-- **PHP**: Backend WordPress
-
----
-
-**Gerenciar Admin Web Inovação** - Transformando a experiência administrativa do WordPress desde 2024.
-
-🚀 **[Demo Online](https://sua-demo-url.com)** | 📚 **[Documentação](https://github.com/andreclinic/Gerenciar-Admin-Web-Inova-o/wiki)** | 💬 **[Suporte](https://github.com/andreclinic/Gerenciar-Admin-Web-Inova-o/discussions)**
+## Licença
+Projeto distribuído sob GPL v2 ou posterior.

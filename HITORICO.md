@@ -7,6 +7,113 @@ Serve como memória do projeto para que o CODEX e os desenvolvedores humanos ent
 
 ## 📅 Histórico
 
+### ⏺ Update(admin preloader mobile pointer)
+
+- **Data:** 2025-09-27 19:23:18
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Alinhado o preloader ao fluxo touch adicionando disparo no `pointerdown/touchstart` do menu lateral e tornando o overlay não bloqueante.
+- **Arquivos afetados:**
+  - `assets/css/mpa-preloader.css`
+  - `assets/js/mpa-adminmenumain.js`
+- **Problema:** Mesmo com a API global, o preloader não aparecia no menu toggle mobile porque o clique só dispara após o toque e o overlay bloqueava eventos antes da navegação.
+- **Solução:** Mantido `pointer-events: none` mesmo visível para não interferir com os toques e acionado o preloader na fase inicial do toque, preservando filtros para ignorar expansões de submenu.
+- **Justificativa:** Garantir feedback imediato no mobile sem impedir que o clique seja convertido em navegação.
+
+### ⏺ Update(admin preloader sidebar touch integration)
+
+- **Data:** 2025-09-27 19:13:41
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Integrada a barra lateral ao preloader criando uma API global e disparando manualmente nos cliques de navegação, respeitando o fluxo de toques em dispositivos móveis.
+- **Arquivos afetados:**
+  - `assets/js/mpa-preloader.js`
+  - `assets/js/mpa-adminmenumain.js`
+- **Problema:** O menu lateral mobile não exibia o preloader e interações por toque bloqueavam o clique, enquanto o desbloqueio de tela gerava loops esporádicos.
+- **Solução:** Exposta a API `MPA_PRELOADER`, adicionada lógica para ignorar toques que apenas expandem submenus e acionado o overlay diretamente dos handlers da sidebar quando ocorre navegação legítima; removida a dependência de `visibilitychange` para evitar loops ao desbloquear a tela.
+- **Justificativa:** Garantir feedback consistente nos fluxos de navegação originados pela barra lateral sem interferir nas interações por toque ou em estados de pausa do navegador.
+
+### ⏺ Update(admin preloader sidebar navigation)
+
+- **Data:** 2025-09-27 18:57:53
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Ajustada a exibição do preloader para disparar imediatamente ao clicar em links e removido o gatilho de `visibilitychange` que causava loop ao reativar a tela.
+- **Arquivos afetados:**
+  - `assets/js/mpa-preloader.js`
+- **Problema:** O menu lateral mobile continuava sem feedback visual porque o overlay era agendado via `setTimeout`, não chegando a renderizar antes do redirecionamento, e o desbloqueio da tela acionava o preloader indefinidamente.
+- **Solução:** Exibição síncrona do overlay no handler de `click` e eliminação do listener de `visibilitychange`, mantendo apenas `beforeunload`/`pagehide` e `pageshow` para gerenciar o estado.
+- **Justificativa:** Oferecer feedback consistente tanto no menu lateral quanto em outros fluxos mobile sem interferir na navegação nem ativar loops inesperados.
+
+### ⏺ Update(admin preloader mobile navigation)
+
+- **Data:** 2025-09-27 18:42:06
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Simplificada a lógica do preloader para não bloquear o clique e garantir renderização uniforme em links do menu lateral (mobile e desktop).
+- **Arquivos afetados:**
+  - `assets/js/mpa-preloader.js`
+- **Problema:** A tentativa anterior de segurar o toque com timers fazia o overlay aparecer antes do `click`, impedindo o redirecionamento em vários cenários.
+- **Solução:** Reescrita a rotina para atuar apenas após o clique, removendo temporizadores de toque e tratadores redundantes de pointer/touch, mantendo gatilhos de `beforeunload`, formulários e `visibilitychange`.
+- **Justificativa:** Evitar interferência nos eventos padrão dos links enquanto preserva o feedback visual durante a navegação no painel.
+
+### ⏺ Update(admin preloader mobile menu display)
+
+- **Data:** 2025-09-27 18:34:01
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Restaurada a exibição do preloader após cliques no menu lateral mobile sem afetar o comportamento desktop.
+- **Arquivos afetados:**
+  - `assets/js/mpa-preloader.js`
+- **Problema:** O timer introduzido para liberar o toque limpava a exibição do preloader antes do `click`, fazendo o overlay não aparecer em navegações do menu mobile.
+- **Solução:** Forçado `showPreloader` dentro do handler de `click` após a limpeza do timer, mantendo a janela de 120 ms para permitir o toque e preservando a lógica de cancelamento quando o evento é prevenido.
+- **Justificativa:** Garantir que o usuário tenha feedback visual ao sair do menu lateral em dispositivos touch sem bloquear a navegação.
+
+### ⏺ Update(admin preloader mobile menu fix)
+
+- **Data:** 2025-09-27 18:25:17
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Corrigida a interação do preloader com o menu lateral mobile para não bloquear a navegação após o toque inicial.
+- **Arquivos afetados:**
+  - `assets/js/mpa-preloader.js`
+- **Problema:** Ao tocar nos itens do menu mobile o preloader surgia, porém a página não navegava porque o overlay cobria o link antes do `click` ser disparado.
+- **Solução:** Introduzido timer curto e cancelamento para `touchstart/pointerdown`, liberando o clique antes de exibir o overlay, adicionando limpeza em `touchend`/`pointerup` e centralizando a remoção de timers ao ocultar o preloader.
+- **Justificativa:** Garantir feedback visual sem impedir o fluxo de navegação em dispositivos touch, mantendo a experiência consistente com desktop.
+
+### ⏺ Update(admin preloader mobile menu)
+
+- **Data:** 2025-09-27 18:14:07
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Refinada a integração do preloader com o menu lateral em dispositivos mobile, ajustando eventos de toque e garantindo sobreposição máxima.
+- **Arquivos afetados:**
+  - `assets/js/mpa-preloader.js`
+  - `assets/css/mpa-preloader.css`
+- **Problema:** Ao navegar pelo menu lateral no mobile o preloader não era exibido, deixando o usuário sem feedback visual enquanto aguardava o carregamento da nova página.
+- **Solução:** Reposicionado o overlay diretamente sob `<body>`, removendo o uso de `requestAnimationFrame`, adicionando fallback para `beforeunload/pagehide/visibilitychange`, tratando interações `touchstart/pointerdown` sem cancelar cliques válidos e elevando o `z-index` para ficar acima do off-canvas.
+- **Justificativa:** Garantir feedback consistente independentemente do tipo de interação (toque, clique ou submissão) e manter acessibilidade em cenários onde o menu mobile se sobrepõe ao conteúdo.
+
+### ⏺ Update(admin preloader mobile)
+
+- **Data:** 2025-09-27 17:54:06
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Ajustada a lógica de exibição do preloader para garantir feedback consistente em dispositivos móveis e submissões realizadas no admin.
+- **Arquivos afetados:**
+  - `assets/js/mpa-preloader.js`
+- **Problema:** Em navegadores mobile o overlay raramente aparecia antes da navegação, deixando o usuário sem indicação de carregamento.
+- **Solução:** Removida a dependência de `requestAnimationFrame` e do atraso com `setTimeout`, adicionados gatilhos imediatos para links, formulários, `beforeunload` e `pagehide`, além de normalizar o reset via `pageshow` e o atributo `aria-hidden`.
+- **Justificativa:** Garantir que o preloader cumpra seu papel de feedback visual independente do dispositivo ou do tipo de interação, preservando acessibilidade e evitando travamento aparente.
+
 ### ⏺ Update(version 1.3)
 
 - **Data:** 2025-09-25 13:33:44

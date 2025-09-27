@@ -10,7 +10,7 @@
   gap: 12px;
   background: rgba(255, 255, 255, 0.85);
   color: #1d2327;
-  z-index: 99999;
+  z-index: 2147483647;
   cursor: wait;
   font-family: inherit;
   opacity: 0;
@@ -22,7 +22,7 @@
 #mpa-preloader.is-visible {
   opacity: 1;
   visibility: visible;
-  pointer-events: all;
+  pointer-events: none;
 }
 
 #mpa-preloader .mpa-spinner {

@@ -2,6 +2,27 @@
 jQuery(function ($) {
     'use strict';
 
+    function triggerNavPreloader($element) {
+        if (!window.MPA_PRELOADER || typeof window.MPA_PRELOADER.show !== 'function') {
+            return;
+        }
+
+        if ($element.attr('data-no-preloader') === 'true') {
+            return;
+        }
+
+        const $container = $element.closest('.mpa-nav-item-container');
+        const hasSubmenu = $container.length && $container.find('.mpa-submenu').length > 0;
+        const isSubmenuItem = $element.hasClass('mpa-submenu-item');
+        const isExpanded = $container.hasClass('expanded');
+
+        if (hasSubmenu && !isSubmenuItem && !isExpanded) {
+            return;
+        }
+
+        window.MPA_PRELOADER.show();
+    }
+
     // Global variable for drag and drop functionality
     let draggedItem = null;
 
@@ -64,13 +85,23 @@ jQuery(function ($) {
         
         // Close mobile menu when clicking on menu items
         $('.mpa-nav-item, .mpa-submenu-item').on('click', function() {
-            if ($(window).width() <= 768 && !$(this).closest('.mpa-nav-item-container').find('.mpa-submenu').length) {
+            const $link = $(this);
+            const $container = $link.closest('.mpa-nav-item-container');
+            const hasSubmenu = $container.length && $container.find('.mpa-submenu').length > 0;
+
+            if ($(window).width() <= 768 && (!hasSubmenu)) {
                 sidebar.removeClass('show');
                 overlay.removeClass('show');
                 $('body').removeClass('mobile-menu-open');
             }
+
+            triggerNavPreloader($link);
         });
-        
+
+        $('.mpa-nav-item, .mpa-submenu-item').on('touchstart pointerdown', function() {
+            triggerNavPreloader($(this));
+        });
+
         // Restaurar estado da sidebar ao carregar
         const sidebarCollapsed = localStorage.getItem('mpa-sidebar-collapsed');
         if (sidebarCollapsed === 'true') {
