@@ -709,7 +709,6 @@ body.login #login h1 a {
 /* Loading state para o botão */
 .mpa-loading {
     opacity: 0.7;
-    pointer-events: none;
 }
 
 /* Animação suave de entrada da página */

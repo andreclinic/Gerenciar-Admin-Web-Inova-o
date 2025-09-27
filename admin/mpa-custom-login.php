@@ -409,11 +409,102 @@ function mpa_custom_login_footer() {
                 }
                 
                 // Adicionar eventos
-                $('#loginform').on('submit', function() {
-                    $('#wp-submit').addClass('mpa-loading');
-                    $('#loginBtnText').text('Entrando...');
+                const $form = $('#loginform');
+                const $submitBtn = $form.find('#wp-submit');
+                const $submitLabel = $('#loginBtnText');
+
+                const setLoadingState = function () {
+                    if (!$submitBtn.length) {
+                        return;
+                    }
+
+                    if ($form.data('mpa-submitting') === true) {
+                        return;
+                    }
+
+                    if (!$submitBtn.hasClass('mpa-loading')) {
+                        $submitBtn.addClass('mpa-loading');
+                    }
+
+                    if ($submitLabel.length) {
+                        $submitLabel.text('Entrando...');
+                    } else {
+                        $submitBtn.text('Entrando...');
+                    }
+
+                    if ($submitBtn[0]) {
+                        void $submitBtn[0].offsetWidth;
+                    }
+                };
+
+                const resetLoadingState = function () {
+                    if (!$submitBtn.length) {
+                        return;
+                    }
+
+                    $submitBtn.removeClass('mpa-loading');
+                    $form.data('mpa-submitting', false);
+
+                    if ($submitLabel.length) {
+                        $submitLabel.text('Entrar');
+                    } else {
+                        $submitBtn.text('Entrar');
+                    }
+                };
+
+                const deferNativeSubmit = function () {
+                    const nativeForm = $form.get(0);
+
+                    if (!nativeForm) {
+                        return;
+                    }
+
+                    window.requestAnimationFrame(function () {
+                        window.requestAnimationFrame(function () {
+                            window.setTimeout(function () {
+                                nativeForm.submit();
+                            }, 180);
+                        });
+                    });
+                };
+
+                const isFormFilled = function () {
+                    const username = $.trim($('#user_login').val() || '');
+                    const password = $.trim($('#user_pass').val() || '');
+
+                    return username.length > 0 && password.length > 0;
+                };
+
+                $submitBtn.on('pointerdown touchstart click', function () {
+                    if ($form.data('mpa-submitting') === true) {
+                        return;
+                    }
+
+                    setLoadingState();
                 });
-                
+
+                $form.on('submit', function (event) {
+                    if ($form.data('mpa-submitting') === true) {
+                        return true;
+                    }
+
+                    setLoadingState();
+
+                    if (!isFormFilled()) {
+                        resetLoadingState();
+                        return true; // permitir validação padrão do WP
+                    }
+
+                    event.preventDefault();
+                    $form.data('mpa-submitting', true);
+
+                    deferNativeSubmit();
+
+                    return false;
+                });
+
+                $(document).on('mpaLogin:resetLoading', resetLoadingState);
+
                 // Funcionalidade do botão de mostrar/ocultar senha
                 $(document).on('click', '#passwordToggle', function() {
                     const passwordInput = $('#user_pass');
@@ -512,7 +603,6 @@ function mpa_custom_login_footer() {
         /* Loading state */
         .mpa-loading {
             opacity: 0.7;
-            pointer-events: none;
         }
 
         /* Otimizações para mobile - reduzir espaçamento */

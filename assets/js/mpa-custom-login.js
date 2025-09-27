@@ -15,7 +15,11 @@ jQuery(document).ready(function($) {
         particleCount: 20,
         typingSpeed: 100
     };
-    
+    const selectors = {
+        submitBtn: '#wp-submit',
+        submitLabel: '#loginBtnText'
+    };
+
     // Inicialização
     init();
     
@@ -129,33 +133,122 @@ jQuery(document).ready(function($) {
      * Handler do submit do formulário
      */
     function setupSubmitHandler() {
+        const setLoadingState = function () {
+            const $submit = $(selectors.submitBtn);
+            if (!$submit.length) {
+                return;
+            }
+
+            if (!$submit.hasClass('mpa-loading')) {
+                $submit.addClass('mpa-loading');
+            }
+
+            const $label = $(selectors.submitLabel);
+            if ($label.length) {
+                $label.text('Entrando...');
+            } else {
+                $submit.text('Entrando...');
+            }
+
+            if ($submit[0]) {
+                void $submit[0].offsetWidth;
+            }
+        };
+
+        const resetLoadingState = function () {
+            const $submit = $(selectors.submitBtn);
+            if (!$submit.length) {
+                return;
+            }
+
+            $submit.removeClass('mpa-loading');
+            $('#loginform').data('mpa-submitting', false);
+
+            if ($(selectors.submitLabel).length) {
+                $(selectors.submitLabel).text('Entrar');
+            } else {
+                $submit.text('Entrar');
+            }
+        };
+
+        const ensureOverlay = function () {
+            let $overlay = $('.mpa-loading-overlay');
+            if (!$overlay.length) {
+                $overlay = $('<div class="mpa-loading-overlay"></div>');
+                $('body').append($overlay);
+            }
+
+            return $overlay;
+        };
+
+        const removeOverlay = function () {
+            $('.mpa-loading-overlay').remove();
+        };
+
+        $(selectors.submitBtn).on('pointerdown touchstart', function () {
+            if ($('#loginform').data('mpa-submitting') === true) {
+                return;
+            }
+            setLoadingState();
+            ensureOverlay();
+        });
+
+        $(selectors.submitBtn).on('click', function () {
+            if ($('#loginform').data('mpa-submitting') === true) {
+                return;
+            }
+            setLoadingState();
+            ensureOverlay();
+        });
+
         $('#loginform').on('submit', function(e) {
             const $form = $(this);
-            const $submit = $('#wp-submit');
-            
-            // Adicionar estado de loading
-            $submit.addClass('mpa-loading');
-            
-            // Criar overlay de loading
-            const $overlay = $('<div class="mpa-loading-overlay"></div>');
-            $('body').append($overlay);
-            
-            // Animação do botão
-            $submit.text('Entrando...');
-            
-            // Validação final
+            const alreadySubmitting = $form.data('mpa-submitting') === true;
+
+            setLoadingState();
+            const $overlay = ensureOverlay();
+
             const isValid = validateForm();
-            
+
             if (!isValid) {
                 e.preventDefault();
-                $submit.removeClass('mpa-loading').text('Entrar');
+                resetLoadingState();
                 $overlay.remove();
                 showError('Por favor, verifique seus dados');
                 return false;
             }
-            
+
+            if (alreadySubmitting) {
+                return true;
+            }
+
+            e.preventDefault();
+            $form.data('mpa-submitting', true);
+
             // Adicionar indicador de progresso
             showProgress();
+
+            var flush = function (cb) {
+                window.requestAnimationFrame(function () {
+                    window.requestAnimationFrame(function () {
+                        cb();
+                    });
+                });
+            };
+
+            flush(function () {
+                window.setTimeout(function () {
+                    $form.trigger('mpaLogin:beforeNativeSubmit');
+                    $form.get(0).submit();
+                }, 220);
+            });
+
+            return false;
+        });
+
+        $(document).on('mpaLogin:resetLoading', function () {
+            resetLoadingState();
+            removeOverlay();
         });
     }
     

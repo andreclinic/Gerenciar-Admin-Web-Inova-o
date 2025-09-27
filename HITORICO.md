@@ -7,6 +7,85 @@ Serve como memória do projeto para que o CODEX e os desenvolvedores humanos ent
 
 ## 📅 Histórico
 
+### ⏺ Update(custom login inline touch submit)
+
+- **Data:** 2025-09-27 20:14:52
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Ajustada a lógica inline da tela de login para garantir que o estado "Entrando..." seja exibido antes do envio ao tocar no Chrome mobile.
+- **Arquivos afetados:**
+  - `admin/mpa-custom-login.php`
+- **Problema:** As alterações no arquivo JS não tinham efeito porque a tela usa script inline; o botão permanecia estático quando pressionado por toque.
+- **Solução:** Introduzidos handlers de `pointerdown/touchstart/click` diretamente no script inline, com checagem de submissão, reflow forçado e dupla chamada a `requestAnimationFrame` antes de submeter o formulário nativo.
+- **Justificativa:** Aplicar o feedback visual real na implementação utilizada atualmente, evitando regressões com caches de assets.
+
+### ⏺ Update(custom login button pointer)
+
+- **Data:** 2025-09-27 20:20:56
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Corrigido o bloqueio do submit mobile removendo o `pointer-events: none` do estado `mpa-loading` para permitir que o clique conclua antes de aplicar o atraso controlado.
+- **Arquivos afetados:**
+  - `admin/mpa-custom-login.php`
+  - `assets/css/mpa-custom-login.css`
+- **Problema:** Ao tocar no botão “Entrar” o carregamento era exibido, porém o clique era cancelado porque o CSS desativava o ponteiro imediatamente, impedindo o submit nativo.
+- **Solução:** Tornado o estilo `mpa-loading` apenas visual (opacidade) e mantido o controle contra múltiplos envios via flag JavaScript, preservando o redirecionamento.
+- **Justificativa:** Garantir que o fluxo de login complete normalmente após exibir o feedback visual no Chrome mobile.
+
+### ⏺ Update(custom login touch overlay)
+
+- **Data:** 2025-09-27 20:06:29
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Aprofundado o tratamento do botão de login para acionar overlay e loading ainda no toque, prolongando levemente o submit para registro visual confiável no Chrome mobile.
+- **Arquivos afetados:**
+  - `assets/js/mpa-custom-login.js`
+- **Problema:** O label “Entrando...” continuava invisível em toques rápidos porque o formulário era enviado antes do navegador pintar as mudanças.
+- **Solução:** Aplicado estado de loading apenas quando o formulário não está em submissão, invocado `ensureOverlay()` nos eventos de toque/clique e ampliado a janela de `requestAnimationFrame` + `setTimeout` para ~220 ms antes do submit nativo.
+- **Justificativa:** Aumentar a chance de repaint mesmo em dispositivos com animações rápidas, entregando feedback imediato ao usuário mobile.
+
+### ⏺ Update(custom login mobile paint)
+
+- **Data:** 2025-09-27 20:00:20
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Refinada a rotina de loading do botão “Entrar” para garantir repintura perceptível antes do envio no Chrome mobile.
+- **Arquivos afetados:**
+  - `assets/js/mpa-custom-login.js`
+- **Problema:** Mesmo após ativar o estado de loading via `touchstart`, o Chrome mobile navegava antes de exibir o label “Entrando...” no botão.
+- **Solução:** Forçado reflow ao alterar o label, complementado com gatilhos em `click` e dupla chamada a `requestAnimationFrame` antes do submit nativo, criando uma janela de ~90 ms para o frame pintar a animação.
+- **Justificativa:** Assegurar feedback visual imediato para usuários mobile sem comprometer a submissão do formulário.
+
+### ⏺ Update(custom login defer submit)
+
+- **Data:** 2025-09-27 19:51:16
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Sincronizado o feedback do botão de login com toques no Chrome mobile, adiando ligeiramente o submit nativo para garantir repintura do estado de carregamento.
+- **Arquivos afetados:**
+  - `assets/js/mpa-custom-login.js`
+- **Problema:** Ao tocar no botão “Entrar” no Chrome mobile a animação não aparecia porque a navegação ocorria antes do repaint do label e da classe de loading.
+- **Solução:** Guardado o estado de submissão, disparado `showProgress` e usado `requestAnimationFrame` + `setTimeout` para submeter o formulário após ~75ms, preservando validação e evitando submits duplicados.
+- **Justificativa:** Permitir que a alteração visual seja perceptível em dispositivos touch sem impactar o fluxo normal de login.
+
+### ⏺ Update(custom login mobile loading)
+
+- **Data:** 2025-09-27 19:39:46
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Ajustado o estado de loading do botão de login para acionar imediatamente em toques no Chrome mobile e garantir reset consistente quando o envio é inválido.
+- **Arquivos afetados:**
+  - `assets/js/mpa-custom-login.js`
+- **Problema:** No Chrome para mobile o botão “Entrar” permanecia estático, pois a alteração de texto só ocorria após o submit e era ofuscada pelo carregamento imediato.
+- **Solução:** Criados helpers para aplicar/remover o estado de loading, disparando-os em `pointerdown/touchstart`, além de evitar overlays duplicados e restaurar o label quando a validação falha.
+- **Justificativa:** Oferecer feedback visual imediato em dispositivos touch, mantendo paridade com a experiência em desktop.
+
 ### ⏺ Update(admin preloader mobile pointer)
 
 - **Data:** 2025-09-27 19:23:18
