@@ -79,10 +79,20 @@ function mpa_render_custom_header()
         </div>
         <div class="mpa-header-right">
             <div class="mpa-header-buttons">
-                <button id="mpa-dark-mode-toggle" class="mpa-header-btn">
+                <button id="mpa-dark-mode-toggle" class="mpa-header-btn" type="button" aria-label="Alternar modo escuro">
                     <svg class="mpa-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
+                <button id="mpa-fullscreen-toggle" class="mpa-header-btn" type="button" aria-label="Abrir em tela cheia" aria-pressed="false">
+                    <svg class="mpa-icon mpa-fullscreen-enter" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 9V5a1 1 0 011-1h4M4 5l5 5M20 9V5a1 1 0 00-1-1h-4m5 5l-5-5M4 15v4a1 1 0 001 1h4m-5-5l5 5M20 15v4a1 1 0 01-1 1h-4m5-5l-5 5" />
+                    </svg>
+                    <svg class="mpa-icon mpa-fullscreen-exit" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 4H5a1 1 0 00-1 1v4m0-5l6 6M15 4h4a1 1 0 011 1v4m-5-5l6 6M9 20H5a1 1 0 01-1-1v-4m6 5l-6-6M15 20h4a1 1 0 001-1v-4m-6 5l6-6" />
                     </svg>
                 </button>
                 <div class="mpa-notifications-container">

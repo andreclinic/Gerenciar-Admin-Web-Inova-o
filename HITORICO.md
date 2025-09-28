@@ -7,6 +7,89 @@ Serve como memória do projeto para que o CODEX e os desenvolvedores humanos ent
 
 ## 📅 Histórico
 
+### ⏺ Update(admin header fullscreen ios fallback)
+
+- **Data:** 2025-09-28 20:48:51
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Forçado o modo fullscreen simulado no iOS, garantindo que o botão permaneça visível e que o layout ocupe toda a viewport em iPhone/iPad.
+- **Arquivos afetados:**
+  - `assets/js/mpa-wpadminbar.js`
+  - `assets/css/mpa-wpadminbar.css`
+- **Problema:** O Safari móvel reportava suporte parcial à Fullscreen API, levando o script a tentar o fluxo nativo e impedindo o fallback visual, fazendo o botão sumir ou não responder.
+- **Solução:** Considerado o iOS como plataforma sem suporte nativo, ativando sempre o fallback CSS, ajustando eventos de toque/clique e refinando o estilo com `100dvh`, header fixo e rolagem suave.
+- **Justificativa:** Viabilizar a experiência de tela cheia no mobile Apple sem afetar o comportamento em desktop ou Android.
+
+### ⏺ Update(admin header fullscreen mobile ux)
+
+- **Data:** 2025-09-28 20:24:58
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Reforçado o controle de tela cheia para manter o botão visível no mobile, garantir toque funcional no Android e fornecer fallback visual em iOS quando a API nativa estiver ausente.
+- **Arquivos afetados:**
+  - `assets/js/mpa-wpadminbar.js`
+  - `assets/css/mpa-wpadminbar.css`
+- **Problema:** Dispositivos móveis não exibiam ou não respondiam ao botão de fullscreen devido à detecção rígida da API, aos eventos `touchstart` e à falta de alternativa no Safari iOS.
+- **Solução:** Adicionadas verificações em protótipos para manter o botão ativo, troca para `touchend` com supressão de clique duplicado, fallback CSS simulando fullscreen em iOS e classe de bloqueio apenas para navegadores realmente incompatíveis.
+- **Justificativa:** Entregar a experiência solicitada com comportamento consistente entre desktop e mobile, sem depender exclusivamente da API nativa.
+
+### ⏺ Update(admin header fullscreen mobile detection)
+
+- **Data:** 2025-09-28 20:10:41
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Ajustada a detecção de suporte à tela cheia para considerar protótipos dos elementos e evitar esconder o botão em navegadores móveis compatíveis.
+- **Arquivos afetados:**
+  - `assets/js/mpa-wpadminbar.js`
+- **Problema:** O botão de fullscreen deixou de aparecer no mobile porque o script avaliava apenas elementos concretos (`document`/`body`) e concluía que não havia suporte.
+- **Solução:** Incluídos os protótipos (`Element/HTMLElement/Document`) no processo de detecção, mantendo o botão visível sempre que a API estiver definida e preservando o fallback existente para prefixos antigos.
+- **Justificativa:** Garantir que navegadores modernos para dispositivos móveis reconheçam o recurso e exibam o controle conforme solicitado pelo usuário.
+
+### ⏺ Update(admin header fullscreen sequential fallback)
+
+- **Data:** 2025-09-28 19:51:01
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Reajustada a detecção da API de tela cheia para tentar múltiplos elementos compatíveis, reaproveitando prefixos antigos e prevenindo falhas assíncronas em navegadores mobile.
+- **Arquivos afetados:**
+  - `assets/js/mpa-wpadminbar.js`
+- **Problema:** Mesmo com o botão exibido, Chrome e Safari mobile não alternavam para tela cheia porque o primeiro elemento testado rejeitava a solicitação e impedia tentativas subsequentes.
+- **Solução:** Mapeados os métodos vendor (`webkit`, `moz`, `ms`) e implementado fallback sequencial com tratamento de promessas/rejeições, além de suprimir toques duplicados e registrar avisos para depuração.
+- **Justificativa:** Garantir que o recurso funcione nos navegadores móveis suportados, mantendo consistência com o comportamento desktop.
+
+### ⏺ Update(admin header fullscreen mobile support)
+
+- **Data:** 2025-09-28 19:35:36
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Unificado o controle de tela cheia para reconhecer suporte móvel, evitar duplicação de ícones no Safari e manter o botão oculto em navegadores sem API.
+- **Arquivos afetados:**
+  - `assets/js/mpa-wpadminbar.js`
+  - `assets/css/mpa-wpadminbar.css`
+- **Problema:** Em dispositivos móveis o Chrome não exibia o botão e no Safari surgiam dois ícones inoperantes por conta da detecção genérica da API fullscreen.
+- **Solução:** Implementado adaptador único para os vendors (standard, webkit, ms), tentativa sequencial de elementos permitidos e atualização de estado resiliente, além de CSS com classe dedicada para alternar os ícones.
+- **Justificativa:** Garantir uma experiência consistente em todo o plugin, respeitando limitações reais da API no mobile e prevenindo comportamentos divergentes entre navegadores.
+
+### ⏺ Update(admin header fullscreen toggle)
+
+- **Data:** 2025-09-28 09:56:26
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Adicionado botão de tela cheia no header personalizado alinhado aos controles de modo escuro para ampliar a imersão do administrador.
+- **Arquivos afetados:**
+  - `admin/mpa-wpadminbar.php`
+  - `assets/js/mpa-wpadminbar.js`
+  - `assets/css/mpa-wpadminbar.css`
+- **Problema:** A interface personalizada não oferecia forma consistente de ativar tela cheia, obrigando o uso de atalhos do navegador e quebrando a expectativa de ergonomia.
+- **Solução:** Inserido controle com ícones dedicados no header, sincronizado via JavaScript com os eventos de fullscreen, incluindo fallback para navegadores legados e feedback visual no tema.
+- **Justificativa:** Garantir que o recurso solicitado esteja disponível em todo o plugin, com experiência coerente ao dark mode e adesão aos padrões de acessibilidade do layout.
+
 ### ⏺ Update(custom login inline touch submit)
 
 - **Data:** 2025-09-27 20:14:52

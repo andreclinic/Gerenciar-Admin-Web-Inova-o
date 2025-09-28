@@ -91,6 +91,11 @@ img.mpa-logo-image {
     gap: 0.75rem;
 }
 
+.mpa-fullscreen-unsupported {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
 .mpa-header-btn {
     padding: 0.5rem;
     background: none;
@@ -100,6 +105,61 @@ img.mpa-logo-image {
     border-radius: 0.5rem;
     transition: all 0.2s;
     position: relative;
+}
+
+.mpa-header-btn[aria-pressed="true"] {
+    color: #2563eb;
+    background-color: #eff6ff;
+}
+
+#mpa-fullscreen-toggle .mpa-fullscreen-exit {
+    display: none !important;
+}
+
+#mpa-fullscreen-toggle .mpa-fullscreen-enter,
+#mpa-fullscreen-toggle .mpa-fullscreen-exit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#mpa-fullscreen-toggle.is-fullscreen .mpa-fullscreen-enter {
+    display: none !important;
+}
+
+#mpa-fullscreen-toggle.is-fullscreen .mpa-fullscreen-exit {
+    display: inline-flex !important;
+}
+
+body.mpa-fullscreen-simulado {
+    overflow: hidden;
+    background: #fff;
+}
+
+body.mpa-fullscreen-simulado #wpwrap {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
+    background: #fff;
+    z-index: 99999;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+body.mpa-fullscreen-simulado .mpa-header {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100000;
+}
+
+body.mpa-fullscreen-simulado .mpa-content,
+body.mpa-fullscreen-simulado #wpcontent {
+    height: calc(100dvh - 50px);
+    overflow-y: auto;
 }
 
 .mpa-notifications-container {
@@ -581,6 +641,11 @@ body.mpa-dark-mode .mpa-header-btn {
 body.mpa-dark-mode .mpa-header-btn:hover {
     color: #d1d5db;
     background-color: #374151;
+}
+
+body.mpa-dark-mode .mpa-header-btn[aria-pressed="true"] {
+    color: #bfdbfe;
+    background-color: rgba(59, 130, 246, 0.15);
 }
 
 body.mpa-dark-mode .mpa-user-info:hover {

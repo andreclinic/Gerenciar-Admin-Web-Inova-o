@@ -30,6 +30,301 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Fullscreen Toggle
+    const fullscreenToggle = document.getElementById('mpa-fullscreen-toggle');
+    if (fullscreenToggle) {
+        const selectorTargets = ['#wpwrap', '#wpcontent', '#wpbody-content', '.mpa-dashboard-wrapper', '.mpa-content'];
+        const dynamicTargets = selectorTargets
+            .map(selector => document.querySelector(selector))
+            .filter(Boolean);
+
+        const fullscreenTargets = [document.documentElement, document.body, ...dynamicTargets]
+            .filter((element, index, array) => element && array.indexOf(element) === index);
+
+        const apiMap = [
+            {
+                request: 'requestFullscreen',
+                exit: 'exitFullscreen',
+                element: 'fullscreenElement',
+                enabled: 'fullscreenEnabled',
+                change: 'fullscreenchange',
+                error: 'fullscreenerror'
+            },
+            {
+                request: 'webkitRequestFullscreen',
+                exit: 'webkitExitFullscreen',
+                element: 'webkitFullscreenElement',
+                enabled: 'webkitFullscreenEnabled',
+                change: 'webkitfullscreenchange',
+                error: 'webkitfullscreenerror'
+            },
+            {
+                request: 'webkitRequestFullScreen',
+                exit: 'webkitCancelFullScreen',
+                element: 'webkitCurrentFullScreenElement',
+                enabled: 'webkitFullscreenEnabled',
+                change: 'webkitfullscreenchange',
+                error: 'webkitfullscreenerror'
+            },
+            {
+                request: 'mozRequestFullScreen',
+                exit: 'mozCancelFullScreen',
+                element: 'mozFullScreenElement',
+                enabled: 'mozFullScreenEnabled',
+                change: 'mozfullscreenchange',
+                error: 'mozfullscreenerror'
+            },
+            {
+                request: 'msRequestFullscreen',
+                exit: 'msExitFullscreen',
+                element: 'msFullscreenElement',
+                enabled: 'msFullscreenEnabled',
+                change: 'MSFullscreenChange',
+                error: 'MSFullscreenError'
+            }
+        ];
+
+        const protoTargets = [
+            typeof Element !== 'undefined' ? Element.prototype : null,
+            typeof HTMLElement !== 'undefined' ? HTMLElement.prototype : null,
+            typeof Document !== 'undefined' ? Document.prototype : null
+        ].filter(Boolean);
+
+        const detectionTargets = [...fullscreenTargets, ...protoTargets];
+
+        const fullscreenApi = (() => {
+            for (let i = 0; i < apiMap.length; i += 1) {
+                const api = apiMap[i];
+                const hasRequest = detectionTargets.some(target => target && api.request in target);
+                if (hasRequest) {
+                    return api;
+                }
+            }
+            return null;
+        })();
+
+        const getActiveElement = () => {
+            if (!fullscreenApi) {
+                return null;
+            }
+            const prop = fullscreenApi.element;
+            return prop && prop in document ? document[prop] : null;
+        };
+
+        const isFullscreenSupported = () => {
+            if (!fullscreenApi) {
+                return false;
+            }
+
+            const enabledProp = fullscreenApi.enabled;
+            if (enabledProp && enabledProp in document) {
+                const enabled = document[enabledProp];
+                if (enabled === false) {
+                    return false;
+                }
+            }
+
+            const requestMethod = fullscreenApi.request;
+            return detectionTargets.some(target => target && requestMethod in target);
+        };
+
+        const hasRequestMethod = element => {
+            if (!element || !fullscreenApi) {
+                return false;
+            }
+            const method = fullscreenApi.request;
+            return typeof element[method] === 'function';
+        };
+        const callRequest = element => {
+            const method = fullscreenApi.request;
+            if (method === 'webkitRequestFullScreen' || method === 'webkitRequestFullscreen') {
+                const keyboardFlag = typeof Element !== 'undefined' && 'ALLOW_KEYBOARD_INPUT' in Element
+                    ? Element.ALLOW_KEYBOARD_INPUT
+                    : undefined;
+                return keyboardFlag !== undefined ? element[method](keyboardFlag) : element[method]();
+            }
+            return element[method]();
+        };
+
+        const openFullscreen = () => {
+            if (!fullscreenApi) {
+                return Promise.reject(new Error('Fullscreen API não suportada.'));
+            }
+
+            const availableTargets = fullscreenTargets.filter(hasRequestMethod);
+            if (!availableTargets.length) {
+                return Promise.reject(new Error('Nenhum elemento compatível encontrado para o modo tela cheia.'));
+            }
+
+            let lastError = null;
+
+            const attempt = index => {
+                if (index >= availableTargets.length) {
+                    return Promise.reject(lastError || new Error('Não foi possível entrar em tela cheia.'));
+                }
+
+                const target = availableTargets[index];
+
+                try {
+                    const result = callRequest(target);
+
+                    if (result && typeof result.then === 'function') {
+                        return result.catch(error => {
+                            lastError = error;
+                            return attempt(index + 1);
+                        });
+                    }
+
+                    return new Promise((resolve, reject) => {
+                        setTimeout(() => {
+                            if (getActiveElement()) {
+                                resolve();
+                            } else {
+                                attempt(index + 1).then(resolve).catch(reject);
+                            }
+                        }, 50);
+                    });
+                } catch (error) {
+                    lastError = error;
+                    return attempt(index + 1);
+                }
+            };
+
+            return attempt(0);
+        };
+
+        const exitFullscreen = () => {
+            if (!fullscreenApi) {
+                return Promise.reject(new Error('Fullscreen API não suportada.'));
+            }
+
+            const activeElement = getActiveElement();
+            if (!activeElement) {
+                return Promise.resolve();
+            }
+
+            const exitMethod = fullscreenApi.exit;
+            if (!(exitMethod in document) || typeof document[exitMethod] !== 'function') {
+                return Promise.reject(new Error('Método de saída da tela cheia indisponível.'));
+            }
+
+            try {
+                const response = document[exitMethod]();
+                return response && typeof response.then === 'function' ? response : Promise.resolve(response);
+            } catch (error) {
+                return Promise.reject(error);
+            }
+        };
+
+        const ua = navigator.userAgent || '';
+        const isIOS = /iPad|iPhone|iPod/i.test(ua);
+        const supportsFullscreen = !isIOS && isFullscreenSupported();
+        const simulateWithCSS = isIOS ? true : !supportsFullscreen;
+        let isSimulatedFullscreen = false;
+
+        const applySimulatedState = () => {
+            if (!simulateWithCSS) {
+                body.classList.remove('mpa-fullscreen-simulado');
+                return;
+            }
+
+            if (isSimulatedFullscreen) {
+                body.classList.add('mpa-fullscreen-simulado');
+            } else {
+                body.classList.remove('mpa-fullscreen-simulado');
+            }
+        };
+
+        const updateFullscreenState = () => {
+            const activeNative = supportsFullscreen ? !!getActiveElement() : false;
+            const activeSimulated = simulateWithCSS ? isSimulatedFullscreen : false;
+            const active = simulateWithCSS ? activeSimulated : activeNative;
+
+            fullscreenToggle.classList.toggle('is-fullscreen', active);
+            fullscreenToggle.setAttribute('aria-pressed', active ? 'true' : 'false');
+            fullscreenToggle.setAttribute('aria-label', active ? 'Sair da tela cheia' : 'Abrir em tela cheia');
+            body.classList.toggle('mpa-fullscreen-active', supportsFullscreen && activeNative);
+            applySimulatedState();
+        };
+
+        if (!supportsFullscreen && !simulateWithCSS) {
+            fullscreenToggle.classList.add('mpa-fullscreen-unsupported');
+            fullscreenToggle.setAttribute('aria-pressed', 'false');
+            fullscreenToggle.setAttribute('aria-label', 'Tela cheia indisponível');
+            return;
+        }
+
+        const animateToggle = () => {
+            fullscreenToggle.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                fullscreenToggle.style.transform = 'scale(1)';
+            }, 150);
+        };
+
+        const handleToggle = () => {
+            animateToggle();
+
+            if (simulateWithCSS) {
+                isSimulatedFullscreen = !isSimulatedFullscreen;
+                updateFullscreenState();
+                return;
+            }
+
+            if (supportsFullscreen) {
+                const active = !!getActiveElement();
+                const action = active ? exitFullscreen() : openFullscreen();
+
+                action
+                    .then(() => {
+                        setTimeout(updateFullscreenState, 50);
+                    })
+                    .catch(error => {
+                        console.warn('Tela cheia indisponível:', error);
+                        updateFullscreenState();
+                    });
+            }
+        };
+
+        let lastTouchTime = 0;
+
+        fullscreenToggle.addEventListener('click', function(event) {
+            if (Date.now() - lastTouchTime < 400) {
+                return;
+            }
+
+            event.preventDefault();
+            handleToggle();
+        });
+
+        fullscreenToggle.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleToggle();
+            }
+        });
+
+        if ('ontouchend' in window) {
+            fullscreenToggle.addEventListener('touchend', function(event) {
+                lastTouchTime = Date.now();
+                event.preventDefault();
+                handleToggle();
+            }, { passive: false });
+        }
+
+        if (supportsFullscreen) {
+            const events = [fullscreenApi.change, fullscreenApi.error]
+                .filter(Boolean)
+                .concat(['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']);
+
+            const uniqueEvents = Array.from(new Set(events));
+            uniqueEvents.forEach(eventName => {
+                document.addEventListener(eventName, updateFullscreenState, { passive: true });
+            });
+        }
+
+        updateFullscreenState();
+    }
+
     // Mobile Menu Toggle - coordinated with sidebar JS
     const mobileMenuBtn = document.getElementById('mpa-mobile-menu-btn');
     if (mobileMenuBtn) {
