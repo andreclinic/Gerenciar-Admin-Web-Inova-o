@@ -420,6 +420,9 @@ if (!defined('ABSPATH')) {
             <button id="exportData" class="mpa-btn mpa-btn-secondary">
                 📊 Exportar Relatório
             </button>
+            <button type="button" id="startOAuth" class="mpa-btn mpa-btn-primary">
+                🔗 Conectar com Google Analytics
+            </button>
         </div>
     <?php endif; ?>
 </div>
@@ -449,3 +452,47 @@ if (!defined('ABSPATH')) {
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const oauthBtn = document.getElementById('startOAuth');
+
+    if (!oauthBtn) {
+        return;
+    }
+
+    oauthBtn.addEventListener('click', function() {
+        oauthBtn.disabled = true;
+        const originalLabel = oauthBtn.innerHTML;
+        oauthBtn.innerHTML = '🔄 Conectando...';
+
+        fetch(ajaxurl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                action: 'mpa_start_oauth',
+                nonce: '<?php echo wp_create_nonce('mpa_analytics_nonce'); ?>',
+                origin: 'dashboard'
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data && data.data.auth_url) {
+                    window.location.href = data.data.auth_url;
+                } else {
+                    const message = data && data.data ? data.data : 'Erro desconhecido';
+                    alert('Erro ao iniciar autorização: ' + message);
+                    oauthBtn.disabled = false;
+                    oauthBtn.innerHTML = originalLabel;
+                }
+            })
+            .catch(error => {
+                alert('Erro na requisição: ' + error.message);
+                oauthBtn.disabled = false;
+                oauthBtn.innerHTML = originalLabel;
+            });
+    });
+});
+</script>

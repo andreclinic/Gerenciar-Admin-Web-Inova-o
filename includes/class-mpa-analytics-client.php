@@ -1004,7 +1004,30 @@ Para encontrar seu Property ID:
         // Gerar state para segurança
         $state = wp_generate_password(32, false);
         update_option('mpa_ga4_oauth_state', $state, false);
-        
+
+        // Identificar origem da solicitação para direcionar pós-OAuth
+        $origin = isset($_POST['origin']) ? sanitize_key($_POST['origin']) : 'settings';
+        if (!in_array($origin, array('settings', 'dashboard'), true)) {
+            $origin = 'settings';
+        }
+
+        $requests = get_option('mpa_ga4_oauth_requests', array());
+        if (!is_array($requests)) {
+            $requests = array();
+        }
+
+        // Manter somente os últimos registros para evitar crescimento indefinido
+        if (count($requests) > 10) {
+            $requests = array_slice($requests, -10, null, true);
+        }
+
+        $requests[$state] = array(
+            'origin' => $origin,
+            'created_at' => time(),
+        );
+
+        update_option('mpa_ga4_oauth_requests', $requests, false);
+
         // URL de callback
         $redirect_uri = admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG);
 
@@ -1066,9 +1089,14 @@ Para encontrar seu Property ID:
             if (empty($saved_state) || $saved_state !== $current_state) {
                 throw new Exception('State inválido - possível ataque CSRF');
             }
-            
+
             // Limpar state usado
             delete_option('mpa_ga4_oauth_state');
+
+            $requests = get_option('mpa_ga4_oauth_requests', array());
+            $origin = isset($requests[$current_state]['origin']) ? $requests[$current_state]['origin'] : 'settings';
+            unset($requests[$current_state]);
+            update_option('mpa_ga4_oauth_requests', $requests, false);
             
             // Trocar código por token
             $code = $_GET['code'] ?? '';
@@ -1076,7 +1104,8 @@ Para encontrar seu Property ID:
             $this->exchange_code_for_token($code);
             
             // Redirecionar com sucesso
-            wp_redirect(admin_url('admin.php?page=' . MPA_Analytics_Page::SETTINGS_SLUG . '&oauth=success'));
+            $target_page = ($origin === 'dashboard') ? MPA_Analytics_Page::PAGE_SLUG : MPA_Analytics_Page::SETTINGS_SLUG;
+            wp_redirect(admin_url('admin.php?page=' . $target_page . '&oauth=success'));
             exit;
             
         } catch (Exception $e) {

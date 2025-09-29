@@ -7,6 +7,33 @@ Serve como memória do projeto para que o CODEX e os desenvolvedores humanos ent
 
 ## 📅 Histórico
 
+### ⏺ Update(analytics oauth quick connect)
+
+- **Data:** 2025-09-29 08:38:21
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Adicionado botão de reconexão rápida ao dashboard do Analytics para iniciar o fluxo OAuth diretamente, evitando ida obrigatória às configurações.
+- **Arquivos afetados:**
+  - `admin/views/mpa-analytics.php`
+- **Problema:** Usuários sem token válido não tinham acesso imediato para reconectar via dashboard, impactando a coleta de métricas.
+- **Solução:** Incluído botão primário ao lado do exportador e script que reutiliza a ação `mpa_start_oauth`, exibindo estado de carregamento e tratando erros.
+- **Justificativa:** Reduzir atrito na retomada da integração GA4 em cenários de expiração ou desconexão.
+
+### ⏺ Update(analytics oauth redirect dashboard)
+
+- **Data:** 2025-09-29 08:44:03
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Ajustado o fluxo OAuth para retornar ao dashboard após conexão iniciada pelo botão rápido, mantendo a experiência no contexto correto.
+- **Arquivos afetados:**
+  - `admin/views/mpa-analytics.php`
+  - `includes/class-mpa-analytics-client.php`
+- **Problema:** Depois da autenticação pelo botão do dashboard o usuário era enviado às configurações, quebrando o fluxo desejado.
+- **Solução:** Marcado a origem do OAuth com `origin=dashboard` e utilizado o state para redirecionar o callback diretamente a `admin.php?page=mpa-analytics` quando apropriado.
+- **Justificativa:** Garantir que a reconexão rápida mantenha o usuário no relatório principal, evitando navegação extra após renovar tokens.
+
 ### ⏺ Update(admin header fullscreen ios fallback)
 
 - **Data:** 2025-09-28 20:48:51
