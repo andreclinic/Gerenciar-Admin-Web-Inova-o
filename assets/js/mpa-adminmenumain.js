@@ -2,12 +2,37 @@
 jQuery(function ($) {
     'use strict';
 
+    function shouldTriggerNavigation($element) {
+        if ($element.attr('data-no-preloader') === 'true') {
+            return false;
+        }
+
+        const href = ($element.attr('href') || '').trim();
+        if (!href || href === '#' || href === '') {
+            return false;
+        }
+
+        if ($element.is('[target="_blank"], [download]')) {
+            return false;
+        }
+
+        const $container = $element.closest('.mpa-nav-item-container');
+        const hasSubmenu = $container.length && $container.find('.mpa-submenu').length > 0;
+        const isSubmenuItem = $element.hasClass('mpa-submenu-item');
+
+        if (hasSubmenu && !isSubmenuItem) {
+            return false;
+        }
+
+        return true;
+    }
+
     function triggerNavPreloader($element) {
         if (!window.MPA_PRELOADER || typeof window.MPA_PRELOADER.show !== 'function') {
             return;
         }
 
-        if ($element.attr('data-no-preloader') === 'true') {
+        if (!shouldTriggerNavigation($element)) {
             return;
         }
 
@@ -98,8 +123,64 @@ jQuery(function ($) {
             triggerNavPreloader($link);
         });
 
-        $('.mpa-nav-item, .mpa-submenu-item').on('touchstart pointerdown', function() {
-            triggerNavPreloader($(this));
+        let touchState = {
+            element: null,
+            moved: false,
+            startX: 0,
+            startY: 0
+        };
+
+        const navSelector = '.mpa-nav-item, .mpa-submenu-item';
+
+        $(document).on('touchstart', navSelector, function(event) {
+            const touch = event.originalEvent && event.originalEvent.touches ? event.originalEvent.touches[0] : null;
+            if (!touch) {
+                return;
+            }
+
+            touchState = {
+                element: this,
+                moved: false,
+                startX: touch.clientX,
+                startY: touch.clientY
+            };
+        });
+
+        $(document).on('touchmove', navSelector, function(event) {
+            if (!touchState.element || touchState.element !== this) {
+                return;
+            }
+
+            const touch = event.originalEvent && event.originalEvent.touches ? event.originalEvent.touches[0] : null;
+            if (!touch) {
+                return;
+            }
+
+            const deltaX = Math.abs(touch.clientX - touchState.startX);
+            const deltaY = Math.abs(touch.clientY - touchState.startY);
+
+            if (deltaX > 6 || deltaY > 6) {
+                touchState.moved = true;
+            }
+        });
+
+        $(document).on('touchend', navSelector, function(event) {
+            if (!touchState.element || touchState.element !== this) {
+                return;
+            }
+
+            const $link = $(this);
+
+            if (!touchState.moved) {
+                triggerNavPreloader($link);
+            }
+
+            touchState = {
+                element: null,
+                moved: false,
+                startX: 0,
+                startY: 0
+            };
         });
 
         // Restaurar estado da sidebar ao carregar

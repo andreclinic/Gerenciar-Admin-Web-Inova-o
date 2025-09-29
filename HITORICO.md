@@ -21,6 +21,19 @@ Serve como memória do projeto para que o CODEX e os desenvolvedores humanos ent
 - **Solução:** Considerado o iOS como plataforma sem suporte nativo, ativando sempre o fallback CSS, ajustando eventos de toque/clique e refinando o estilo com `100dvh`, header fixo e rolagem suave.
 - **Justificativa:** Viabilizar a experiência de tela cheia no mobile Apple sem afetar o comportamento em desktop ou Android.
 
+### ⏺ Update(admin sidebar preloader touch guard)
+
+- **Data:** 2025-09-29 08:17:52
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Ajustado o disparo do preloader do menu lateral para ignorar gestos de arraste e expansões de submenu no mobile, preservando a fluidez da navegação.
+- **Arquivos afetados:**
+  - `assets/js/mpa-adminmenumain.js`
+- **Problema:** Qualquer toque no menu móvel ativava o preloader mesmo quando o usuário apenas arrastava ou apenas abria submenus, prejudicando a experiência.
+- **Solução:** Adicionada triagem de links navegáveis, detecção de movimento em gestos touch e remoção do gatilho imediato em `pointerdown`, garantindo que o preloader apareça apenas em cliques que realmente navegam.
+- **Justificativa:** Evitar feedback indevido durante interações não-navegacionais, mantendo o preloader reservado para carregamentos reais de página.
+
 ### ⏺ Update(admin header fullscreen mobile ux)
 
 - **Data:** 2025-09-28 20:24:58
