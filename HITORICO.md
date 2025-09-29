@@ -34,6 +34,19 @@ Serve como memória do projeto para que o CODEX e os desenvolvedores humanos ent
 - **Solução:** Marcado a origem do OAuth com `origin=dashboard` e utilizado o state para redirecionar o callback diretamente a `admin.php?page=mpa-analytics` quando apropriado.
 - **Justificativa:** Garantir que a reconexão rápida mantenha o usuário no relatório principal, evitando navegação extra após renovar tokens.
 
+### ⏺ Update(custom login native submit failsafe)
+
+- **Data:** 2025-09-29 10:27:10
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Reestruturada a tela de login para preservar campos ocultos/integrações de segurança e adicionar failsafe no submit, evitando travamentos após exibir “Entrando...”.
+- **Arquivos afetados:**
+  - `admin/mpa-custom-login.php`
+- **Problema:** O botão alternava para o estado de carregamento, porém o envio nativo podia ser bloqueado por scripts ou campos removidos, impedindo o redirecionamento ao dashboard.
+- **Solução:** Clonado os elementos originais (mensagens, campos ocultos, extras de plugins) antes de reconstruir o layout, reinserindo-os no novo form, e adicionado um fallback que garante o disparo do submit mesmo se o primeiro ciclo falhar.
+- **Justificativa:** Manter compatibilidade com plugins como Wordfence/2FA e assegurar que o fluxo de login finalize em todos os cenários.
+
 ### ⏺ Update(admin header fullscreen ios fallback)
 
 - **Data:** 2025-09-28 20:48:51

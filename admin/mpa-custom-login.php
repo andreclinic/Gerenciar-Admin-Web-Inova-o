@@ -116,9 +116,7 @@ function mpa_custom_login_styles() {
         }
 
         /* Esconder elementos de outros plugins */
-        .wfls-captcha-container,
         .uip-login-form,
-        .wordfence-login-form,
         .uip-login-panel,
         .uip-login-content {
             display: none !important;
@@ -216,8 +214,8 @@ function mpa_custom_login_footer() {
             $('body').removeClass('uip-login uip-dark-mode uip-light-mode');
             $('body').addClass('mpa-login-override');
 
-            // Remover elementos e scripts de outros plugins
-            $('.wfls-captcha-container, .uip-login-form, .wordfence-login-form, .uip-login-panel, .uip-login-content').remove();
+            // Remover wrappers conflitantes do UIPress, preservando integrações de segurança
+            $('.uip-login-form, .uip-login-panel, .uip-login-content').remove();
 
             // Forçar remoção de estilos inline do UIPress
             $('style').each(function() {
@@ -284,11 +282,54 @@ function mpa_custom_login_footer() {
                 // Se não existir, não fazer nada
                 if (!$loginDiv.length || !$loginForm.length) return;
 
-                // Reorganizar completamente a estrutura
+                const originalMessages = $loginDiv.find('.message, #login_error').clone(true, true);
+
+                const formAction = $loginForm.attr('action') || loginUrl;
+                const formMethod = $loginForm.attr('method') || 'post';
+
+                // Reorganizar completamente a estrutura preservando campos originais
                 const originalUserInput = $('#user_login').clone();
                 const originalPassInput = $('#user_pass').clone();
-                const originalRememberMe = $('.forgetmenot').clone();
-                const originalSubmit = $('#wp-submit').clone();
+                const originalRememberMe = $loginForm.find('.forgetmenot').clone(true, true);
+                const originalHiddenInputs = $loginForm.find('input[type="hidden"]').clone(true, true);
+
+                const additionalFormNodes = [];
+                $loginForm.children().each(function () {
+                    const $child = $(this);
+
+                    if ($child.find('#user_login').length || $child.find('#user_pass').length) {
+                        return;
+                    }
+
+                    if ($child.is('.forgetmenot') || $child.find('#rememberme').length) {
+                        return;
+                    }
+
+                    if ($child.find('#wp-submit').length) {
+                        return;
+                    }
+
+                    if ($child.is('input[type="hidden"]') || $child.find('input[type="hidden"]').length) {
+                        return;
+                    }
+
+                    additionalFormNodes.push($child.clone(true, true));
+                });
+
+                const originalRememberInput = originalRememberMe.find('input[name="rememberme"]').first();
+                const rememberValueRaw = originalRememberInput.length ? originalRememberInput.val() || 'forever' : 'forever';
+                const sanitizedRememberValue = String(rememberValueRaw).replace(/"/g, '&quot;');
+                const rememberChecked = originalRememberInput.length ? originalRememberInput.prop('checked') : false;
+                const rememberCheckboxAttributes = [
+                    'name="rememberme"',
+                    'id="rememberme"',
+                    'class="checkbox"',
+                    'value="' + sanitizedRememberValue + '"'
+                ];
+
+                if (rememberChecked) {
+                    rememberCheckboxAttributes.push('checked');
+                }
 
                 // Garantir atributos necessários para preenchimento automático
                 originalUserInput
@@ -330,7 +371,7 @@ function mpa_custom_login_footer() {
                     </div>
 
                     <!-- Login Form -->
-                    <form id="loginform" name="loginform" method="post" action="${loginUrl}">
+                    <form id="loginform" name="loginform" method="${formMethod}" action="${formAction}">
                         <div class="form-group">
                             <label for="user_login" class="form-label">Usuário ou E-mail</label>
                             <div class="input-wrapper" data-original-input="user_login"></div>
@@ -349,9 +390,11 @@ function mpa_custom_login_footer() {
                             </div>
                         </div>
 
+                        <div class="mpa-extra-fields" id="mpa-extra-fields"></div>
+
                         <div class="form-options">
                             <label class="remember-me">
-                                <input type="checkbox" name="rememberme" class="checkbox">
+                                <input type="checkbox" ${rememberCheckboxAttributes.join(' ')}>
                                 <span class="remember-label">Lembrar de mim</span>
                             </label>
                             <a href="${lostPasswordUrl}" class="forgot-password">Esqueci a senha</a>
@@ -360,9 +403,6 @@ function mpa_custom_login_footer() {
                         <button type="submit" name="wp-submit" id="wp-submit" class="login-btn">
                             <span id="loginBtnText">Entrar</span>
                         </button>
-
-                        <input type="hidden" name="redirect_to" value="${adminUrl}">
-                        <input type="hidden" name="mpa_custom_login" value="1">
                     </form>
 
                     <!-- Language Selector -->
@@ -396,6 +436,12 @@ function mpa_custom_login_footer() {
                 // Inserir novo HTML
                 $loginDiv.html(newHTML);
 
+                if (originalMessages.length) {
+                    const $messageWrapper = $('<div class="mpa-login-messages"></div>');
+                    $messageWrapper.append(originalMessages);
+                    $loginDiv.prepend($messageWrapper);
+                }
+
                 // Recolocar inputs originais para preservar atributos de autofill do navegador
                 const $usernameWrapper = $loginDiv.find('[data-original-input="user_login"]');
                 const $passwordWrapper = $loginDiv.find('[data-original-input="user_pass"]');
@@ -412,6 +458,55 @@ function mpa_custom_login_footer() {
                 const $form = $('#loginform');
                 const $submitBtn = $form.find('#wp-submit');
                 const $submitLabel = $('#loginBtnText');
+
+                const appendedHiddenNames = {};
+
+                if (originalHiddenInputs.length) {
+                    originalHiddenInputs.each(function () {
+                        const $input = $(this);
+                        const name = $input.attr('name');
+
+                        if (name === 'redirect_to') {
+                            $input.val(adminUrl);
+                        }
+
+                        if (!name) {
+                            $form.append($input);
+                            return;
+                        }
+
+                        if (!appendedHiddenNames[name]) {
+                            $form.append($input);
+                            appendedHiddenNames[name] = true;
+                        }
+                    });
+                }
+
+                if (!appendedHiddenNames.redirect_to) {
+                    $form.append('<input type="hidden" name="redirect_to" value="' + adminUrl.replace(/"/g, '&quot;') + '">');
+                    appendedHiddenNames.redirect_to = true;
+                }
+
+                if (!appendedHiddenNames.testcookie) {
+                    $form.append('<input type="hidden" name="testcookie" value="1">');
+                    appendedHiddenNames.testcookie = true;
+                }
+
+                if (!appendedHiddenNames.mpa_custom_login) {
+                    $form.append('<input type="hidden" name="mpa_custom_login" value="1">');
+                    appendedHiddenNames.mpa_custom_login = true;
+                }
+
+                if (additionalFormNodes.length) {
+                    const $extraFieldsContainer = $form.find('#mpa-extra-fields');
+                    additionalFormNodes.forEach(function ($node) {
+                        if ($extraFieldsContainer.length) {
+                            $extraFieldsContainer.append($node);
+                        } else {
+                            $form.append($node);
+                        }
+                    });
+                }
 
                 const setLoadingState = function () {
                     if (!$submitBtn.length) {
@@ -444,6 +539,7 @@ function mpa_custom_login_footer() {
 
                     $submitBtn.removeClass('mpa-loading');
                     $form.data('mpa-submitting', false);
+                    $form.data('mpa-native-fired', false);
 
                     if ($submitLabel.length) {
                         $submitLabel.text('Entrar');
@@ -459,13 +555,39 @@ function mpa_custom_login_footer() {
                         return;
                     }
 
-                    window.requestAnimationFrame(function () {
+                    const fireNativeSubmit = function () {
+                        if ($form.data('mpa-native-fired') === true) {
+                            return;
+                        }
+
+                        $form.data('mpa-native-fired', true);
+
+                        try {
+                            nativeForm.submit();
+                        } catch (error) {
+                            console.error('[MPA Login] Erro ao acionar submit nativo:', error);
+                            nativeForm.dispatchEvent(new Event('submit', { cancelable: true }));
+                        }
+                    };
+
+                    if (typeof window.requestAnimationFrame === 'function') {
                         window.requestAnimationFrame(function () {
-                            window.setTimeout(function () {
-                                nativeForm.submit();
-                            }, 180);
+                            window.requestAnimationFrame(function () {
+                                window.setTimeout(function () {
+                                    fireNativeSubmit();
+                                }, 180);
+                            });
                         });
-                    });
+                    } else {
+                        window.setTimeout(fireNativeSubmit, 180);
+                    }
+
+                    // Fail-safe: se o navegador bloquear o submit, tentar novamente após 1.5s
+                    window.setTimeout(function () {
+                        if ($form.data('mpa-submitting') === true && $form.data('mpa-native-fired') !== true) {
+                            fireNativeSubmit();
+                        }
+                    }, 1500);
                 };
 
                 const isFormFilled = function () {
@@ -497,6 +619,7 @@ function mpa_custom_login_footer() {
 
                     event.preventDefault();
                     $form.data('mpa-submitting', true);
+                    $form.data('mpa-native-fired', false);
 
                     deferNativeSubmit();
 
