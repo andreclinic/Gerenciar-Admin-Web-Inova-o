@@ -405,39 +405,28 @@ add_action('admin_init', function () {
         $export_type = sanitize_text_field($_POST['mpa_export_type'] ?? 'all');
         $role_key = sanitize_text_field($_POST['mpa_role'] ?? '_global');
 
-        // Obter configurações para exportar
-        $all_settings = get_option('mpa_menu_settings_roles', []);
-        $export_data = [];
+        $package_args = array(
+            'export_type' => $export_type,
+        );
 
-        if ($export_type === 'current' && isset($all_settings[$role_key])) {
-            // Exportar apenas role atual
-            $export_data = [$role_key => $all_settings[$role_key]];
+        if ($export_type === 'current' && $role_key && $role_key !== '_global') {
+            $package_args['roles'] = array($role_key);
             $filename = "mpa-menu-config-{$role_key}-" . date('Y-m-d-H-i-s') . '.json';
         } else {
-            // Exportar todas as configurações
-            $export_data = $all_settings;
             $filename = "mpa-menu-config-all-" . date('Y-m-d-H-i-s') . '.json';
         }
 
-        // Adicionar metadados
-        $export_package = [
-            'version' => '1.0',
-            'plugin' => 'Gerenciar Admin Web Inovação',
-            'export_date' => date('Y-m-d H:i:s'),
-            'export_type' => $export_type,
-            'wordpress_version' => get_bloginfo('version'),
-            'site_url' => get_site_url(),
-            'data' => $export_data
-        ];
+        $export_package = mpa_build_menu_export_package($package_args);
+        $json_payload = wp_json_encode($export_package, JSON_PRETTY_PRINT);
 
         // Forçar download do arquivo JSON
         header('Content-Type: application/json');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Content-Length: ' . strlen(wp_json_encode($export_package, JSON_PRETTY_PRINT)));
+        header('Content-Length: ' . strlen($json_payload));
         header('Pragma: no-cache');
         header('Expires: 0');
 
-        echo wp_json_encode($export_package, JSON_PRETTY_PRINT);
+        echo $json_payload;
         exit;
     }
 
@@ -481,36 +470,25 @@ add_action('admin_init', function () {
         unlink($uploaded_file['file']);
         $import_data = json_decode($file_content, true);
 
-        if (json_last_error() !== JSON_ERROR_NONE || !isset($import_data['data'])) {
+        if (json_last_error() !== JSON_ERROR_NONE) {
             wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=3')));
             exit;
         }
 
-        // Validar estrutura do arquivo
-        if (!isset($import_data['plugin']) || $import_data['plugin'] !== 'Gerenciar Admin Web Inovação') {
-            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=4')));
+        $normalized = mpa_normalize_menu_import_payload($import_data);
+
+        if (empty($normalized['roles']) && empty($normalized['options'])) {
+            wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&import_error=3')));
             exit;
         }
 
-        $current_settings = get_option('mpa_menu_settings_roles', []);
-        $new_data = $import_data['data'];
+        $roles_mode = ($import_mode === 'merge') ? 'merge' : 'replace';
+        $options_mode = ($import_mode === 'merge') ? 'merge' : 'replace';
 
-        if ($import_mode === 'merge') {
-            // Mesclar com configurações existentes
-            foreach ($new_data as $role => $settings) {
-                if (isset($current_settings[$role])) {
-                    $current_settings[$role] = array_merge($current_settings[$role], $settings);
-                } else {
-                    $current_settings[$role] = $settings;
-                }
-            }
-            $final_data = $current_settings;
-        } else {
-            // Substituir completamente
-            $final_data = $new_data;
-        }
-
-        update_option('mpa_menu_settings_roles', $final_data);
+        mpa_apply_menu_import_payload($normalized, array(
+            'roles_mode' => $roles_mode,
+            'options_mode' => $options_mode,
+        ));
         wp_safe_redirect(mpa_get_scroll_redirect_url(admin_url('admin.php?page=mpa-menu-roles&importado=1')));
         exit;
     }

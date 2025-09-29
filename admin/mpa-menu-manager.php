@@ -645,6 +645,201 @@ add_action('admin_notices', function() {
 // EXPORTAÇÃO E IMPORTAÇÃO
 /////////////////////
 
+function mpa_get_menu_option_array($option_name, $default = array()) {
+    $value = get_option($option_name, $default);
+    return is_array($value) ? $value : $default;
+}
+
+function mpa_build_menu_export_package($args = array()) {
+    $defaults = array(
+        'export_type' => 'all',
+        'roles' => null,
+    );
+
+    $args = wp_parse_args($args, $defaults);
+
+    $all_roles_settings = mpa_get_menu_option_array('mpa_menu_settings_roles');
+
+    if (is_array($args['roles']) && !empty($args['roles'])) {
+        $roles_to_export = array();
+        foreach ($args['roles'] as $role_key) {
+            if (isset($all_roles_settings[$role_key])) {
+                $roles_to_export[$role_key] = $all_roles_settings[$role_key];
+            }
+        }
+    } else {
+        $roles_to_export = $all_roles_settings;
+    }
+
+    $options = array(
+        'menu_permissions' => mpa_get_menu_option_array('mpa_menu_permissions'),
+        'menu_customizations' => mpa_get_menu_option_array('mpa_menu_customizations'),
+        'menu_order' => mpa_get_menu_option_array('mpa_menu_order'),
+        'custom_menus' => mpa_get_menu_option_array('mpa_custom_menus'),
+    );
+
+    $legacy_settings = get_option('mpa_menu_settings', null);
+    if (!is_null($legacy_settings)) {
+        $options['legacy_settings'] = $legacy_settings;
+    }
+
+    return array(
+        'plugin' => 'Gerenciar Admin Web Inovação',
+        'version' => '2.0',
+        'schema_version' => '2.0',
+        'export_type' => $args['export_type'],
+        'export_date' => current_time('mysql'),
+        'wordpress_version' => get_bloginfo('version'),
+        'site_url' => get_site_url(),
+        'roles' => $roles_to_export,
+        'options' => $options,
+    );
+}
+
+function mpa_normalize_menu_import_payload($payload) {
+    $normalized = array(
+        'schema_version' => null,
+        'roles' => array(),
+        'options' => array(),
+    );
+
+    if (!is_array($payload)) {
+        return $normalized;
+    }
+
+    if (isset($payload['schema_version']) || isset($payload['roles']) || isset($payload['options'])) {
+        $normalized['schema_version'] = $payload['schema_version'] ?? ($payload['version'] ?? null);
+        if (isset($payload['roles']) && is_array($payload['roles'])) {
+            $normalized['roles'] = $payload['roles'];
+        }
+        if (isset($payload['options']) && is_array($payload['options'])) {
+            $normalized['options'] = $payload['options'];
+        }
+    } elseif (isset($payload['data']) && is_array($payload['data'])) {
+        $normalized['roles'] = $payload['data'];
+    } else {
+        $known_option_keys = array(
+            'mpa_menu_permissions',
+            'mpa_menu_customizations',
+            'mpa_menu_order',
+            'mpa_custom_menus',
+            'mpa_menu_settings_roles',
+            'mpa_menu_settings',
+        );
+
+        $contains_known_keys = false;
+        foreach ($known_option_keys as $key) {
+            if (isset($payload[$key])) {
+                $contains_known_keys = true;
+                break;
+            }
+        }
+
+        if ($contains_known_keys) {
+            if (isset($payload['mpa_menu_settings_roles']) && is_array($payload['mpa_menu_settings_roles'])) {
+                $normalized['roles'] = $payload['mpa_menu_settings_roles'];
+            }
+
+            $normalized['options'] = array(
+                'menu_permissions' => $payload['mpa_menu_permissions'] ?? array(),
+                'menu_customizations' => $payload['mpa_menu_customizations'] ?? array(),
+                'menu_order' => $payload['mpa_menu_order'] ?? array(),
+                'custom_menus' => $payload['mpa_custom_menus'] ?? array(),
+            );
+
+            if (isset($payload['mpa_menu_settings'])) {
+                $normalized['options']['legacy_settings'] = $payload['mpa_menu_settings'];
+            }
+        } elseif (is_array($payload)) {
+            $normalized['roles'] = $payload;
+        }
+    }
+
+    $option_keys = array('menu_permissions', 'menu_customizations', 'menu_order', 'custom_menus', 'legacy_settings');
+    foreach ($option_keys as $key) {
+        if (!array_key_exists($key, $normalized['options'])) {
+            continue;
+        }
+
+        if ($key === 'legacy_settings') {
+            continue;
+        }
+
+        if (!is_array($normalized['options'][$key])) {
+            $normalized['options'][$key] = array();
+        }
+    }
+
+    if (!isset($normalized['options']['legacy_settings'])) {
+        $normalized['options']['legacy_settings'] = null;
+    }
+
+    return $normalized;
+}
+
+function mpa_apply_menu_import_payload($payload, $args = array()) {
+    $defaults = array(
+        'roles_mode' => 'replace',
+        'options_mode' => 'replace',
+    );
+
+    $args = wp_parse_args($args, $defaults);
+
+    if (isset($payload['roles']) && is_array($payload['roles']) && !empty($payload['roles'])) {
+        $current_roles = mpa_get_menu_option_array('mpa_menu_settings_roles');
+
+        if ($args['roles_mode'] === 'merge') {
+            foreach ($payload['roles'] as $role => $settings) {
+                if (isset($current_roles[$role]) && is_array($current_roles[$role]) && is_array($settings)) {
+                    $current_roles[$role] = array_merge($current_roles[$role], $settings);
+                } else {
+                    $current_roles[$role] = $settings;
+                }
+            }
+            update_option('mpa_menu_settings_roles', $current_roles);
+        } else {
+            update_option('mpa_menu_settings_roles', $payload['roles']);
+        }
+    }
+
+    if (isset($payload['options']) && is_array($payload['options'])) {
+        $option_map = array(
+            'menu_permissions' => 'mpa_menu_permissions',
+            'menu_customizations' => 'mpa_menu_customizations',
+            'menu_order' => 'mpa_menu_order',
+            'custom_menus' => 'mpa_custom_menus',
+            'legacy_settings' => 'mpa_menu_settings',
+        );
+
+        foreach ($option_map as $key => $option_name) {
+            if (!array_key_exists($key, $payload['options'])) {
+                continue;
+            }
+
+            $new_value = $payload['options'][$key];
+
+            if ($key === 'legacy_settings') {
+                if (!is_null($new_value)) {
+                    update_option($option_name, $new_value);
+                }
+                continue;
+            }
+
+            if (!is_array($new_value)) {
+                $new_value = array();
+            }
+
+            if ($args['options_mode'] === 'merge') {
+                $current_value = mpa_get_menu_option_array($option_name);
+                $merged_value = array_merge($current_value, $new_value);
+                update_option($option_name, $merged_value);
+            } else {
+                update_option($option_name, $new_value);
+            }
+        }
+    }
+}
+
 // Adicionar actions para export/import
 add_action('admin_post_mpa_export_menu_settings', 'mpa_export_menu_settings_callback');
 add_action('admin_post_mpa_import_menu_settings', 'mpa_import_menu_settings_callback');
@@ -655,14 +850,11 @@ function mpa_export_menu_settings_callback() {
         wp_die('Sem permissões suficientes.');
     }
 
-    // Exportar todas as configurações do plugin
-    $export_data = array(
-        'mpa_menu_permissions' => get_option('mpa_menu_permissions', array()),
-        'mpa_menu_customizations' => get_option('mpa_menu_customizations', array()),
-        'mpa_menu_order' => get_option('mpa_menu_order', array())
-    );
-    
-    $json = json_encode($export_data, JSON_PRETTY_PRINT);
+    $package = mpa_build_menu_export_package(array(
+        'export_type' => 'all',
+    ));
+
+    $json = wp_json_encode($package, JSON_PRETTY_PRINT);
 
     $filename = 'mpa_menu_settings_' . date('Y-m-d') . '.json';
 
@@ -713,22 +905,13 @@ function mpa_import_menu_settings_callback() {
         $data = json_decode($file_content, true);
 
         if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
-            // Importar todas as configurações
-            if (isset($data['mpa_menu_permissions'])) {
-                update_option('mpa_menu_permissions', $data['mpa_menu_permissions']);
-            }
-            if (isset($data['mpa_menu_customizations'])) {
-                update_option('mpa_menu_customizations', $data['mpa_menu_customizations']);
-            }
-            if (isset($data['mpa_menu_order'])) {
-                update_option('mpa_menu_order', $data['mpa_menu_order']);
-            }
-            
-            // Compatibilidade com exports antigos (só permissões)
-            if (!isset($data['mpa_menu_permissions']) && !isset($data['mpa_menu_customizations']) && !isset($data['mpa_menu_order'])) {
-                update_option('mpa_menu_permissions', $data);
-            }
-            
+            $normalized = mpa_normalize_menu_import_payload($data);
+
+            mpa_apply_menu_import_payload($normalized, array(
+                'roles_mode' => 'replace',
+                'options_mode' => 'replace',
+            ));
+
             $redirect = add_query_arg('mpa_status', 'success', admin_url('admin.php?page=mpa-menu-roles'));
         } else {
             $redirect = add_query_arg('mpa_status', 'invalid_json', admin_url('admin.php?page=mpa-menu-roles'));
@@ -1581,4 +1764,3 @@ add_action('wp_loaded', function() {
         echo '</pre>';
     }
 });
-

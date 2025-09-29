@@ -7,6 +7,20 @@ Serve como memória do projeto para que o CODEX e os desenvolvedores humanos ent
 
 ## 📅 Histórico
 
+### ⏺ Update(menu export full schema)
+
+- **Data:** 2025-09-29 10:47:03
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Ampliada a exportação/importação dos menus para incluir permissões, ordenação, submenus e itens personalizados em um pacote único versionado.
+- **Arquivos afetados:**
+  - `admin/mpa-menu-manager.php`
+  - `admin/mpa-menu-settings.php`
+- **Problema:** A exportação atual levava apenas parte das configurações, impedindo replicar a mesma estrutura de menus e itens customizados em outro ambiente.
+- **Solução:** Centralizado o coletor de dados, atualizado o JSON para schema 2.0 com opções globais e roles, e refeito o import para mesclar/substituir mantendo compatibilidade com arquivos antigos.
+- **Justificativa:** Garantir que a migração entre projetos traga 100% da navegação customizada, evitando retrabalho manual.
+
 ### ⏺ Update(analytics oauth quick connect)
 
 - **Data:** 2025-09-29 08:38:21
