@@ -7,7 +7,6 @@
 jQuery(document).ready(function($) {
     'use strict';
     
-    console.log('🎨 MPA Custom Login: Inicializando interface personalizada');
     
     // Configurações
     const config = {
@@ -464,7 +463,6 @@ jQuery(document).ready(function($) {
     
     // Log de inicialização completa
     setTimeout(() => {
-        console.log('✅ MPA Custom Login: Interface inicializada com sucesso');
     }, 1000);
     
     // Interceptar erros de login para melhor UX

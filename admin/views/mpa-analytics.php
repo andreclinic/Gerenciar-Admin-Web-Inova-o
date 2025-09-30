@@ -62,38 +62,27 @@ if (!defined('ABSPATH')) {
         
         <!-- Garantir que Chart.js seja carregado -->
         <script>
-        console.log('🔍 [MPA DEBUG HTML] Verificando Chart.js:', typeof Chart !== 'undefined' ? 'DISPONÍVEL' : 'INDISPONÍVEL');
         
         // Se Chart.js não foi carregado via wp_enqueue_script, carregar diretamente
         if (typeof Chart === 'undefined') {
-            console.log('📊 [MPA DEBUG] Carregando Chart.js diretamente...');
             var chartScript = document.createElement('script');
             chartScript.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js';
-            chartScript.onload = function() {
-                console.log('✅ [MPA DEBUG] Chart.js carregado com sucesso!');
-            };
             chartScript.onerror = function() {
                 console.error('❌ [MPA DEBUG] Falha ao carregar Chart.js');
             };
             document.head.appendChild(chartScript);
-        } else {
-            console.log('✅ [MPA DEBUG] Chart.js já disponível');
         }
         </script>
         
         <!-- Debug info e fallback -->
         <script>
-        console.log('🔍 [MPA DEBUG HTML] mpaAnalyticsLoading element criado');
-        console.log('🔍 [MPA DEBUG HTML] mpaAnalytics object:', typeof mpaAnalytics !== 'undefined' ? mpaAnalytics : 'UNDEFINED');
         
         // Fallback: Se após 5 segundos o dashboard não foi inicializado, forçar carregamento
         setTimeout(function() {
             if (!window.mpaAnalyticsDashboard) {
-                console.log('⚠️ [MPA FALLBACK] Dashboard não foi inicializado, tentando forçar...');
                 
                 // Verificar se os recursos necessários estão disponíveis
                 if (typeof jQuery !== 'undefined' && typeof mpaAnalytics !== 'undefined') {
-                    console.log('✅ [MPA FALLBACK] jQuery e mpaAnalytics disponíveis, carregando dados diretamente');
                     
                     // Carregar dados diretamente
                     jQuery.ajax({
@@ -103,7 +92,6 @@ if (!defined('ABSPATH')) {
                             'X-WP-Nonce': mpaAnalytics.nonce
                         },
                         success: function(response) {
-                            console.log('✅ [MPA FALLBACK] Dados recebidos:', response);
                             if (response.success && response.data && response.data.current) {
                                 // Atualizar elementos diretamente
                                 jQuery('#usersCount').text(response.data.current.users);
@@ -132,7 +120,6 @@ if (!defined('ABSPATH')) {
                                 // Esconder loading
                                 jQuery('#mpaAnalyticsLoading').hide();
                                 
-                                console.log('✅ [MPA FALLBACK] Dashboard atualizado com sucesso!');
                             }
                         },
                         error: function(xhr, status, error) {
@@ -145,7 +132,6 @@ if (!defined('ABSPATH')) {
                     
                     // Se jQuery está disponível mas mpaAnalytics não, criar o objeto manualmente
                     if (typeof jQuery !== 'undefined' && typeof mpaAnalytics === 'undefined') {
-                        console.log('🔧 [MPA FALLBACK] Criando objeto mpaAnalytics manualmente');
                         
                         // Criar objeto mpaAnalytics com os dados necessários
                         window.mpaAnalytics = {
@@ -155,7 +141,6 @@ if (!defined('ABSPATH')) {
                             ajaxNonce: '<?php echo wp_create_nonce('mpa_analytics_nonce'); ?>'
                         };
                         
-                        console.log('✅ [MPA FALLBACK] Objeto mpaAnalytics criado:', window.mpaAnalytics);
                         
                         // Agora tentar carregar dados novamente
                         jQuery.ajax({
@@ -165,7 +150,6 @@ if (!defined('ABSPATH')) {
                                 'X-WP-Nonce': window.mpaAnalytics.nonce
                             },
                             success: function(response) {
-                                console.log('✅ [MPA FALLBACK MANUAL] Dados recebidos:', response);
                                 if (response.success && response.data && response.data.current) {
                                     // Atualizar elementos diretamente
                                     jQuery('#usersCount').text(response.data.current.users);
@@ -188,7 +172,6 @@ if (!defined('ABSPATH')) {
                                     // Esconder loading
                                     jQuery('#mpaAnalyticsLoading').hide();
                                     
-                                    console.log('✅ [MPA FALLBACK MANUAL] Dashboard atualizado com sucesso!');
                                 }
                             },
                             error: function(xhr, status, error) {
@@ -201,8 +184,6 @@ if (!defined('ABSPATH')) {
                         jQuery('#mpaAnalyticsLoading').html('<p style="color: red;">Erro: Recursos JavaScript não carregados</p>');
                     }
                 }
-            } else {
-                console.log('✅ [MPA DEBUG] Dashboard já foi inicializado corretamente');
             }
         }, 5000);
         </script>

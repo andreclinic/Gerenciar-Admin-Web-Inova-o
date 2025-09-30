@@ -7,6 +7,25 @@ Serve como memória do projeto para que o CODEX e os desenvolvedores humanos ent
 
 ## 📅 Histórico
 
+### ⏺ Update(remove debug console logs)
+
+- **Data:** 2025-09-30 12:42:58
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Removidos rastros de logs informativos e mensagens de debug do console dos módulos de analytics, menu e login para entregar build final de produção sem ruído em navegadores.
+- **Arquivos afetados:**
+  - `admin/views/mpa-analytics.php`
+  - `assets/js/mpa-analytics.js`
+  - `assets/js/mpa-adminmenumain.js`
+  - `assets/js/mpa-menu-settings.js`
+  - `assets/js/mpa-wpbody.js`
+  - `assets/js/mpa-wpfooter.js`
+  - `assets/js/mpa-custom-login.js`
+- **Problema:** Durante o uso em produção, o console do navegador era preenchido com mensagens de depuração que deveriam ter sido desativadas após a finalização do projeto.
+- **Solução:** Eliminadas as chamadas `console.log` e ajustes residuais, mantendo apenas avisos de erro necessários e limpando estruturas condicionais que dependiam desses logs.
+- **Justificativa:** Evitar ruídos no console dos administradores, reduzir custos de suporte e alinhar o comportamento aos padrões de release.
+
 ### ⏺ Update(menu export full schema)
 
 - **Data:** 2025-09-29 10:47:03

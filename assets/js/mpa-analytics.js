@@ -214,7 +214,6 @@
             
             try {
                 sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
-                console.log(`💾 [MPA CACHE] Dados salvos no cache para ${endpoint}`);
             } catch (e) {
                 console.warn('⚠️ [MPA CACHE] Erro ao salvar no cache:', e);
             }
@@ -286,7 +285,6 @@
             if (!this.shouldLoadInitialData()) {
                 const cachedData = this.loadCachedDataIfAvailable();
                 if (cachedData) {
-                    console.log('📦 [MPA CACHE] Usando dados em cache, pulando requisições API');
                     return;
                 }
             }
@@ -956,13 +954,11 @@
         // UI STATES
         // ===================================
         showLoading() {
-            console.log('⏳ [MPA DEBUG] Mostrando loading...');
             $('#mpaAnalyticsLoading').show();
             $('.mpa-analytics-section, .mpa-card-grid').css('opacity', '0.6');
         }
 
         hideLoading() {
-            console.log('✅ [MPA DEBUG] Escondendo loading...');
             $('#mpaAnalyticsLoading').hide();
             $('.mpa-analytics-section, .mpa-card-grid').css('opacity', '1');
         }
@@ -1067,7 +1063,6 @@ Gerado em: ${new Date().toLocaleString('pt-BR')}`;
         setupAutoRefresh() {
             // Forçar atualização de dados completos a cada 15 minutos (respeitando cache)
             setInterval(() => {
-                console.log('🔄 [MPA AUTO-REFRESH] Forçando recarregamento de dados');
                 this.isInitialLoad = true; // Força o recarregamento ignorando cache
                 this.loadAllData();
             }, 15 * 60 * 1000);
@@ -1083,24 +1078,8 @@ Gerado em: ${new Date().toLocaleString('pt-BR')}`;
     // INITIALIZATION
     // ===================================
     $(document).ready(function() {
-        console.log('🔍 [MPA DEBUG] DOM ready, verificando se estamos na página Analytics');
-        console.log('🔍 [MPA DEBUG] Elemento .mpa-dashboard-analytics encontrado:', $('.mpa-dashboard-analytics').length > 0);
-        console.log('🔍 [MPA DEBUG] Elemento #mpaAnalyticsLoading encontrado:', $('#mpaAnalyticsLoading').length > 0);
-        console.log('🔍 [MPA DEBUG] mpaAnalytics object disponível:', typeof mpaAnalytics !== 'undefined');
-        
-        // Verificar se estamos na página de analytics
-        if ($('.mpa-dashboard-analytics').length > 0) {
-            console.log('✅ [MPA DEBUG] Estamos na página Analytics');
-            
-            // Verificar se o GA4 está configurado
-            if ($('#mpaAnalyticsLoading').length > 0) {
-                console.log('✅ [MPA DEBUG] GA4 configurado, inicializando dashboard');
-                window.mpaAnalyticsDashboard = new MPAAnalyticsDashboard();
-            } else {
-                console.log('⚠️ [MPA DEBUG] GA4 não configurado');
-            }
-        } else {
-            console.log('⚠️ [MPA DEBUG] Não estamos na página Analytics');
+        if ($('.mpa-dashboard-analytics').length > 0 && $('#mpaAnalyticsLoading').length > 0) {
+            window.mpaAnalyticsDashboard = new MPAAnalyticsDashboard();
         }
     });
 

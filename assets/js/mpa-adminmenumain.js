@@ -373,7 +373,6 @@ jQuery(function ($) {
                 // Update the link if it was changed
                 if (href !== $link.attr('href')) {
                     $link.attr('href', href);
-                    console.log('Fixed URL:', $link.attr('href'), '->', href);
                 }
             }
         });
@@ -590,9 +589,7 @@ jQuery(function ($) {
                 e.stopPropagation();
                 e.originalEvent.dataTransfer.dropEffect = 'move';
                 $(this).addClass('main-menu-drop-zone');
-                console.log('Dragover on main nav with submenu item');
             } else if (draggedItem) {
-                console.log('Dragover on main nav but not submenu item:', draggedItem, 'has class:', $(draggedItem).hasClass('mpa-submenu-item'));
             }
         });
 
@@ -620,7 +617,6 @@ jQuery(function ($) {
                 e.stopPropagation();
                 $(this).removeClass('main-menu-drop-zone');
 
-                console.log('Transforming submenu to menu:', $(draggedItem));
 
                 // Transform submenu back to main menu
                 transformSidebarSubmenuToMenu($(draggedItem));
@@ -809,7 +805,6 @@ jQuery(function ($) {
         addSubmenuDragEvents($newSubmenuElement);
 
         // Send transformation to backend
-        console.log('🚀 Enviando transformação para o backend:', {draggedMenuSlug, parentMenuSlug, draggedMenuTitle});
         saveMenuToSubmenuTransformation(draggedMenuSlug, parentMenuSlug, draggedMenuTitle);
 
         showSidebarNotification(`Menu "${draggedMenuTitle}" transformado em submenu com sucesso! Recarregando...`, 'success');
@@ -860,7 +855,6 @@ jQuery(function ($) {
 
     // Save menu to submenu transformation (reuse from main menu manager)
     function saveMenuToSubmenuTransformation(menuSlug, parentSlug, menuTitle) {
-        console.log('saveMenuToSubmenuTransformation chamada:', {menuSlug, parentSlug, menuTitle});
 
         const formData = new FormData();
         formData.append('action', 'mpa_transform_menu_to_submenu');
@@ -869,27 +863,20 @@ jQuery(function ($) {
         formData.append('menu_title', menuTitle);
         formData.append('nonce', mpaDragDropVars ? mpaDragDropVars.nonce : '');
 
-        console.log('FormData preparado:', Array.from(formData.entries()));
-        console.log('URL AJAX:', mpaDragDropVars ? mpaDragDropVars.ajax_url : '/wp-admin/admin-ajax.php');
 
         fetch(mpaDragDropVars ? mpaDragDropVars.ajax_url : '/wp-admin/admin-ajax.php', {
             method: 'POST',
             body: formData
         })
         .then(response => {
-            console.log('Resposta recebida:', response.status, response.statusText);
             return response.json();
         })
         .then(data => {
-            console.log('Dados da resposta:', data);
 
             if (data.success) {
-                console.log('✅ Transformação salva com sucesso!', data.data);
 
                 // Recarregar página após sucesso no backend
-                console.log('🔄 Iniciando reload em 1.5 segundos...');
                 setTimeout(() => {
-                    console.log('🔄 Recarregando página agora...');
                     window.location.reload();
                 }, 1500);
             } else {
@@ -909,7 +896,6 @@ jQuery(function ($) {
             draggedItem = this;
             $(this).addClass('dragging');
             e.originalEvent.dataTransfer.effectAllowed = 'move';
-            console.log('Submenu drag started:', this, 'has mpa-submenu-item class:', $(this).hasClass('mpa-submenu-item'));
         });
 
         $submenuElement.on('dragend', function(e) {
@@ -921,14 +907,12 @@ jQuery(function ($) {
 
     // Transform submenu back to main menu in sidebar
     function transformSidebarSubmenuToMenu($submenuItem) {
-        console.log('transformSidebarSubmenuToMenu called with:', $submenuItem);
 
         const menuSlug = $submenuItem.attr('data-menu-slug');
         const parentSlug = $submenuItem.attr('data-parent-slug');
         const menuTitle = $submenuItem.find('span').text().replace('↳ ', '').trim();
         const menuUrl = $submenuItem.attr('href');
 
-        console.log('Menu data:', { menuSlug, parentSlug, menuTitle, menuUrl });
 
         // Remove the submenu item
         $submenuItem.remove();
@@ -1021,7 +1005,6 @@ jQuery(function ($) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                console.log('Submenu revertido com sucesso!', data.data);
 
                 showSidebarNotification('Submenu transformado em menu principal com sucesso! Recarregando...', 'success');
 
@@ -1052,6 +1035,5 @@ jQuery(function ($) {
         cleanMenuTitles();
         initSidebarDragDrop(); // Initialize drag and drop functionality
 
-        console.log('MPA Admin Menu initialized with drag-and-drop');
     });
 });
