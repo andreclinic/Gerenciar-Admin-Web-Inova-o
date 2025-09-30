@@ -7,6 +7,47 @@ Serve como memória do projeto para que o CODEX e os desenvolvedores humanos ent
 
 ## 📅 Histórico
 
+### ⏺ Update(custom menu capability)
+
+- **Data:** 2025-09-30 16:56:53
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Ajustada a capability dos menus personalizados para `read` e normalizado o redirecionamento interno, permitindo que roles sem `manage_options` (como `gerente`) sejam levadas corretamente à URL configurada em vez de travar na slug intermediária `mpa_custom_*`.
+- **Arquivos afetados:**
+  - `admin/mpa-menu-functions.php`
+  - `admin/mpa-menu-manager.php`
+  - `admin/mpa-adminmenumain.php`
+- **Problema:** Os menus customizados eram registrados com `manage_options`, bloqueando o router `mpa_custom_menu_router` para usuários sem essa permissão e deixando o link preso em `admin.php?page=mpa_custom_*`.
+- **Solução:** Alinhado o `add_menu_page()` para usar `read`, normalizado o destino antes do redirect e atualizado a sidebar para renderizar o link final diretamente quando o slug for `mpa_custom_*`, mantendo o controle de acesso pelas regras do plugin e garantindo o destino correto.
+- **Justificativa:** Restaurar o comportamento esperado dos links personalizados para gestores não administradores.
+
+### ⏺ Update(menu danger zone modal)
+
+- **Data:** 2025-09-30 18:47:44
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Transformada a "Zona de Perigo" da tela de menus por role em um modal com overlay, evitando que o alerta destrutivo permaneça exposto constantemente e reforçando a confirmação antes do reset.
+- **Arquivos afetados:**
+  - `admin/mpa-menu-settings.php`
+- **Problema:** O aviso de reset ficava sempre visível, poluindo a interface e gerando apreensão constante mesmo quando o usuário não pretendia realizar a ação.
+- **Solução:** Substituído o bloco aberto por um botão que abre modal com aviso, lista do que será apagado, overlay e suporte a ESC/click fora para fechar, mantendo o fluxo de reset existente.
+- **Justificativa:** Melhorar usabilidade e reduzir risco de cliques acidentais sem retirar o alerta necessário para operações destrutivas.
+
+### ⏺ Update(plugin version 1.4)
+
+- **Data:** 2025-09-30 18:55:00
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Incremento da versão do plugin para 1.4 refletindo as correções recentes no sistema de menus personalizados e na interface de gerenciamento.
+- **Arquivos afetados:**
+  - `gerenciar-admin.php`
+- **Problema:** A versão registrada permanecia em 1.3 mesmo após novas melhorias entregues.
+- **Solução:** Atualização do cabeçalho principal para 1.4.
+- **Justificativa:** Manter versionamento alinhado ao estado atual do plugin, facilitando deploy e controle.
+
 ### ⏺ Update(remove debug console logs)
 
 - **Data:** 2025-09-30 12:42:58

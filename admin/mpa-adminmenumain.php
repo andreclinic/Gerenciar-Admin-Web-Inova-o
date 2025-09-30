@@ -92,7 +92,10 @@ function mpa_render_dynamic_sidebar()
         <div class="mpa-nav-item-container" data-menu="<?php echo esc_attr($menu_file); ?>">
             <a href="<?php
                     // Construir URL corretamente para o menu principal
-                    if (strpos($menu_file, '.php') !== false) {
+                    $custom_target_url = mpa_get_custom_menu_target_url($menu_file);
+                    if ($custom_target_url) {
+                        echo esc_url($custom_target_url);
+                    } elseif (strpos($menu_file, '.php') !== false) {
                         // Arquivo direto do WordPress como index.php, edit.php, etc.
                         echo esc_url(admin_url($menu_file));
                     } elseif (strpos($menu_file, 'http') === 0) {
@@ -302,6 +305,83 @@ function mpa_get_menu_description($menu_file)
     ];
 
     return isset($descriptions[$menu_file]) ? $descriptions[$menu_file] : 'Acessar seção';
+}
+
+if (!function_exists('mpa_get_custom_menu_target_url')) {
+    function mpa_get_custom_menu_target_url($slug)
+    {
+        if (empty($slug) || strpos($slug, 'mpa_custom_') !== 0) {
+            return null;
+        }
+
+        if (!empty($GLOBALS['mpa_custom_links_map'][$slug]['url'])) {
+            return $GLOBALS['mpa_custom_links_map'][$slug]['url'];
+        }
+
+        $menu_id = substr($slug, strlen('mpa_custom_'));
+        if (!$menu_id) {
+            return null;
+        }
+
+        $custom_menus = get_option('mpa_custom_menus', array());
+        if (empty($custom_menus)) {
+            return null;
+        }
+
+        $user = wp_get_current_user();
+        $roles = $user ? (array) $user->roles : array();
+        $roles_to_check = $roles;
+
+        // Incluir variações comuns (gerente/gerentes, editor/editores)
+        foreach ($roles as $role_slug) {
+            if ($role_slug === 'gerentes' && !in_array('gerente', $roles_to_check, true)) {
+                $roles_to_check[] = 'gerente';
+            } elseif ($role_slug === 'gerente' && !in_array('gerentes', $roles_to_check, true)) {
+                $roles_to_check[] = 'gerentes';
+            } elseif ($role_slug === 'editores' && !in_array('editor', $roles_to_check, true)) {
+                $roles_to_check[] = 'editor';
+            } elseif ($role_slug === 'editor' && !in_array('editores', $roles_to_check, true)) {
+                $roles_to_check[] = 'editores';
+            }
+        }
+
+        // Verificar menus específicos da role
+        foreach ($roles_to_check as $role_slug) {
+            if (!empty($custom_menus[$role_slug][$menu_id]['url'])) {
+                $saved_url = $custom_menus[$role_slug][$menu_id]['url'];
+                return mpa_get_final_custom_menu_url($saved_url);
+            }
+        }
+
+        // fallback: procurar em todos os registros
+        foreach ($custom_menus as $role_menus) {
+            if (!empty($role_menus[$menu_id]['url'])) {
+                return mpa_get_final_custom_menu_url($role_menus[$menu_id]['url']);
+            }
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('mpa_get_final_custom_menu_url')) {
+    function mpa_get_final_custom_menu_url($raw_url)
+    {
+        $raw_url = trim((string) $raw_url);
+        if ($raw_url === '') {
+            return null;
+        }
+
+        if (function_exists('mpa_is_external_url') && mpa_is_external_url($raw_url)) {
+            return $raw_url;
+        }
+
+        if (function_exists('mpa_normalize_local_admin_url')) {
+            return mpa_normalize_local_admin_url($raw_url);
+        }
+
+        return admin_url(ltrim($raw_url, '/'));
+    }
 }
 
 // Esconder o menu padrão do WordPress

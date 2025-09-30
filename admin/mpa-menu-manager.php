@@ -1680,25 +1680,32 @@ function mpa_add_custom_menus_to_admin() {
         foreach ($ordered_role_menus as $menu_id => $menu_data) {
             $title = sanitize_text_field($menu_data['title'] ?? 'Menu Personalizado');
             $icon = sanitize_text_field($menu_data['icon'] ?? 'dashicons-admin-generic');
-            $url = $menu_data['url'] ?? '#';
+            $raw_url = trim($menu_data['url'] ?? '');
+
+            if ($raw_url === '') {
+                continue;
+            }
+
+            $is_external = function_exists('mpa_is_external_url') ? mpa_is_external_url($raw_url) : false;
+            $final_url = $is_external
+                ? $raw_url
+                : (function_exists('mpa_normalize_local_admin_url') ? mpa_normalize_local_admin_url($raw_url) : admin_url(ltrim($raw_url, '/')));
 
             // Gerar um slug único para o menu
             $menu_slug = 'mpa_custom_' . $menu_id;
-            
-            
-            $result = add_menu_page(
-                $title,                              // page_title
-                $title,                              // menu_title
-                'read',                              // capability
-                $menu_slug,                          // menu_slug
-                function() use ($url) {              // callback - redirecionar diretamente
-                    wp_safe_redirect($url);
+
+            add_menu_page(
+                $title,
+                $title,
+                'read',
+                $menu_slug,
+                function () use ($final_url) {
+                    wp_safe_redirect($final_url);
                     exit;
                 },
-                $icon,                               // icon_url
-                null                                 // Deixar WordPress escolher posição, mpa_apply_menu_order() reorganizará
+                $icon,
+                null
             );
-            
         }
     }
 }

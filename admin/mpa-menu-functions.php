@@ -403,7 +403,7 @@ add_action('admin_menu', function () {
             add_menu_page(
                 $title,
                 $title,
-                'manage_options',
+                'read',
                 $slug,
                 'mpa_custom_menu_router',
                 $icon,

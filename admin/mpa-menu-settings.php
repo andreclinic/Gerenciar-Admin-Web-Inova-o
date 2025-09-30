@@ -1161,34 +1161,205 @@ if (!function_exists('mpa_render_settings_page')) {
                     </h2>
                 </div>
                 <div class="mpa-section-content">
-                    <div class="mpa-notice error" style="margin-bottom: 20px;">
-                        <span class="dashicons dashicons-warning"></span>
-                        <div>
-                            Esta ação irá <strong>DELETAR PERMANENTEMENTE</strong> todas as configurações de menu para o perfil selecionado
-                            <strong>"<?php echo esc_html($role_current === '_global' ? 'Global' : $roles[$role_current]['name'] . " ({$role_current})"); ?>"</strong>.
-                        </div>
-                    </div>
-
-                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
-                        <h4 style="color: #dc2626; margin: 0 0 10px;">O que será removido:</h4>
-                        <ul style="margin: 0; padding-left: 20px; color: #7f1d1d;">
-                            <li>Todos os menus personalizados criados</li>
-                            <li>Renomeações de menus e submenus</li>
-                            <li>Ordem personalizada dos menus</li>
-                            <li>Menus e submenus removidos/ocultados</li>
-                            <li>Transformações de menus (promover/demover)</li>
-                            <li>Todas as demais configurações personalizadas</li>
-                        </ul>
-                    </div>
-
-                    <button type="button" id="mpa-reset-config" class="button-danger mpa-primary-btn"
-                            data-role="<?php echo esc_attr($role_current); ?>"
-                            style="background: #dc2626; border-color: #dc2626;">
-                        <span class="dashicons dashicons-trash"></span>
-                        Resetar Todas as Configurações
+                    <p class="mpa-danger-hint">Atenção: esta área remove todas as configurações do perfil atual. Revise com cuidado antes de continuar.</p>
+                    <button type="button"
+                            class="button button-danger mpa-danger-open"
+                            data-modal-target="mpa-danger-modal">
+                        <span class="dashicons dashicons-shield"></span>
+                        Mostrar opções destrutivas
                     </button>
                 </div>
+
+                <div class="mpa-danger-overlay" data-modal-overlay hidden></div>
+
+                <div class="mpa-danger-modal" id="mpa-danger-modal" hidden>
+                    <div class="mpa-danger-modal__content" role="dialog" aria-modal="true" aria-labelledby="mpa-danger-modal-title">
+                        <button type="button" class="mpa-danger-close" data-modal-close aria-label="Fechar">
+                            <span class="dashicons dashicons-no"></span>
+                        </button>
+                        <h2 id="mpa-danger-modal-title">
+                            <span class="dashicons dashicons-warning"></span>
+                            Resetar configurações do perfil "<?php echo esc_html($role_current === '_global' ? 'Global' : $roles[$role_current]['name'] . " ({$role_current})"); ?>"
+                        </h2>
+                        <p>Esta ação irá <strong>DELETAR PERMANENTEMENTE</strong> todas as configurações de menu do perfil selecionado. Não há como desfazer.</p>
+
+                        <div class="mpa-danger-list">
+                            <h4>O que será removido:</h4>
+                            <ul>
+                                <li>Todos os menus personalizados criados</li>
+                                <li>Renomeações de menus e submenus</li>
+                                <li>Ordem personalizada dos menus</li>
+                                <li>Menus e submenus removidos/ocultados</li>
+                                <li>Transformações de menus (promover/demover)</li>
+                                <li>Todas as demais configurações personalizadas</li>
+                            </ul>
+                        </div>
+
+                        <p class="mpa-danger-warning">Confirme somente se desejar apagar todas as configurações deste perfil.</p>
+
+                        <button type="button" id="mpa-reset-config" class="button-danger mpa-primary-btn"
+                                data-role="<?php echo esc_attr($role_current); ?>"
+                                style="background: #dc2626; border-color: #dc2626;">
+                            <span class="dashicons dashicons-trash"></span>
+                            Resetar Todas as Configurações
+                        </button>
+                    </div>
+                </div>
             </div>
+
+            <style>
+                .mpa-danger-zone {
+                    position: relative;
+                }
+
+                .mpa-danger-hint {
+                    margin: 0 0 12px;
+                    color: #4b5563;
+                }
+
+                .mpa-danger-open {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    background: #dc2626;
+                    border-color: #dc2626;
+                    color: #fff;
+                }
+
+                .mpa-danger-open:hover,
+                .mpa-danger-open:focus {
+                    background: #b91c1c;
+                    border-color: #b91c1c;
+                    color: #fff;
+                }
+
+                .mpa-danger-overlay {
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(15, 23, 42, 0.45);
+                    z-index: 99998;
+                }
+
+                .mpa-danger-modal {
+                    position: fixed;
+                    inset: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 40px 20px;
+                    z-index: 99999;
+                }
+
+                .mpa-danger-modal__content {
+                    background: #fff;
+                    border-radius: 8px;
+                    max-width: 520px;
+                    width: 100%;
+                    padding: 28px;
+                    box-shadow: 0 25px 45px rgba(15, 23, 42, 0.2);
+                    position: relative;
+                }
+
+                .mpa-danger-modal__content h2 {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin: 0 0 12px;
+                    color: #b91c1c;
+                }
+
+                .mpa-danger-modal__content p {
+                    margin: 0 0 16px;
+                    color: #1f2937;
+                }
+
+                .mpa-danger-list {
+                    background: #fef2f2;
+                    border: 1px solid #fecaca;
+                    border-radius: 6px;
+                    padding: 16px;
+                    margin-bottom: 18px;
+                }
+
+                .mpa-danger-list h4 {
+                    margin: 0 0 10px;
+                    color: #dc2626;
+                }
+
+                .mpa-danger-list ul {
+                    margin: 0;
+                    padding-left: 20px;
+                    color: #7f1d1d;
+                }
+
+                .mpa-danger-warning {
+                    font-weight: 600;
+                    color: #b91c1c;
+                    margin-bottom: 18px;
+                }
+
+                .mpa-danger-close {
+                    position: absolute;
+                    top: 12px;
+                    right: 12px;
+                    background: transparent;
+                    border: none;
+                    color: #374151;
+                    cursor: pointer;
+                }
+
+                .mpa-danger-close:hover,
+                .mpa-danger-close:focus {
+                    color: #111827;
+                }
+
+                .mpa-danger-modal[hidden],
+                .mpa-danger-overlay[hidden] {
+                    display: none;
+                }
+
+                body.mpa-danger-modal-open {
+                    overflow: hidden;
+                }
+            </style>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const modal = document.getElementById('mpa-danger-modal');
+                    const overlay = document.querySelector('[data-modal-overlay]');
+                    const openBtn = document.querySelector('.mpa-danger-open');
+                    const closeBtns = document.querySelectorAll('[data-modal-close]');
+
+                    if (!modal || !overlay || !openBtn) {
+                        return;
+                    }
+
+                    const openModal = function () {
+                        modal.hidden = false;
+                        overlay.hidden = false;
+                        document.body.classList.add('mpa-danger-modal-open');
+                        modal.focus();
+                    };
+
+                    const closeModal = function () {
+                        modal.hidden = true;
+                        overlay.hidden = true;
+                        document.body.classList.remove('mpa-danger-modal-open');
+                    };
+
+                    openBtn.addEventListener('click', openModal);
+                    overlay.addEventListener('click', closeModal);
+                    closeBtns.forEach(function (btn) {
+                        btn.addEventListener('click', closeModal);
+                    });
+
+                    document.addEventListener('keydown', function (event) {
+                        if (event.key === 'Escape' && !modal.hidden) {
+                            closeModal();
+                        }
+                    });
+                });
+            </script>
 
             <!-- SortableJS -->
             <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
