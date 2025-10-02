@@ -7,6 +7,32 @@ Serve como memória do projeto para que o CODEX e os desenvolvedores humanos ent
 
 ## 📅 Histórico
 
+### ⏺ Update(login redirect restore)
+
+- **Data:** 2025-10-02 11:49:13
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Restaurado o comportamento padrão de redirecionamento pós-login do WordPress, preservando a URL solicitada antes da autenticação.
+- **Arquivos afetados:**
+  - `admin/mpa-custom-login.php`
+- **Problema:** O formulário de login sobrescrevia o campo `redirect_to` com o dashboard, forçando todos os usuários à página de analytics mesmo quando requisitavam outra tela (ex.: Modo Garçom).
+- **Solução:** Mantido o valor original de `redirect_to` durante a reconstrução do formulário customizado, utilizando o fallback padrão apenas quando o campo não é fornecido.
+- **Justificativa:** Garantir fluxo consistente para links diretos do admin e evitar fricção com perfis que acessam páginas específicas após o login.
+
+### ⏺ Update(plugin version 1.6)
+
+- **Data:** 2025-10-02 11:57:20
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Versão incrementada para 1.6 refletindo a correção do redirecionamento pós-login e demais ajustes recentes.
+- **Arquivos afetados:**
+  - `gerenciar-admin.php`
+- **Problema:** O cabeçalho do plugin ainda indicava a versão 1.5 após a melhoria no fluxo de login.
+- **Solução:** Atualizado o cabeçalho principal para 1.6.
+- **Justificativa:** Manter o controle de versão alinhado ao conjunto atual de mudanças antes do deploy.
+
 ### ⏺ Update(plugin version 1.5)
 
 - **Data:** 2025-10-02 10:02:29

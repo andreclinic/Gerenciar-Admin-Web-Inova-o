@@ -466,10 +466,6 @@ function mpa_custom_login_footer() {
                         const $input = $(this);
                         const name = $input.attr('name');
 
-                        if (name === 'redirect_to') {
-                            $input.val(adminUrl);
-                        }
-
                         if (!name) {
                             $form.append($input);
                             return;
