@@ -82,3 +82,75 @@ function mpa_render_admin_preloader() {
     </div>
     <?php
 }
+
+// Detecta o modo garçom para aplicar layout fullscreen
+function mpa_is_modo_garcom_screen() {
+    return is_admin() && isset($_GET['page']) && $_GET['page'] === 'modo-garcom-wc';
+}
+
+// Adiciona classes no body para isolar o escopo das regras de fullscreen
+add_filter('admin_body_class', function ($classes) {
+    if (!mpa_is_modo_garcom_screen()) {
+        return $classes;
+    }
+
+    if (strpos($classes, 'dwi-theme') === false) {
+        $classes .= ' dwi-theme';
+    }
+
+    if (strpos($classes, 'mpa-garcom-fullscreen') === false) {
+        $classes .= ' mpa-garcom-fullscreen';
+    }
+
+    return $classes;
+});
+
+// Aplica estilos fullscreen apenas na página modo garçom
+add_action('admin_head', function () {
+    if (!mpa_is_modo_garcom_screen()) {
+        return;
+    }
+    ?>
+    <style type="text/css">
+        body.dwi-theme.mpa-garcom-fullscreen,
+        body.dwi-theme.mpa-garcom-fullscreen #wpwrap {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff;
+            min-height: 100vh;
+        }
+
+        body.dwi-theme.mpa-garcom-fullscreen #wpadminbar,
+        body.dwi-theme.mpa-garcom-fullscreen #adminmenuback,
+        body.dwi-theme.mpa-garcom-fullscreen #adminmenuwrap,
+        body.dwi-theme.mpa-garcom-fullscreen #adminmenu,
+        body.dwi-theme.mpa-garcom-fullscreen #mpa-custom-header,
+        body.dwi-theme.mpa-garcom-fullscreen .mpa-header,
+        body.dwi-theme.mpa-garcom-fullscreen #mpa-sidebar,
+        body.dwi-theme.mpa-garcom-fullscreen #mpa-sidebar-overlay,
+        body.dwi-theme.mpa-garcom-fullscreen #screen-meta,
+        body.dwi-theme.mpa-garcom-fullscreen #screen-meta-links,
+        body.dwi-theme.mpa-garcom-fullscreen #wpfooter {
+            display: none !important;
+        }
+
+        body.dwi-theme.mpa-garcom-fullscreen #wpcontent,
+        body.dwi-theme.mpa-garcom-fullscreen #wpbody,
+        body.dwi-theme.mpa-garcom-fullscreen #wpbody-content {
+            margin: 0 !important;
+            padding: 0 !important;
+            min-height: 100vh;
+        }
+
+        body.dwi-theme.mpa-garcom-fullscreen #wpbody-content > .wrap,
+        body.dwi-theme.mpa-garcom-fullscreen #wpcontent > .wrap,
+        body.dwi-theme.mpa-garcom-fullscreen .wrap {
+            margin: 0 !important;
+            padding: 0 !important;
+            max-width: 100% !important;
+            box-shadow: none !important;
+            background: transparent !important;
+        }
+    </style>
+    <?php
+});

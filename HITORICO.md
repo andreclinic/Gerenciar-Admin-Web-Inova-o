@@ -7,6 +7,32 @@ Serve como memória do projeto para que o CODEX e os desenvolvedores humanos ent
 
 ## 📅 Histórico
 
+### ⏺ Update(plugin version 1.5)
+
+- **Data:** 2025-10-02 10:02:29
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Incremento da versão do plugin para 1.5 refletindo o ajuste fullscreen do Modo Garçom e demais melhorias recentes.
+- **Arquivos afetados:**
+  - `gerenciar-admin.php`
+- **Problema:** A versão ainda permanecia em 1.4 após aplicar o layout fullscreen dedicado na tela de garçom.
+- **Solução:** Atualizado o cabeçalho principal do plugin para 1.5.
+- **Justificativa:** Manter rastreio de releases alinhado às mudanças entregues.
+
+### ⏺ Update(garcom fullscreen layout)
+
+- **Data:** 2025-10-02 09:47:45
+- **Branch:** codex
+- **Autor:** CODEX / OpenAI
+- **Descrição:**  
+  Aplicado modo fullscreen na tela Modo Garçom, removendo a moldura do admin (topo, menu lateral e rodapé) para que a página ocupe toda a viewport.
+- **Arquivos afetados:**
+  - `admin/mpa-admin.php`
+- **Problema:** A página `modo-garcom-wc` ainda exibia header, sidebar e footer do WordPress, reduzindo a área útil e destoando do fluxo dedicado para atendimento.
+- **Solução:** Identificada a tela via slug e adicionadas classes no `body` com estilos específicos para esconder os elementos do admin e zerar margens, mantendo o conteúdo no tamanho máximo.
+- **Justificativa:** Atender à necessidade operacional de exibir o modo garçom em tela cheia, sem interferências da interface administrativa.
+
 ### ⏺ Update(custom menu capability)
 
 - **Data:** 2025-09-30 16:56:53
